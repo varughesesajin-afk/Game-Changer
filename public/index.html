@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sports Event Manager</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">🏆</span> Sports Event Manager</a>
+    <nav class="topnav">
+      <a href="/admin.html">Organizer login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Upcoming &amp; ongoing events</h1>
+  <p class="muted">Browse events, register your team or yourself, and check fixtures, schedules and scores.</p>
+
+  <div id="events" class="grid" style="margin-top:20px;">
+    <div class="empty-state"><span class="spinner"></span></div>
+  </div>
+</div>
+
+<footer class="site-footer">Sports Event Manager</footer>
+
+<script src="/js/api.js"></script>
+<script>
+async function load() {
+  const el = document.getElementById("events");
+  try {
+    const events = await api.get("/api/events");
+    if (!events.length) {
+      el.innerHTML = `<div class="empty-state">No events published yet. Check back soon.</div>`;
+      return;
+    }
+    el.innerHTML = events.map(eventCard).join("");
+  } catch (e) {
+    el.innerHTML = `<div class="alert error">Couldn't load events: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function eventCard(ev) {
+  const badgeClass = statusBadgeClass(ev.status);
+  return `
+    <a class="event-card" href="/event.html?id=${encodeURIComponent(ev.id)}">
+      <span class="badge ${badgeClass}">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
+      <h3>${escapeHtml(ev.name)}</h3>
+      <div class="muted small">${escapeHtml(ev.sportLabel)}${ev.venue ? " · " + escapeHtml(ev.venue) : ""}</div>
+      ${ev.startDate ? `<div class="small muted">📅 ${escapeHtml(fmtDateOnly(ev.startDate))}</div>` : ""}
+      <div class="small muted">${ev.registrationCount} ${ev.category === "individual" ? "players" : "teams"} registered</div>
+    </a>
+  `;
+}
+
+load();
+</script>
+</body>
+</html>
