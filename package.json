@@ -1,5 +1,5 @@
 {
-  "name": "sports-event-manager",
+  "name": "games-all-day",
   "version": "1.0.0",
   "description": "Self-hosted app for organizing sports events: public registration, fixture generation, schedules, and scores.",
   "main": "server.js",

@@ -204,11 +204,26 @@ router.get("/events/:id/matches", (req, res) => {
   res.json(matchService.eventMatches(event.id));
 });
 
+router.get("/events/:id/standings", (req, res) => {
+  const event = db.find("events", req.params.id);
+  if (!event) return res.status(404).json({ error: "Event not found" });
+  res.json({
+    groups: matchService.groupStandings(event.id),
+    overall: matchService.overallStandings(event.id),
+  });
+});
+
+router.get("/events/:id/stats", (req, res) => {
+  const event = db.find("events", req.params.id);
+  if (!event) return res.status(404).json({ error: "Event not found" });
+  res.json(matchService.eventStats(event.id));
+});
+
 router.patch("/matches/:id", (req, res) => {
   const match = db.find("matches", req.params.id);
   if (!match) return res.status(404).json({ error: "Match not found" });
 
-  const { scoreA, scoreB, scheduledAt, venue } = req.body || {};
+  const { scoreA, scoreB, games, penalties, goalEvents, scheduledAt, venue } = req.body || {};
   let result = match;
 
   if (scheduledAt !== undefined || venue !== undefined) {
@@ -218,7 +233,27 @@ router.patch("/matches/:id", (req, res) => {
     result = db.update("matches", match.id, patch);
   }
 
-  if (scoreA !== undefined && scoreB !== undefined) {
+  if (goalEvents !== undefined) {
+    try {
+      result = matchService.recordGoalEvents(match.id, goalEvents);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  if (penalties !== undefined) {
+    try {
+      result = matchService.recordPenalties(match.id, penalties);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  } else if (games !== undefined) {
+    try {
+      result = matchService.recordGameScores(match.id, games);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  } else if (scoreA !== undefined && scoreB !== undefined) {
     const a = Number(scoreA);
     const b = Number(scoreB);
     if (Number.isNaN(a) || Number.isNaN(b) || a < 0 || b < 0) {

@@ -16,5 +16,5 @@ app.use("/api", publicApi);
 app.serveStatic(path.join(__dirname, "public"));
 
 app.listen(PORT, () => {
-  console.log(`Sports Event Manager running at http://localhost:${PORT}`);
+  console.log(`Games All Day running at http://localhost:${PORT}`);
 });

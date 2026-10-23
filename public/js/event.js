@@ -2,7 +2,7 @@ const params = new URLSearchParams(location.search);
 const eventId = params.get("id");
 const content = document.getElementById("content");
 
-let state = { event: null, registrations: [], matches: [], standings: null, activeTab: "register" };
+let state = { event: null, registrations: [], matches: [], standings: null, stats: null, activeTab: "register" };
 
 async function init() {
   if (!eventId) {
@@ -10,16 +10,18 @@ async function init() {
     return;
   }
   try {
-    const [event, registrations, matches, standings] = await Promise.all([
+    const [event, registrations, matches, standings, stats] = await Promise.all([
       api.get(`/api/events/${eventId}`),
       api.get(`/api/events/${eventId}/registrations`),
       api.get(`/api/events/${eventId}/fixtures`),
       api.get(`/api/events/${eventId}/standings`),
+      api.get(`/api/events/${eventId}/stats`),
     ]);
     state.event = event;
     state.registrations = registrations;
     state.matches = matches;
     state.standings = standings;
+    state.stats = stats;
     state.activeTab = event.status === "registration_open" ? "register" : "participants";
     render();
   } catch (e) {
@@ -28,16 +30,18 @@ async function init() {
 }
 
 async function refreshData() {
-  const [event, registrations, matches, standings] = await Promise.all([
+  const [event, registrations, matches, standings, stats] = await Promise.all([
     api.get(`/api/events/${eventId}`),
     api.get(`/api/events/${eventId}/registrations`),
     api.get(`/api/events/${eventId}/fixtures`),
     api.get(`/api/events/${eventId}/standings`),
+    api.get(`/api/events/${eventId}/stats`),
   ]);
   state.event = event;
   state.registrations = registrations;
   state.matches = matches;
   state.standings = standings;
+  state.stats = stats;
   render();
 }
 
@@ -45,12 +49,17 @@ function render() {
   const ev = state.event;
   const noun = ev.category === "individual" ? "Players" : "Teams";
   const hasFixtures = state.matches.length > 0;
+  const hasStats =
+    ev.category !== "individual" &&
+    state.stats &&
+    (state.stats.topScorers.length || state.stats.topAssists.length || state.stats.bestDefense.length);
 
   const tabs = [];
   if (ev.status === "registration_open") tabs.push(["register", "Register"]);
   tabs.push(["participants", `${noun} (${state.registrations.length})`]);
   if (hasFixtures) tabs.push(["fixtures", "Fixtures & Schedule"]);
   if (hasFixtures) tabs.push(["standings", "Standings"]);
+  if (hasStats) tabs.push(["stats", "Top Scorers"]);
   if (!tabs.find(([id]) => id === state.activeTab)) state.activeTab = tabs[0][0];
 
   content.innerHTML = `
@@ -83,8 +92,66 @@ function render() {
   if (state.activeTab === "participants") body.innerHTML = renderParticipantsTab();
   if (state.activeTab === "fixtures") body.innerHTML = renderFixturesTab();
   if (state.activeTab === "standings") body.innerHTML = renderStandingsTab();
+  if (state.activeTab === "stats") body.innerHTML = renderStatsTab();
 
   if (state.activeTab === "register") wireRegisterForm();
+}
+
+function leaderTable(rows, nameLabel, valueLabel, valueKey) {
+  if (!rows.length) return `<div class="empty-state">Nothing recorded yet.</div>`;
+  return `
+    <table>
+      <thead><tr><th>#</th><th>${nameLabel}</th><th>${valueLabel}</th></tr></thead>
+      <tbody>
+        ${rows
+          .map(
+            (r, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(r.name)}</td>
+            <td><strong>${r[valueKey]}</strong></td>
+          </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function renderStatsTab() {
+  const s = state.stats;
+  return `
+    <h3 style="margin-top:0;">Top Scorers</h3>
+    <div class="card">${leaderTable(s.topScorers, "Player", "Goals", "goals")}</div>
+
+    <h3>Most Assists</h3>
+    <div class="card">${leaderTable(s.topAssists, "Player", "Assists", "assists")}</div>
+
+    <h3>Best Defense</h3>
+    <div class="card">
+      ${
+        s.bestDefense.length
+          ? `<table>
+          <thead><tr><th>#</th><th>Team</th><th>P</th><th>Clean sheets</th><th>Conceded</th></tr></thead>
+          <tbody>
+            ${s.bestDefense
+              .map(
+                (r, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${r.played}</td>
+                <td><strong>${r.cleanSheets}</strong></td>
+                <td>${r.conceded}</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>`
+          : `<div class="empty-state">Nothing recorded yet.</div>`
+      }
+    </div>
+  `;
 }
 
 function renderRegisterTab() {
@@ -179,14 +246,30 @@ function renderParticipantsTab() {
 function matchLine(m) {
   const played = m.status === "completed";
   const isBye = m.status === "bye";
+  const hasGames = Array.isArray(m.games) && m.games.length > 0;
+  const showScore = played || (hasGames && (m.scoreA > 0 || m.scoreB > 0));
+  const hasPens = m.penalties && m.penalties.shots && m.penalties.shots.length > 0;
+  const goalEvents = Array.isArray(m.goalEvents) ? m.goalEvents : [];
+  const goalsFor = (side) => goalEvents.filter((g) => g.side === side);
+  const goalLine = (g) => `⚽ ${escapeHtml(g.scorer)}${g.assist ? ` <span class="muted">(assist: ${escapeHtml(g.assist)})</span>` : ""}`;
   return `
     <div class="match-row">
       <div>
         <div class="match-participants">
           <span>${escapeHtml(m.participantAName || "TBD")}</span>
-          ${played ? `<span class="match-score">${m.scoreA} – ${m.scoreB}</span>` : `<span class="muted">vs</span>`}
+          ${showScore ? `<span class="match-score">${m.scoreA} – ${m.scoreB}${hasPens ? ` <span class="small muted">(pens ${m.penalties.scoreA}-${m.penalties.scoreB})</span>` : ""}</span>` : `<span class="muted">vs</span>`}
           <span>${escapeHtml(isBye ? "(bye)" : m.participantBName || "TBD")}</span>
         </div>
+        ${hasGames ? `<div class="small muted">${m.games.map(([a, b]) => `${a}-${b}`).join(", ")}</div>` : ""}
+        ${
+          goalEvents.length
+            ? `<div class="small muted" style="display:flex; gap:24px; margin-top:2px;">
+                <div>${goalsFor("A").map(goalLine).join("<br>")}</div>
+                <div>${goalsFor("B").map(goalLine).join("<br>")}</div>
+              </div>`
+            : ""
+        }
+        ${played && m.winnerName ? `<div class="small muted">${escapeHtml(m.winnerName)} won${hasPens ? " on penalties" : ""}</div>` : ""}
         <div class="match-meta">
           ${m.scheduledAt ? `📅 ${escapeHtml(fmtDate(m.scheduledAt))}` : ""}
           ${m.venue ? ` · 📍 ${escapeHtml(m.venue)}` : ""}
@@ -240,7 +323,7 @@ function renderFixturesTab() {
 function standingsTable(rows) {
   return `
     <table>
-      <thead><tr><th>#</th><th>${state.event.category === "individual" ? "Player" : "Team"}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>Pts</th></tr></thead>
+      <thead><tr><th>#</th><th>${state.event.category === "individual" ? "Player" : "Team"}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
       <tbody>
         ${rows
           .map(
@@ -252,6 +335,7 @@ function standingsTable(rows) {
             <td>${r.wins}</td>
             <td>${r.draws}</td>
             <td>${r.losses}</td>
+            <td>${r.goalDiff > 0 ? "+" : ""}${r.goalDiff}</td>
             <td><strong>${r.points}</strong></td>
           </tr>`
           )

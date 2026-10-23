@@ -1,4 +1,4 @@
-# Sports Event Manager
+# Games All Day
 
 A self-hosted app for organizing sports events: a public page where teams
 or players register themselves, and an organizer dashboard to generate

@@ -4,6 +4,8 @@ const logoutLink = document.getElementById("logout-link");
 let admin = { isAdmin: false };
 let dashState = { events: [], showCreateForm: false };
 let eventState = null;
+let penaltyExtraRounds = {}; // matchId -> extra sudden-death rounds added beyond the base 5
+let goalEventExtraRows = {}; // matchId -> extra blank goal-entry rows added beyond the default
 
 window.addEventListener("hashchange", route);
 logoutLink.addEventListener("click", async (e) => {
@@ -177,13 +179,15 @@ function wireCreateEventForm() {
 async function renderEventView(id) {
   content.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
   try {
-    const [event, registrations, matches, suggestion] = await Promise.all([
+    const [event, registrations, matches, suggestion, standings, stats] = await Promise.all([
       api.get(`/api/admin/events/${id}`),
       api.get(`/api/admin/events/${id}/registrations`),
       api.get(`/api/admin/events/${id}/matches`),
       api.get(`/api/admin/events/${id}/suggest-format`),
+      api.get(`/api/admin/events/${id}/standings`),
+      api.get(`/api/admin/events/${id}/stats`),
     ]);
-    eventState = { id, event, registrations, matches, suggestion, activeTab: eventState && eventState.id === id ? eventState.activeTab : "settings", selectedFormat: null };
+    eventState = { id, event, registrations, matches, suggestion, standings, stats, activeTab: eventState && eventState.id === id ? eventState.activeTab : "settings", selectedFormat: null };
   } catch (e) {
     content.innerHTML = `<div class="alert error">${escapeHtml(e.message)}</div><p><a href="#">← Back</a></p>`;
     return;
@@ -193,23 +197,29 @@ async function renderEventView(id) {
 
 async function reloadEventState() {
   const id = eventState.id;
-  const [event, registrations, matches, suggestion] = await Promise.all([
+  const [event, registrations, matches, suggestion, standings, stats] = await Promise.all([
     api.get(`/api/admin/events/${id}`),
     api.get(`/api/admin/events/${id}/registrations`),
     api.get(`/api/admin/events/${id}/matches`),
     api.get(`/api/admin/events/${id}/suggest-format`),
+    api.get(`/api/admin/events/${id}/standings`),
+    api.get(`/api/admin/events/${id}/stats`),
   ]);
-  Object.assign(eventState, { event, registrations, matches, suggestion });
+  Object.assign(eventState, { event, registrations, matches, suggestion, standings, stats });
 }
 
 function drawEventView() {
   const { event, activeTab } = eventState;
+  const sport = SPORTS_CACHE.find((s) => s.key === event.sport);
+  const isTeam = (sport ? sport.category : event.category) !== "individual";
   const tabs = [
     ["settings", "Settings"],
     ["registrations", `Registrations (${eventState.registrations.length})`],
     ["fixtures", "Fixture format"],
     ["scores", "Scores & Schedule"],
+    ["standings", "Standings"],
   ];
+  if (isTeam) tabs.push(["stats", "Top Scorers"]);
 
   content.innerHTML = `
     <a href="#" class="small">← All events</a>
@@ -239,6 +249,108 @@ function drawEventView() {
   if (activeTab === "registrations") drawRegistrationsTab(body);
   if (activeTab === "fixtures") drawFixturesTab(body);
   if (activeTab === "scores") drawScoresTab(body);
+  if (activeTab === "standings") drawStandingsTab(body);
+  if (activeTab === "stats") drawStatsTab(body);
+}
+
+function leaderTable(rows, nameLabel, valueLabel, valueKey) {
+  if (!rows.length) return `<div class="empty-state">Nothing recorded yet.</div>`;
+  return `
+    <table>
+      <thead><tr><th>#</th><th>${nameLabel}</th><th>${valueLabel}</th></tr></thead>
+      <tbody>
+        ${rows
+          .map(
+            (r, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(r.name)}</td>
+            <td><strong>${r[valueKey]}</strong></td>
+          </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function drawStatsTab(body) {
+  const s = eventState.stats || { topScorers: [], topAssists: [], bestDefense: [] };
+  body.innerHTML = `
+    <h3 style="margin-top:0;">Top Scorers</h3>
+    <div class="card">${leaderTable(s.topScorers, "Player", "Goals", "goals")}</div>
+
+    <h3>Most Assists</h3>
+    <div class="card">${leaderTable(s.topAssists, "Player", "Assists", "assists")}</div>
+
+    <h3>Best Defense</h3>
+    <div class="card">
+      ${
+        s.bestDefense.length
+          ? `<table>
+          <thead><tr><th>#</th><th>Team</th><th>P</th><th>Clean sheets</th><th>Conceded</th></tr></thead>
+          <tbody>
+            ${s.bestDefense
+              .map(
+                (r, i) => `
+              <tr>
+                <td>${i + 1}</td>
+                <td>${escapeHtml(r.name)}</td>
+                <td>${r.played}</td>
+                <td><strong>${r.cleanSheets}</strong></td>
+                <td>${r.conceded}</td>
+              </tr>`
+              )
+              .join("")}
+          </tbody>
+        </table>`
+          : `<div class="empty-state">Nothing recorded yet.</div>`
+      }
+    </div>
+  `;
+}
+
+function adminStandingsTable(rows, isIndividual) {
+  return `
+    <table>
+      <thead><tr><th>#</th><th>${isIndividual ? "Player" : "Team"}</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GD</th><th>Pts</th></tr></thead>
+      <tbody>
+        ${rows
+          .map(
+            (r, i) => `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${escapeHtml(r.name)}</td>
+            <td>${r.played}</td>
+            <td>${r.wins}</td>
+            <td>${r.draws}</td>
+            <td>${r.losses}</td>
+            <td>${r.goalDiff > 0 ? "+" : ""}${r.goalDiff}</td>
+            <td><strong>${r.points}</strong></td>
+          </tr>`
+          )
+          .join("")}
+      </tbody>
+    </table>
+  `;
+}
+
+function drawStandingsTab(body) {
+  const s = eventState.standings;
+  const isIndividual = eventState.event.category === "individual" || SPORTS_CACHE.find((sp) => sp.key === eventState.event.sport)?.category === "individual";
+  let html = "";
+  if (s && s.overall && s.overall.length) {
+    html += `<div class="card">${adminStandingsTable(s.overall, isIndividual)}</div>`;
+  }
+  if (s && s.groups && s.groups.length) {
+    s.groups.forEach((g) => {
+      html += `<h3>${escapeHtml(g.name)}</h3><div class="card">${adminStandingsTable(g.standings, isIndividual)}</div>`;
+    });
+  }
+  if (!html) {
+    html = `<div class="empty-state">No standings yet — this format doesn't produce a league table, or no matches have been completed.</div>`;
+  }
+  body.innerHTML = html;
 }
 
 function drawSettingsTab(body) {
@@ -510,6 +622,11 @@ function drawScoresTab(body) {
     return;
   }
 
+  const sport = SPORTS_CACHE.find((s) => s.key === eventState.event.sport);
+  const scoring = sport && sport.scoring && sport.scoring.type === "games" ? sport.scoring : null;
+  const category = sport ? sport.category : eventState.event.category || "team";
+  const isTeam = category !== "individual";
+
   const groups = [...new Set(matches.filter((m) => m.groupName).map((m) => m.groupName))];
   const stages = [
     ...groups.map((g) => ({ label: g, list: matches.filter((m) => m.groupName === g) })),
@@ -526,7 +643,7 @@ function drawScoresTab(body) {
           .map((r) => {
             const roundMatches = stage.list.filter((m) => m.round === r);
             const roundName = roundMatches[0].roundName;
-            return `<div class="round-heading">${escapeHtml(roundName)}</div>${roundMatches.map(scoreRow).join("")}`;
+            return `<div class="round-heading">${escapeHtml(roundName)}</div>${roundMatches.map((m) => scoreRow(m, scoring, isTeam)).join("")}`;
           })
           .join("")}
       `;
@@ -537,11 +654,88 @@ function drawScoresTab(body) {
     btn.addEventListener("click", async () => {
       const row = btn.closest("[data-match-id]");
       const id = row.dataset.matchId;
+      if (scoring) {
+        const games = [...row.querySelectorAll("[data-game]")].map((gameRow) => [
+          gameRow.querySelector('[data-field="gameA"]').value,
+          gameRow.querySelector('[data-field="gameB"]').value,
+        ]);
+        if (!games.some(([a, b]) => a !== "" && b !== "")) return alert("Enter at least one completed game.");
+        try {
+          await api.patch(`/api/admin/matches/${id}`, { games });
+          await reloadEventState();
+          drawEventView();
+        } catch (err) {
+          alert(err.message);
+        }
+        return;
+      }
       const scoreA = row.querySelector('[data-field="scoreA"]').value;
       const scoreB = row.querySelector('[data-field="scoreB"]').value;
       if (scoreA === "" || scoreB === "") return alert("Enter both scores.");
       try {
         await api.patch(`/api/admin/matches/${id}`, { scoreA: Number(scoreA), scoreB: Number(scoreB) });
+        await reloadEventState();
+        drawEventView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  body.querySelectorAll("[data-add-pen-round]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-match-id]").dataset.matchId;
+      penaltyExtraRounds[id] = (penaltyExtraRounds[id] || 0) + 1;
+      drawEventView();
+    });
+  });
+
+  body.querySelectorAll("[data-save-penalties]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const row = btn.closest("[data-match-id]");
+      const id = row.dataset.matchId;
+      const shots = [...row.querySelectorAll("[data-pen-shot]")]
+        .map((r) => ({
+          side: r.dataset.side,
+          name: r.querySelector('[data-field="penName"]').value,
+          number: r.querySelector('[data-field="penNumber"]').value,
+          scored: r.querySelector('[data-field="penScored"]').checked,
+        }))
+        .filter((s) => s.name.trim());
+      if (!shots.length) return alert("Enter at least one penalty taker.");
+      try {
+        await api.patch(`/api/admin/matches/${id}`, { penalties: shots });
+        delete penaltyExtraRounds[id];
+        await reloadEventState();
+        drawEventView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  body.querySelectorAll("[data-add-goal-row]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.closest("[data-match-id]").dataset.matchId;
+      goalEventExtraRows[id] = (goalEventExtraRows[id] || 0) + 1;
+      drawEventView();
+    });
+  });
+
+  body.querySelectorAll("[data-save-goals]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const row = btn.closest("[data-match-id]");
+      const id = row.dataset.matchId;
+      const goalEvents = [...row.querySelectorAll("[data-goal-row]")]
+        .map((r) => ({
+          side: r.querySelector('[data-field="goalSide"]').value,
+          scorer: r.querySelector('[data-field="goalScorer"]').value,
+          assist: r.querySelector('[data-field="goalAssist"]').value,
+        }))
+        .filter((g) => g.scorer.trim());
+      try {
+        await api.patch(`/api/admin/matches/${id}`, { goalEvents });
+        delete goalEventExtraRows[id];
         await reloadEventState();
         drawEventView();
       } catch (err) {
@@ -583,18 +777,125 @@ function drawScoresTab(body) {
   });
 }
 
-function scoreRow(m) {
+function goalEventsHtml(m, isTeam) {
+  if (!isTeam) return "";
+  const existing = Array.isArray(m.goalEvents) ? m.goalEvents : [];
+  const blankRows = 3 + (goalEventExtraRows[m.id] || 0);
+  const rows = [...existing, ...Array.from({ length: blankRows }, () => ({ side: "A", scorer: "", assist: "" }))];
+  const nameA = m.participantAName || "Team A";
+  const nameB = m.participantBName || "Team B";
+  return `
+    <div class="card" style="margin-top:10px;">
+      <div style="font-weight:600;">Goals & assists</div>
+      <div class="hint" style="margin:4px 0 10px;">Optional — log who scored (and who assisted) each goal. Used for the Top Scorers tab.</div>
+      ${rows
+        .map(
+          (g) => `
+        <div class="row" data-goal-row style="margin-top:6px; align-items:flex-end;">
+          <div class="field" style="max-width:130px;">
+            <label class="small">Team</label>
+            <select data-field="goalSide">
+              <option value="A" ${g.side === "A" ? "selected" : ""}>${escapeHtml(nameA)}</option>
+              <option value="B" ${g.side === "B" ? "selected" : ""}>${escapeHtml(nameB)}</option>
+            </select>
+          </div>
+          <div class="field" style="max-width:160px;">
+            <label class="small">Scorer</label>
+            <input type="text" maxlength="60" data-field="goalScorer" value="${escapeHtml(g.scorer || "")}">
+          </div>
+          <div class="field" style="max-width:160px;">
+            <label class="small">Assist (optional)</label>
+            <input type="text" maxlength="60" data-field="goalAssist" value="${escapeHtml(g.assist || "")}">
+          </div>
+        </div>`
+        )
+        .join("")}
+      <div style="margin-top:10px;">
+        <button class="btn small" data-save-goals>Save goals</button>
+        <button class="btn secondary small" data-add-goal-row>+ Add row</button>
+      </div>
+    </div>
+  `;
+}
+
+function penaltyShootoutHtml(m) {
+  const isDraw = m.stage === "knockout" && m.scoreA != null && m.scoreB != null && m.scoreA === m.scoreB;
+  if (!isDraw) return "";
+  const existingShots = m.penalties && Array.isArray(m.penalties.shots) ? m.penalties.shots : [];
+  const baseRounds = Math.max(5, Math.ceil(existingShots.length / 2));
+  const rounds = baseRounds + (penaltyExtraRounds[m.id] || 0);
+  const shotFor = (side, round) => {
+    // Shots were saved as a flat alternating list (A, B, A, B, ...); find the nth shot for this side.
+    const sideShots = existingShots.filter((s) => s.side === side);
+    return sideShots[round] || { name: "", number: "", scored: false };
+  };
+  const sideCol = (side, label) => `
+    <div style="flex:1; min-width:200px;">
+      <div class="small muted" style="margin-bottom:4px;">${escapeHtml(label)}</div>
+      ${Array.from({ length: rounds })
+        .map((_, i) => {
+          const shot = shotFor(side, i);
+          return `
+        <div class="row" data-pen-shot data-side="${side}" style="margin-top:6px; align-items:flex-end;">
+          <div class="field" style="max-width:120px;">
+            <label class="small">Kick ${i + 1} — name</label>
+            <input type="text" maxlength="60" data-field="penName" value="${escapeHtml(shot.name || "")}">
+          </div>
+          <div class="field" style="max-width:70px;">
+            <label class="small">#</label>
+            <input type="text" maxlength="10" data-field="penNumber" value="${escapeHtml(shot.number || "")}">
+          </div>
+          <label class="small" style="display:flex; align-items:center; gap:4px; padding-bottom:8px;">
+            <input type="checkbox" data-field="penScored" ${shot.scored ? "checked" : ""}> Scored
+          </label>
+        </div>`;
+        })
+        .join("")}
+    </div>`;
+  return `
+    <div class="card" style="margin-top:10px; background:var(--bg-muted,#f7f7f8);">
+      <div style="font-weight:600;">Penalty shootout — scores level, a winner must advance</div>
+      <div class="hint" style="margin:4px 0 10px;">${m.penalties ? `Currently: ${m.penalties.scoreA}-${m.penalties.scoreB}.` : ""} Enter each kick's taker and whether it was scored. If still level after these rounds, add a sudden-death kick.</div>
+      <div class="row" style="gap:20px; flex-wrap:wrap;">
+        ${sideCol("A", m.participantAName || "Team A")}
+        ${sideCol("B", m.participantBName || "Team B")}
+      </div>
+      <div style="margin-top:10px;">
+        <button class="btn small" data-save-penalties>Save penalties</button>
+        <button class="btn secondary small" data-add-pen-round>+ Add sudden-death kick</button>
+      </div>
+    </div>
+  `;
+}
+
+function scoreRow(m, scoring, isTeam) {
   const canScore = m.participantAId && m.participantBId;
   const scheduledLocal = m.scheduledAt ? toLocalInputValue(m.scheduledAt) : "";
-  return `
-    <div class="card" data-match-id="${m.id}" style="padding:14px; margin-bottom:8px;">
-      <div class="flex-between">
-        <div style="font-weight:600;">${escapeHtml(m.participantAName || "TBD")} <span class="muted">vs</span> ${escapeHtml(m.participantBName || (m.status === "bye" ? "(bye)" : "TBD"))}</div>
-        <span class="badge ${m.status === "completed" ? "accent" : ""}">${m.status}</span>
-      </div>
-      ${
-        canScore
-          ? `
+  const existingGames = Array.isArray(m.games) ? m.games : [];
+  const scoreInputsHtml = scoring
+    ? `
+        <div class="hint" style="margin-top:10px;">Best of ${scoring.bestOf}, each game to ${scoring.pointsToWin} (win by ${scoring.winBy}, capped at ${scoring.cap}). Leave later games blank if the match finished early.</div>
+        ${Array.from({ length: scoring.bestOf })
+          .map((_, i) => {
+            const g = existingGames[i] || ["", ""];
+            return `
+          <div class="row" data-game style="margin-top:8px; align-items:flex-end;">
+            <div class="field" style="max-width:80px;">
+              <label class="small">Game ${i + 1} — A</label>
+              <input type="number" min="0" data-field="gameA" value="${g[0] ?? ""}">
+            </div>
+            <div class="field" style="max-width:80px;">
+              <label class="small">Game ${i + 1} — B</label>
+              <input type="number" min="0" data-field="gameB" value="${g[1] ?? ""}">
+            </div>
+          </div>`;
+          })
+          .join("")}
+        <div style="margin-top:10px;">
+          <button class="btn small" data-save-score>Save score</button>
+          ${m.status === "completed" ? `<button class="btn secondary small" data-clear-score>Clear</button>` : ""}
+        </div>`
+    : `
         <div class="row" style="margin-top:10px; align-items:flex-end;">
           <div class="field" style="max-width:100px;">
             <label class="small">Score A</label>
@@ -606,7 +907,19 @@ function scoreRow(m) {
           </div>
           <button class="btn small" data-save-score>Save score</button>
           ${m.status === "completed" ? `<button class="btn secondary small" data-clear-score>Clear</button>` : ""}
-        </div>
+        </div>`;
+  return `
+    <div class="card" data-match-id="${m.id}" style="padding:14px; margin-bottom:8px;">
+      <div class="flex-between">
+        <div style="font-weight:600;">${escapeHtml(m.participantAName || "TBD")} <span class="muted">vs</span> ${escapeHtml(m.participantBName || (m.status === "bye" ? "(bye)" : "TBD"))}</div>
+        <span class="badge ${m.status === "completed" ? "accent" : ""}">${m.status}</span>
+      </div>
+      ${
+        canScore
+          ? `
+        ${scoreInputsHtml}
+        ${penaltyShootoutHtml(m)}
+        ${goalEventsHtml(m, isTeam)}
         <div class="row" style="margin-top:8px; align-items:flex-end;">
           <div class="field">
             <label class="small">Scheduled at</label>

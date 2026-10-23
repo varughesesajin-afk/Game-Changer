@@ -100,6 +100,12 @@ router.get("/events/:id/standings", (req, res) => {
   });
 });
 
+router.get("/events/:id/stats", (req, res) => {
+  const event = db.find("events", req.params.id);
+  if (!event || event.status === "draft") return res.status(404).json({ error: "Event not found" });
+  res.json(matchService.eventStats(event.id));
+});
+
 router.get("/events/:id/suggest-format", (req, res) => {
   const event = db.find("events", req.params.id);
   if (!event || event.status === "draft") return res.status(404).json({ error: "Event not found" });
