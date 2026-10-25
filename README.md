@@ -15,6 +15,11 @@ data store, and static HTML/CSS/JS.
 - **Smart fixture suggestions** — Round Robin, Single Elimination Knockout, or Groups + Knockout, based on headcount and sport, with a plain-English reason.
 - **Automatic bracket generation** — round robin scheduling, knockout brackets with byes handled automatically, and group stages that promote top finishers into a knockout bracket.
 - **Live scores & standings** — organizers enter scores; the public site shows an up-to-date league table or bracket automatically.
+- **Visual knockout bracket** — a connected bracket tree (not just a list) on both the public page and the admin dashboard.
+- **Goals, assists & Player of the Match** — log who scored, who assisted, and tag a standout player per match; tallied into event-wide leaderboards.
+- **Player rating cards** — a quick, transparent OVR rating per player for this event, computed from goals/assists/POTM (team sports) or match record (individual sports).
+- **Format summary card** — a plain-English read-only overview of the sport, format, and qualification rules on the public event page.
+- **Match Days** — casual games or training sessions (separate from tournament events): the organizer sets a venue, date, time and a player cap (e.g. 12/16/18), and players just add their own name to the list until it's full. No team registration needed.
 - **Scheduling** — set date/time and venue per match.
 - **Simple admin auth** — one organizer password protects the dashboard.
 

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Match Days · Games All Day</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
+    <nav class="topnav">
+      <a href="/">Events</a>
+      <a href="/matchdays.html">Match Days</a>
+      <a href="/admin.html">Organizer login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <h1>Match Days</h1>
+  <p class="muted">Casual games and training sessions — add your name to the list, no team registration needed.</p>
+
+  <div id="matchdays" class="grid" style="margin-top:20px;">
+    <div class="empty-state"><span class="spinner"></span></div>
+  </div>
+</div>
+
+<footer class="site-footer">Games All Day</footer>
+
+<script src="/js/api.js"></script>
+<script>
+async function load() {
+  const el = document.getElementById("matchdays");
+  try {
+    const matchdays = await api.get("/api/matchdays");
+    if (!matchdays.length) {
+      el.innerHTML = `<div class="empty-state">No match days scheduled yet. Check back soon.</div>`;
+      return;
+    }
+    el.innerHTML = matchdays.map(matchdayCard).join("");
+  } catch (e) {
+    el.innerHTML = `<div class="alert error">Couldn't load match days: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function matchdayCard(md) {
+  const full = md.signupCount >= md.maxPlayers;
+  const closed = md.status !== "open";
+  const badgeClass = closed ? "" : full ? "warning" : "accent";
+  const badgeLabel = closed ? "Closed" : full ? "Full" : "Open";
+  return `
+    <a class="event-card" href="/matchday.html?id=${encodeURIComponent(md.id)}">
+      <span class="badge ${badgeClass}">${badgeLabel}</span>
+      <h3>${escapeHtml(md.name || "Match Day")}</h3>
+      ${md.venue ? `<div class="muted small">📍 ${escapeHtml(md.venue)}</div>` : ""}
+      <div class="small muted">📅 ${escapeHtml(fmtDateOnly(md.date))}${md.time ? " · " + escapeHtml(md.time) : ""}</div>
+      <div class="small muted">${md.signupCount}/${md.maxPlayers} players signed up</div>
+    </a>
+  `;
+}
+
+load();
+</script>
+</body>
+</html>

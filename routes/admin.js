@@ -191,7 +191,7 @@ router.post("/events/:id/generate-knockout-from-groups", (req, res) => {
   const advancePerGroup = Number(req.body && req.body.advancePerGroup) || 2;
   try {
     matchService.createKnockoutFromGroups(event.id, advancePerGroup);
-    db.update("events", event.id, { status: "in_progress" });
+    db.update("events", event.id, { status: "in_progress", advancePerGroup });
     res.json({ ok: true, matches: matchService.eventMatches(event.id) });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -219,11 +219,17 @@ router.get("/events/:id/stats", (req, res) => {
   res.json(matchService.eventStats(event.id));
 });
 
+router.get("/events/:id/players", (req, res) => {
+  const event = db.find("events", req.params.id);
+  if (!event) return res.status(404).json({ error: "Event not found" });
+  res.json(matchService.playerProfiles(event.id));
+});
+
 router.patch("/matches/:id", (req, res) => {
   const match = db.find("matches", req.params.id);
   if (!match) return res.status(404).json({ error: "Match not found" });
 
-  const { scoreA, scoreB, games, penalties, goalEvents, scheduledAt, venue } = req.body || {};
+  const { scoreA, scoreB, games, penalties, goalEvents, potm, scheduledAt, venue } = req.body || {};
   let result = match;
 
   if (scheduledAt !== undefined || venue !== undefined) {
@@ -236,6 +242,14 @@ router.patch("/matches/:id", (req, res) => {
   if (goalEvents !== undefined) {
     try {
       result = matchService.recordGoalEvents(match.id, goalEvents);
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+  }
+
+  if (potm !== undefined) {
+    try {
+      result = matchService.recordPotm(match.id, potm);
     } catch (err) {
       return res.status(400).json({ error: err.message });
     }
@@ -273,6 +287,108 @@ router.delete("/matches/:id/score", (req, res) => {
   const match = db.find("matches", req.params.id);
   if (!match) return res.status(404).json({ error: "Match not found" });
   res.json(matchService.clearScore(match.id));
+});
+
+// ----- Match Days: casual/training sessions with a simple player signup
+// list (no teams, no fixtures) — just a capped roster plus when/where. -----
+
+function serializeMatchday(md) {
+  return { ...md, signupCount: db.where("matchdaySignups", (s) => s.matchdayId === md.id).length };
+}
+
+router.get("/matchdays", (req, res) => {
+  const list = db
+    .all("matchdays")
+    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+    .map(serializeMatchday);
+  res.json(list);
+});
+
+router.post("/matchdays", (req, res) => {
+  const { name, venue, date, time, maxPlayers, notes } = req.body || {};
+  const max = Number(maxPlayers);
+  if (!Number.isInteger(max) || max < 2 || max > 200) {
+    return res.status(400).json({ error: "Max players must be a whole number between 2 and 200." });
+  }
+  if (!date) return res.status(400).json({ error: "Date is required." });
+  const md = db.insert("matchdays", "mday", {
+    name: name ? String(name).trim().slice(0, 100) : "",
+    venue: venue ? String(venue).trim().slice(0, 120) : "",
+    date,
+    time: time ? String(time).trim() : "",
+    maxPlayers: max,
+    notes: notes ? String(notes).trim().slice(0, 300) : "",
+    status: "open",
+  });
+  res.status(201).json(serializeMatchday(md));
+});
+
+router.get("/matchdays/:id", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  res.json(serializeMatchday(md));
+});
+
+router.patch("/matchdays/:id", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  const allowed = ["name", "venue", "date", "time", "notes", "status"];
+  const patch = {};
+  for (const key of allowed) {
+    if (key in (req.body || {})) patch[key] = req.body[key];
+  }
+  if (patch.status && !["open", "closed"].includes(patch.status)) {
+    return res.status(400).json({ error: "Invalid status." });
+  }
+  if ("maxPlayers" in (req.body || {})) {
+    const max = Number(req.body.maxPlayers);
+    if (!Number.isInteger(max) || max < 2 || max > 200) {
+      return res.status(400).json({ error: "Max players must be a whole number between 2 and 200." });
+    }
+    patch.maxPlayers = max;
+  }
+  res.json(serializeMatchday(db.update("matchdays", md.id, patch)));
+});
+
+router.delete("/matchdays/:id", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  db.remove("matchdays", md.id);
+  db.removeWhere("matchdaySignups", (s) => s.matchdayId === md.id);
+  res.json({ ok: true });
+});
+
+router.get("/matchdays/:id/signups", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  const signups = db
+    .where("matchdaySignups", (s) => s.matchdayId === md.id)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+  res.json(signups);
+});
+
+router.post("/matchdays/:id/signups", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  const { name } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: "Name is required." });
+  const trimmed = String(name).trim().slice(0, 60);
+  const existing = db.where("matchdaySignups", (s) => s.matchdayId === md.id);
+  if (existing.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
+    return res.status(400).json({ error: `"${trimmed}" is already on the list.` });
+  }
+  if (existing.length >= md.maxPlayers) {
+    return res.status(400).json({ error: `This match day is full (${md.maxPlayers}/${md.maxPlayers}).` });
+  }
+  const rec = db.insert("matchdaySignups", "player", { matchdayId: md.id, name: trimmed });
+  res.status(201).json(rec);
+});
+
+router.delete("/signups/:id", (req, res) => {
+  const s = db.find("matchdaySignups", req.params.id);
+  if (!s) return res.status(404).json({ error: "Signup not found" });
+  db.remove("matchdaySignups", s.id);
+  res.json({ ok: true });
 });
 
 module.exports = router;

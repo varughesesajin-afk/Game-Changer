@@ -106,11 +106,65 @@ router.get("/events/:id/stats", (req, res) => {
   res.json(matchService.eventStats(event.id));
 });
 
+router.get("/events/:id/players", (req, res) => {
+  const event = db.find("events", req.params.id);
+  if (!event || event.status === "draft") return res.status(404).json({ error: "Event not found" });
+  res.json(matchService.playerProfiles(event.id));
+});
+
 router.get("/events/:id/suggest-format", (req, res) => {
   const event = db.find("events", req.params.id);
   if (!event || event.status === "draft") return res.status(404).json({ error: "Event not found" });
   const count = db.where("registrations", (r) => r.eventId === event.id && r.approved).length;
   res.json(suggestFormat(count, event.sport));
+});
+
+// ----- Match Days: casual/training sessions players join directly by name. -----
+
+function serializeMatchday(md) {
+  return { ...md, signupCount: db.where("matchdaySignups", (s) => s.matchdayId === md.id).length };
+}
+
+router.get("/matchdays", (req, res) => {
+  const list = db
+    .all("matchdays")
+    .sort((a, b) => new Date(a.date || 0) - new Date(b.date || 0))
+    .map(serializeMatchday);
+  res.json(list);
+});
+
+router.get("/matchdays/:id", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  res.json(serializeMatchday(md));
+});
+
+router.get("/matchdays/:id/signups", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  const signups = db
+    .where("matchdaySignups", (s) => s.matchdayId === md.id)
+    .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    .map((s) => ({ id: s.id, name: s.name }));
+  res.json(signups);
+});
+
+router.post("/matchdays/:id/join", (req, res) => {
+  const md = db.find("matchdays", req.params.id);
+  if (!md) return res.status(404).json({ error: "Match day not found" });
+  if (md.status !== "open") return res.status(400).json({ error: "Signups are closed for this match day." });
+  const { name } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: "Enter your name to join." });
+  const trimmed = String(name).trim().slice(0, 60);
+  const existing = db.where("matchdaySignups", (s) => s.matchdayId === md.id);
+  if (existing.some((s) => s.name.toLowerCase() === trimmed.toLowerCase())) {
+    return res.status(400).json({ error: `"${trimmed}" is already on the list.` });
+  }
+  if (existing.length >= md.maxPlayers) {
+    return res.status(400).json({ error: `This match day is full (${md.maxPlayers}/${md.maxPlayers}). Ask the organizer about a waitlist.` });
+  }
+  const rec = db.insert("matchdaySignups", "player", { matchdayId: md.id, name: trimmed });
+  res.status(201).json({ id: rec.id, name: rec.name });
 });
 
 module.exports = router;

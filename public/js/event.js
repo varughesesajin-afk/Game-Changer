@@ -2,7 +2,7 @@ const params = new URLSearchParams(location.search);
 const eventId = params.get("id");
 const content = document.getElementById("content");
 
-let state = { event: null, registrations: [], matches: [], standings: null, stats: null, activeTab: "register" };
+let state = { event: null, registrations: [], matches: [], standings: null, stats: null, players: [], activeTab: "register" };
 
 async function init() {
   if (!eventId) {
@@ -10,18 +10,20 @@ async function init() {
     return;
   }
   try {
-    const [event, registrations, matches, standings, stats] = await Promise.all([
+    const [event, registrations, matches, standings, stats, players] = await Promise.all([
       api.get(`/api/events/${eventId}`),
       api.get(`/api/events/${eventId}/registrations`),
       api.get(`/api/events/${eventId}/fixtures`),
       api.get(`/api/events/${eventId}/standings`),
       api.get(`/api/events/${eventId}/stats`),
+      api.get(`/api/events/${eventId}/players`),
     ]);
     state.event = event;
     state.registrations = registrations;
     state.matches = matches;
     state.standings = standings;
     state.stats = stats;
+    state.players = players;
     state.activeTab = event.status === "registration_open" ? "register" : "participants";
     render();
   } catch (e) {
@@ -30,18 +32,20 @@ async function init() {
 }
 
 async function refreshData() {
-  const [event, registrations, matches, standings, stats] = await Promise.all([
+  const [event, registrations, matches, standings, stats, players] = await Promise.all([
     api.get(`/api/events/${eventId}`),
     api.get(`/api/events/${eventId}/registrations`),
     api.get(`/api/events/${eventId}/fixtures`),
     api.get(`/api/events/${eventId}/standings`),
     api.get(`/api/events/${eventId}/stats`),
+    api.get(`/api/events/${eventId}/players`),
   ]);
   state.event = event;
   state.registrations = registrations;
   state.matches = matches;
   state.standings = standings;
   state.stats = stats;
+  state.players = players;
   render();
 }
 
@@ -52,7 +56,8 @@ function render() {
   const hasStats =
     ev.category !== "individual" &&
     state.stats &&
-    (state.stats.topScorers.length || state.stats.topAssists.length || state.stats.bestDefense.length);
+    (state.stats.topScorers.length || state.stats.topAssists.length || state.stats.bestDefense.length || (state.stats.potmLeaders && state.stats.potmLeaders.length));
+  const hasPlayers = state.players && state.players.length > 0;
 
   const tabs = [];
   if (ev.status === "registration_open") tabs.push(["register", "Register"]);
@@ -60,6 +65,7 @@ function render() {
   if (hasFixtures) tabs.push(["fixtures", "Fixtures & Schedule"]);
   if (hasFixtures) tabs.push(["standings", "Standings"]);
   if (hasStats) tabs.push(["stats", "Top Scorers"]);
+  if (hasPlayers) tabs.push(["players", "Player Ratings"]);
   if (!tabs.find(([id]) => id === state.activeTab)) state.activeTab = tabs[0][0];
 
   content.innerHTML = `
@@ -72,6 +78,8 @@ function render() {
       </div>
     </div>
     ${ev.description ? `<p style="margin-top:14px;">${escapeHtml(ev.description)}</p>` : ""}
+
+    ${formatSummaryCard(ev)}
 
     <div class="tabs" style="margin-top:24px;">
       ${tabs.map(([id, label]) => `<div class="tab ${state.activeTab === id ? "active" : ""}" data-tab="${id}">${label}</div>`).join("")}
@@ -93,8 +101,76 @@ function render() {
   if (state.activeTab === "fixtures") body.innerHTML = renderFixturesTab();
   if (state.activeTab === "standings") body.innerHTML = renderStandingsTab();
   if (state.activeTab === "stats") body.innerHTML = renderStatsTab();
+  if (state.activeTab === "players") body.innerHTML = renderPlayersTab();
 
   if (state.activeTab === "register") wireRegisterForm();
+}
+
+function formatSummaryCard(ev) {
+  const noun = ev.category === "individual" ? "players" : "teams";
+  return `
+    <div class="card format-summary" style="margin-top:16px;">
+      <div class="format-summary-grid">
+        <div><label>Sport</label><div>${escapeHtml(ev.sportLabel)}</div></div>
+        <div><label>Category</label><div>${ev.category === "individual" ? "Individual" : "Team"}</div></div>
+        <div><label>Entrants</label><div>${ev.registrationCount} ${noun}</div></div>
+        ${ev.venue ? `<div><label>Venue</label><div>${escapeHtml(ev.venue)}</div></div>` : ""}
+        ${ev.startDate ? `<div><label>Start date</label><div>${escapeHtml(fmtDateOnly(ev.startDate))}</div></div>` : ""}
+      </div>
+      <div class="format-summary-rules">${formatRulesText(ev)}</div>
+    </div>
+  `;
+}
+
+function formatRulesText(ev) {
+  if (!ev.format) {
+    return `<span class="muted">Format hasn't been decided yet — check back once the organizer generates fixtures.</span>`;
+  }
+  if (ev.format === "round_robin") {
+    return `<strong>Round robin</strong> — every entrant plays every other entrant once. Ranked by points (3 for a win${ev.allowDraws === false ? "" : ", 1 for a draw"}), then goal difference.`;
+  }
+  if (ev.format === "knockout") {
+    return `<strong>Single-elimination knockout</strong> — lose once and you're out. Byes are awarded automatically when the bracket isn't a perfect power of two.`;
+  }
+  if (ev.format === "group_knockout") {
+    return `<strong>Groups + knockout</strong> — entrants are split into groups to play round robin${
+      ev.advancePerGroup ? `; the top ${ev.advancePerGroup} from each group advance to` : ", then qualifiers advance to"
+    } a single-elimination knockout stage.`;
+  }
+  return "";
+}
+
+function playerCard(p, isIndividual) {
+  const statsHtml = isIndividual
+    ? `
+      <div><span>${p.wins}</span><label>Wins</label></div>
+      <div><span>${p.draws}</span><label>Draws</label></div>
+      <div><span>${p.losses}</span><label>Losses</label></div>`
+    : `
+      <div><span>${p.goals}</span><label>Goals</label></div>
+      <div><span>${p.assists}</span><label>Assists</label></div>
+      <div><span>${p.potm}</span><label>POTM</label></div>`;
+  return `
+    <div class="player-card">
+      <div class="player-card-top">
+        <div class="player-ovr">${p.ovr}</div>
+        <div>
+          <div class="player-name">${escapeHtml(p.name)}</div>
+          ${p.team ? `<div class="small muted">${escapeHtml(p.team)}</div>` : ""}
+        </div>
+      </div>
+      <div class="player-stats">${statsHtml}</div>
+    </div>
+  `;
+}
+
+function renderPlayersTab() {
+  if (!state.players.length) return `<div class="empty-state">No player stats yet.</div>`;
+  const isIndividual = state.event.category === "individual";
+  return `
+    <div class="hint" style="margin-bottom:12px;">OVR is a quick, transparent rating from this event's results${isIndividual ? " (wins/draws/losses)" : " (goals, assists, and Player of the Match tags)"} — not an official ranking.</div>
+    <div class="grid">${state.players.map((p) => playerCard(p, isIndividual)).join("")}</div>
+  `;
 }
 
 function leaderTable(rows, nameLabel, valueLabel, valueKey) {
@@ -126,6 +202,9 @@ function renderStatsTab() {
 
     <h3>Most Assists</h3>
     <div class="card">${leaderTable(s.topAssists, "Player", "Assists", "assists")}</div>
+
+    <h3>Player of the Match</h3>
+    <div class="card">${leaderTable(s.potmLeaders || [], "Player", "POTM", "potm")}</div>
 
     <h3>Best Defense</h3>
     <div class="card">
@@ -270,6 +349,7 @@ function matchLine(m) {
             : ""
         }
         ${played && m.winnerName ? `<div class="small muted">${escapeHtml(m.winnerName)} won${hasPens ? " on penalties" : ""}</div>` : ""}
+        ${m.potm && m.potm.name ? `<div class="small">⭐ POTM: ${escapeHtml(m.potm.name)}</div>` : ""}
         <div class="match-meta">
           ${m.scheduledAt ? `📅 ${escapeHtml(fmtDate(m.scheduledAt))}` : ""}
           ${m.venue ? ` · 📍 ${escapeHtml(m.venue)}` : ""}
@@ -278,6 +358,52 @@ function matchLine(m) {
       <span class="badge ${played ? "accent" : ""}">${played ? "Final" : isBye ? "Bye" : m.status === "pending" ? "Awaiting qualifiers" : "Scheduled"}</span>
     </div>
   `;
+}
+
+function bracketMatchBox(m) {
+  const played = m.status === "completed";
+  const isBye = m.status === "bye";
+  const winnerA = played && m.winnerName && m.winnerName === m.participantAName;
+  const winnerB = played && m.winnerName && m.winnerName === m.participantBName;
+  const hasPens = m.penalties && m.penalties.shots && m.penalties.shots.length > 0;
+  return `
+    <div class="bracket-box ${m.roundName === "Final" ? "bracket-final" : ""}">
+      <div class="bracket-row ${winnerA ? "winner" : ""}">
+        <span>${escapeHtml(m.participantAName || "TBD")}</span>
+        <span class="bracket-score">${played ? m.scoreA : ""}</span>
+      </div>
+      <div class="bracket-row ${winnerB ? "winner" : ""}">
+        <span>${escapeHtml(isBye ? "(bye)" : m.participantBName || "TBD")}</span>
+        <span class="bracket-score">${played ? m.scoreB : ""}</span>
+      </div>
+      ${hasPens ? `<div class="bracket-pens">pens ${m.penalties.scoreA}-${m.penalties.scoreB}</div>` : ""}
+    </div>
+  `;
+}
+
+function renderBracket(koMatches) {
+  const rounds = [...new Set(koMatches.map((m) => m.round))].sort((a, b) => a - b);
+  const byRound = rounds.map((r) =>
+    koMatches.filter((m) => m.round === r).sort((a, b) => a.matchNumber - b.matchNumber)
+  );
+  let html = `<div class="bracket">`;
+  byRound.forEach((roundMatches, ri) => {
+    const isLast = ri === byRound.length - 1;
+    html += `<div class="bracket-round">
+      <div class="bracket-round-title">${escapeHtml(roundMatches[0].roundName)}</div>
+      <div class="bracket-round-matches ${isLast ? "bracket-round-final" : ""}">`;
+    if (isLast) {
+      html += roundMatches.map((m) => bracketMatchBox(m)).join("");
+    } else {
+      for (let i = 0; i < roundMatches.length; i += 2) {
+        const pair = roundMatches.slice(i, i + 2);
+        html += `<div class="bracket-pair">${pair.map((m) => bracketMatchBox(m)).join("")}</div>`;
+      }
+    }
+    html += `</div></div>`;
+  });
+  html += `</div>`;
+  return html;
 }
 
 function renderFixturesTab() {
@@ -309,12 +435,7 @@ function renderFixturesTab() {
 
   if (knockout.length) {
     if (groups.length) html += `<h3>Knockout stage</h3>`;
-    const rounds = [...new Set(knockout.map((m) => m.round))].sort((a, b) => a - b);
-    rounds.forEach((r) => {
-      const roundName = knockout.find((m) => m.round === r).roundName;
-      html += `<div class="round-heading">${escapeHtml(roundName)}</div>`;
-      html += knockout.filter((m) => m.round === r).map(matchLine).join("");
-    });
+    html += renderBracket(knockout);
   }
 
   return html;

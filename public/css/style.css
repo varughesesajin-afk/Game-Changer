@@ -319,3 +319,162 @@ footer.site-footer {
   .row { flex-direction: column; }
   .row > * { min-width: 0; }
 }
+
+/* Format summary card */
+.format-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.format-summary-grid label {
+  display: block;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-bottom: 3px;
+  font-weight: 600;
+}
+.format-summary-grid > div > div:last-child { font-weight: 600; }
+.format-summary-rules {
+  font-size: 0.88rem;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  color: var(--text-muted);
+}
+.format-summary-rules strong { color: var(--text); }
+
+/* Player rating cards */
+.player-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+.player-card-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.player-ovr {
+  width: 46px;
+  height: 46px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.05rem;
+  flex-shrink: 0;
+}
+.player-name { font-weight: 700; }
+.player-stats {
+  display: flex;
+  gap: 14px;
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+}
+.player-stats > div { flex: 1; text-align: center; }
+.player-stats span { display: block; font-weight: 700; font-size: 1.1rem; }
+.player-stats label {
+  display: block;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  margin-top: 2px;
+}
+
+/* Visual knockout bracket */
+.bracket {
+  display: flex;
+  gap: 36px;
+  overflow-x: auto;
+  padding: 10px 4px 20px;
+}
+.bracket-round {
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  flex-shrink: 0;
+}
+.bracket-round-title {
+  text-align: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+.bracket-round-matches {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  flex: 1;
+  gap: 24px;
+}
+.bracket-round-final { justify-content: center; }
+.bracket-pair {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  gap: 20px;
+  position: relative;
+  flex: 1;
+}
+.bracket-pair::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  top: 25%;
+  bottom: 25%;
+  width: 18px;
+  border-top: 2px solid var(--border);
+  border-bottom: 2px solid var(--border);
+  border-right: 2px solid var(--border);
+  border-radius: 0 4px 4px 0;
+}
+.bracket-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.bracket-box.bracket-final {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow);
+}
+.bracket-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+}
+.bracket-row:last-child { border-bottom: none; }
+.bracket-row.winner { color: var(--accent); }
+.bracket-score { font-variant-numeric: tabular-nums; }
+.bracket-pens {
+  text-align: center;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  padding: 2px 0 6px;
+}
+
+.capacity-bar { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.capacity-bar-fill { height: 100%; background: var(--accent); border-radius: 999px; transition: width 0.2s ease; }
+.capacity-label { font-size: 0.82rem; color: var(--text-muted); margin-top: 6px; }
+
+.pen-live { margin-bottom: 4px; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; }
+.pen-live-wait { background: var(--surface-2); color: var(--text-muted); }
+.pen-live-level { background: var(--warning-soft); color: var(--warning); }
+.pen-live-lead { background: var(--accent-soft); color: var(--accent); }
