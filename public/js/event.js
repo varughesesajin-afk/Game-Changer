@@ -68,18 +68,31 @@ function render() {
   if (hasPlayers) tabs.push(["players", "Player Ratings"]);
   if (!tabs.find(([id]) => id === state.activeTab)) state.activeTab = tabs[0][0];
 
+  const formatShort = { round_robin: "Round robin", knockout: "Single-elimination knockout", group_knockout: "Groups + knockout" }[ev.format] || "";
+
   content.innerHTML = `
     <a href="/" class="small">← All events</a>
-    <div class="flex-between" style="margin-top:10px;">
-      <div>
-        <span class="badge ${statusBadgeClass(ev.status)}">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
-        <h1 style="margin-top:8px;">${escapeHtml(ev.name)}</h1>
-        <div class="muted">${escapeHtml(ev.sportLabel)}${ev.venue ? " · " + escapeHtml(ev.venue) : ""}${ev.startDate ? " · " + escapeHtml(fmtDateOnly(ev.startDate)) : ""}</div>
+
+    <div class="event-hero">
+      <div class="event-hero-top">
+        <div>
+          <span class="badge">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
+          <h1>${escapeHtml(ev.name)}</h1>
+          <div class="muted">${escapeHtml(ev.sportLabel)}${formatShort ? " · " + escapeHtml(formatShort) : ""}</div>
+        </div>
+      </div>
+      <div class="event-hero-chips">
+        ${ev.venue ? heroChip("📍", "Venue", ev.venue) : ""}
+        ${ev.startDate ? heroChip("📅", "Date", fmtDateOnly(ev.startDate)) : ""}
+        ${heroChip("👥", noun, `${ev.registrationCount} ${noun.toLowerCase()}`)}
       </div>
     </div>
+
     ${ev.description ? `<p style="margin-top:14px;">${escapeHtml(ev.description)}</p>` : ""}
 
-    ${formatSummaryCard(ev)}
+    <div class="card" style="margin-top:16px;">
+      <div class="format-summary-rules" style="border-top:none; padding-top:0;">${formatRulesText(ev)}</div>
+    </div>
 
     <div class="tabs" style="margin-top:24px;">
       ${tabs.map(([id, label]) => `<div class="tab ${state.activeTab === id ? "active" : ""}" data-tab="${id}">${label}</div>`).join("")}
@@ -106,18 +119,11 @@ function render() {
   if (state.activeTab === "register") wireRegisterForm();
 }
 
-function formatSummaryCard(ev) {
-  const noun = ev.category === "individual" ? "players" : "teams";
+function heroChip(icon, label, value) {
   return `
-    <div class="card format-summary" style="margin-top:16px;">
-      <div class="format-summary-grid">
-        <div><label>Sport</label><div>${escapeHtml(ev.sportLabel)}</div></div>
-        <div><label>Category</label><div>${ev.category === "individual" ? "Individual" : "Team"}</div></div>
-        <div><label>Entrants</label><div>${ev.registrationCount} ${noun}</div></div>
-        ${ev.venue ? `<div><label>Venue</label><div>${escapeHtml(ev.venue)}</div></div>` : ""}
-        ${ev.startDate ? `<div><label>Start date</label><div>${escapeHtml(fmtDateOnly(ev.startDate))}</div></div>` : ""}
-      </div>
-      <div class="format-summary-rules">${formatRulesText(ev)}</div>
+    <div class="event-hero-chip">
+      <span class="ehc-icon">${icon}</span>
+      <div><label>${escapeHtml(label)}</label><div class="ehc-val">${escapeHtml(String(value))}</div></div>
     </div>
   `;
 }

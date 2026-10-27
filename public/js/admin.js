@@ -87,12 +87,14 @@ function drawDashboard() {
   const showingCreate = isMatchdays ? showCreateMatchdayForm : showCreateForm;
 
   content.innerHTML = `
-    <div class="flex-between">
-      <h1 style="margin:0;">Your ${isMatchdays ? "match days" : "events"}</h1>
-      <button class="btn" id="new-item-btn">${showingCreate ? "Cancel" : isMatchdays ? "+ New match day" : "+ New event"}</button>
+    <div class="page-hero">
+      <div class="flex-between">
+        <h1 style="margin:0;">Your ${isMatchdays ? "match days" : "events"}</h1>
+        <button class="btn" id="new-item-btn">${showingCreate ? "Cancel" : isMatchdays ? "+ New match day" : "+ New event"}</button>
+      </div>
     </div>
 
-    <div class="tabs" style="margin-top:14px;">
+    <div class="tabs" style="margin-top:18px;">
       <div class="tab ${!isMatchdays ? "active" : ""}" data-dash-section="events">Events</div>
       <div class="tab ${isMatchdays ? "active" : ""}" data-dash-section="matchdays">Match Days</div>
     </div>
@@ -350,12 +352,21 @@ function drawEventView() {
 
   content.innerHTML = `
     <a href="#" class="small">← All events</a>
-    <div class="flex-between" style="margin-top:10px;">
-      <div>
-        <span class="badge ${statusBadgeClass(event.status)}">${escapeHtml(STATUS_LABELS[event.status] || event.status)}</span>
-        <h1 style="margin-top:8px;">${escapeHtml(event.name)}</h1>
+
+    <div class="event-hero">
+      <div class="event-hero-top">
+        <div>
+          <span class="badge">${escapeHtml(STATUS_LABELS[event.status] || event.status)}</span>
+          <h1>${escapeHtml(event.name)}</h1>
+          <div class="muted">${sport ? escapeHtml(sport.label) : escapeHtml(event.sport)}</div>
+        </div>
+        <a class="small" style="color:#fff;" href="/event.html?id=${event.id}" target="_blank">View public page ↗</a>
       </div>
-      <a class="small" href="/event.html?id=${event.id}" target="_blank">View public page ↗</a>
+      <div class="event-hero-chips">
+        ${event.venue ? `<div class="event-hero-chip"><span class="ehc-icon">📍</span><div><label>Venue</label><div class="ehc-val">${escapeHtml(event.venue)}</div></div></div>` : ""}
+        ${event.startDate ? `<div class="event-hero-chip"><span class="ehc-icon">📅</span><div><label>Start date</label><div class="ehc-val">${escapeHtml(fmtDateOnly(event.startDate))}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">👥</span><div><label>Entrants</label><div class="ehc-val">${eventState.registrations.length}</div></div></div>
+      </div>
     </div>
 
     <div class="tabs" style="margin-top:20px;">
@@ -1305,12 +1316,21 @@ function drawMatchdayView() {
 
   content.innerHTML = `
     <a href="#" class="small">← All match days</a>
-    <div class="flex-between" style="margin-top:10px;">
-      <div>
-        <span class="badge ${badge.cls}">${badge.label}</span>
-        <h1 style="margin-top:8px;">${escapeHtml(md.name || "Match Day")}</h1>
+
+    <div class="event-hero">
+      <div class="event-hero-top">
+        <div>
+          <span class="badge">${badge.label}</span>
+          <h1>${escapeHtml(md.name || "Match Day")}</h1>
+        </div>
+        <a class="small" style="color:#fff;" href="/matchday.html?id=${md.id}" target="_blank">View public page ↗</a>
       </div>
-      <a class="small" href="/matchday.html?id=${md.id}" target="_blank">View public page ↗</a>
+      <div class="event-hero-chips">
+        ${md.venue ? `<div class="event-hero-chip"><span class="ehc-icon">📍</span><div><label>Venue</label><div class="ehc-val">${escapeHtml(md.venue)}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">📅</span><div><label>Date</label><div class="ehc-val">${escapeHtml(fmtDateOnly(md.date))}</div></div></div>
+        ${md.time ? `<div class="event-hero-chip"><span class="ehc-icon">🕒</span><div><label>Time</label><div class="ehc-val">${escapeHtml(md.time)}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">👥</span><div><label>Players</label><div class="ehc-val">${md.signupCount}/${md.maxPlayers}</div></div></div>
+      </div>
     </div>
 
     <div class="card" style="margin-top:20px;">

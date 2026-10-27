@@ -43,11 +43,19 @@ function render() {
 
   content.innerHTML = `
     <a href="/matchdays.html" class="small">← All match days</a>
-    <div style="margin-top:10px;">
-      <span class="badge ${badgeClass}">${badgeLabel}</span>
-      <h1 style="margin-top:8px;">${escapeHtml(md.name || "Match Day")}</h1>
-      <div class="muted">
-        ${md.venue ? `📍 ${escapeHtml(md.venue)} · ` : ""}📅 ${escapeHtml(fmtDateOnly(md.date))}${md.time ? " · 🕒 " + escapeHtml(md.time) : ""}
+
+    <div class="event-hero">
+      <div class="event-hero-top">
+        <div>
+          <span class="badge">${badgeLabel}</span>
+          <h1>${escapeHtml(md.name || "Match Day")}</h1>
+        </div>
+      </div>
+      <div class="event-hero-chips">
+        ${md.venue ? `<div class="event-hero-chip"><span class="ehc-icon">📍</span><div><label>Venue</label><div class="ehc-val">${escapeHtml(md.venue)}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">📅</span><div><label>Date</label><div class="ehc-val">${escapeHtml(fmtDateOnly(md.date))}</div></div></div>
+        ${md.time ? `<div class="event-hero-chip"><span class="ehc-icon">🕒</span><div><label>Time</label><div class="ehc-val">${escapeHtml(md.time)}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">👥</span><div><label>Players</label><div class="ehc-val">${md.signupCount}/${md.maxPlayers}</div></div></div>
       </div>
     </div>
     ${md.notes ? `<p style="margin-top:14px;">${escapeHtml(md.notes)}</p>` : ""}
