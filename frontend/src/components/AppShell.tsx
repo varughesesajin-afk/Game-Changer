@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 
 const TABS = [
   { id: "explore", label: "Explore", icon: Flame, to: "/" },
-  { id: "communities", label: "Groups", icon: Users, to: "/communities" },
+  { id: "communities", label: "Community", icon: Users, to: "/communities" },
   { id: "tournaments", label: "Tourneys", icon: Trophy, to: "/tournaments" },
   { id: "host", label: "Host & Earn", icon: Sparkles, to: "/monetize" },
   { id: "profile", label: "My Games", icon: UserIcon, to: "/profile" },
