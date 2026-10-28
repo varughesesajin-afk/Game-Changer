@@ -4,6 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from lib.auth import current_user, is_admin, optional_user
+from lib.community_access import get_community, require_manage
 from lib.db import db
 from models.schemas import (Match, PlayerIn, ResultIn, Team, TeamCreate, Tournament,
                             TournamentCreate, User)
@@ -87,15 +88,11 @@ async def create_tournament(body: TournamentCreate, user: User = Depends(current
             raise HTTPException(403, "Only platform admins can create official tournaments")
         body.community_id = None
     else:
-        if not (user.is_pro or is_admin(user)):
-            raise HTTPException(402, "Organising tournaments requires Organiser Pro")
-        if body.community_id:
-            c = await db.communities.find_one({"id": body.community_id}, {"_id": 0})
-            if not c:
-                raise HTTPException(404, "Community not found")
-            if c["owner_id"] != user.user_id and not is_admin(user):
-                raise HTTPException(403, "You can only host tournaments in communities you organise")
-            community_name = c["name"]
+        if not body.community_id:
+            raise HTTPException(400, "Pick the community that hosts this tournament")
+        c = await get_community(body.community_id)
+        require_manage(c, user)
+        community_name = c.name
     t = Tournament(**body.model_dump(), community_name=community_name,
                    organiser_id=user.user_id, organiser_name=user.name)
     await db.tournaments.insert_one(t.model_dump())

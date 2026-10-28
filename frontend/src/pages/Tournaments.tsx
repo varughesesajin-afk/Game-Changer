@@ -37,10 +37,13 @@ export default function Tournaments() {
       nav("/login");
       return;
     }
-    if (createKind === "community" && !me.is_pro && !isAdmin) {
-      toast("Hosting tournaments is an Organiser Pro feature");
-      nav("/monetize");
-      return;
+    if (createKind === "community" && !isAdmin) {
+      const managed = owned.find((c) => c.manage_active);
+      if (!managed) {
+        toast("Hosting tournaments needs Manage (OMR 1/month) on your community");
+        nav(owned[0] ? `/communities/${owned[0].id}` : "/monetize");
+        return;
+      }
     }
     setOpen(true);
   };
@@ -70,7 +73,7 @@ export default function Tournaments() {
         )}
         {list.isLoading && <div className="h-48 animate-pulse rounded-2xl bg-surface" />}
       </div>
-      {me && <CreateTournamentDialog key={createKind + owned.length} open={open} onOpenChange={setOpen} kind={createKind} communities={owned} />}
+      {me && <CreateTournamentDialog key={createKind + owned.length} open={open} onOpenChange={setOpen} kind={createKind} communities={isAdmin ? owned : owned.filter((c) => c.manage_active)} />}
     </div>
   );
 }

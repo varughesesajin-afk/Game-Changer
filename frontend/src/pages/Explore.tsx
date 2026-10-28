@@ -8,6 +8,7 @@ import CommunityCard from "@/components/CommunityCard";
 import GameCard from "@/components/GameCard";
 import { apiGet } from "@/lib/api";
 import { HERO_IMG, useMe } from "@/lib/auth";
+import Brand from "@/components/Brand";
 import type { Feed } from "@/lib/types";
 
 function Section({ title, to, testid, children }: { title: string; to?: string; testid: string; children: React.ReactNode }) {
@@ -40,12 +41,10 @@ export default function Explore() {
     <div>
       <header className="relative h-72 overflow-hidden">
         <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(11,15,23,0.4) 0%, rgba(11,15,23,0.92) 85%, #0B0F17 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.4) 0%, rgba(5,20,30,0.92) 85%, #05141E 100%)" }} />
         <div className="relative flex h-full flex-col justify-between p-5">
           <div className="flex items-center justify-between">
-            <div className="font-heading text-xl font-black tracking-tight">
-              Play<span className="text-energy">Hub</span>
-            </div>
+            <Brand tagline />
             {me ? (
               <Link to="/profile" data-testid="header-profile-link" className="text-sm font-semibold text-slate-200">
                 Hi, {me.name.split(" ")[0]}
@@ -57,8 +56,8 @@ export default function Explore() {
             )}
           </div>
           <div className="animate-rise space-y-2">
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-energy px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em]">
-              <Trophy className="size-3" /> Every sport · Every week
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
+              <Trophy className="size-3" /> Game on
             </div>
             <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">
               Your Sunday game.<br />Your city's tournaments.
@@ -115,8 +114,8 @@ export default function Explore() {
           className="block rounded-2xl border border-energy/40 bg-gradient-to-br from-energy/20 via-surface to-surface p-5 transition-[border-color] duration-200 hover:border-energy"
         >
           <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-energy">Organisers</div>
-          <div className="mt-1 font-heading text-xl font-bold">Run your group like a club.</div>
-          <p className="mt-1 text-sm text-slate-300">Unlimited groups, tournaments with live brackets, match-fee tracking.</p>
+          <div className="mt-1 font-heading text-xl font-bold">Run your community like a club.</div>
+          <p className="mt-1 text-sm text-slate-300">Manage for OMR 1/month: edit details, schedule games, host tournaments, track match fees.</p>
         </Link>
       </div>
     </div>

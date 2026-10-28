@@ -103,7 +103,7 @@ export default function TournamentDetail() {
     <div>
       <header className="relative h-60 overflow-hidden">
         <img src={sportImage(t?.sport ?? "", t?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(11,15,23,0.3) 0%, rgba(11,15,23,0.92) 80%, #0B0F17 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.3) 0%, rgba(5,20,30,0.92) 80%, #05141E 100%)" }} />
         <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="absolute left-4 top-4 rounded-full bg-black/40 p-2 backdrop-blur transition-colors hover:bg-black/60">
           <ArrowLeft className="size-5" />
         </button>
@@ -112,7 +112,7 @@ export default function TournamentDetail() {
             <div className="flex gap-1.5">
               <StatusBadge status={t.status} />
               {t.kind === "official" ? (
-                <span className="rounded-full bg-energy px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em]">Official</span>
+                <span className="rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">Official</span>
               ) : t.community_id ? (
                 <Link to={`/communities/${t.community_id}`} className="rounded-full bg-ice/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-ice">
                   {t.community_name}

@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from lib.dates import today_iso
 from lib.db import db, ensure_indexes
-from models.schemas import Community, Member, RosterEntry, Team, Tournament
+from models.schemas import Community, Member, PaymentRecord, RosterEntry, Team, Tournament
 from routers.communities import _game_from, next_dates
 from routers.tournaments import _advance, build_bracket
 
@@ -40,8 +40,8 @@ async def main():
     await db.users.update_one({"email": ADMIN["email"]}, {"$setOnInsert": {"user_id": ADMIN["user_id"], "name": ADMIN["name"], "picture": None, "created_at": now},
                                                           "$set": {"role": "admin"}}, upsert=True)
     admin = await db.users.find_one({"email": ADMIN["email"]}, {"_id": 0})
-    await db.users.update_one({"email": TESTER["email"]}, {"$set": {**TESTER, "picture": None, "is_pro": True,
-                              "pro_plan": "pro_monthly", "pro_until": d(30), "created_at": now}}, upsert=True)
+    await db.users.update_one({"email": TESTER["email"]}, {"$set": {**TESTER, "picture": None, "is_pro": False,
+                              "pro_plan": None, "pro_until": None, "created_at": now}}, upsert=True)
     await db.users.update_one({"email": FREE["email"]}, {"$set": {**FREE, "picture": None, "is_pro": False,
                               "pro_plan": None, "pro_until": None, "created_at": now}}, upsert=True)
     for uid, tok in [(TESTER["user_id"], "test_session_player"), (FREE["user_id"], "test_session_free"),
@@ -53,7 +53,7 @@ async def main():
     specs = [
         ("Sunday Champions 7v7", "Football", ["Sun", "Tue"], "20:00", 14, 2.0, "Muscat", "Al Khuwair Turf", IMG["Football"], admin),
         ("Tuesday Padel Night", "Padel", ["Tue"], "19:00", 8, 3.0, "Muscat", "Padel Club Qurum", IMG["Padel"], TESTER),
-        ("Friday Hoops Run", "Basketball", ["Fri"], "18:30", 10, 1.5, "Muscat", "Sultan Qaboos Sports Complex", IMG["Basketball"], TESTER),
+        ("Friday Hoops Run", "Basketball", ["Fri"], "18:30", 10, 1.5, "Muscat", "Sultan Qaboos Sports Complex", IMG["Basketball"], admin),
         ("Beach Volley Crew", "Volleyball", ["Sat"], "17:00", 12, 0.0, "Muscat", "Shatti Al Qurum Beach", IMG["Volleyball"], admin),
         ("Weekend Tape-Ball Cricket", "Cricket", ["Fri", "Sat"], "07:00", 22, 1.0, "Seeb", "Seeb Ground 3", IMG["Cricket"], admin),
     ]
@@ -65,6 +65,7 @@ async def main():
         c = Community(name=name, sport=sport, days=days, time=time, max_players=mx, fee=fee, city=city, venue=venue,
                       image=img, description=f"Regular {sport.lower()} group. Turn up, add your name, play hard.",
                       owner_id=owner["user_id"], owner_name=owner["name"], members=members,
+                      manage_until=d(30) if owner is TESTER else None,
                       created_at=now - timedelta(minutes=i))
         await db.communities.insert_one(c.model_dump())
         communities.append(c)
@@ -80,7 +81,7 @@ async def main():
 
     # official tournaments (run by the platform)
     off = [
-        Tournament(title="PlayHub Muscat Football Cup", sport="Football", kind="official", venue="Al Seeb Stadium Annex",
+        Tournament(title="Green Ocean Muscat Football Cup", sport="Football", kind="official", venue="Al Seeb Stadium Annex",
                    city="Muscat", start_date=d(12), entry_fee=40, prize_pool=1000, max_teams=16, team_size=7,
                    description="Our flagship 7-a-side knockout. 16 teams, one champion.", image=IMG["Football2"],
                    organiser_id=admin["user_id"], organiser_name=admin["name"],
@@ -119,6 +120,9 @@ async def main():
                             teams=teams(["Smash Bros", "Lob Stars", "Wall Bangers"], 2, TESTER))
     for t in off + [live, padel_comm]:
         await db.tournaments.insert_one(t.model_dump())
+    await db.payment_transactions.insert_one(PaymentRecord(user_id=TESTER["user_id"], user_name=TESTER["name"],
+        community_id=communities[1].id, community_name=communities[1].name, plan_id="community_manage",
+        amount=1.0, currency="OMR").model_dump())
     print("seeded", len(communities), "communities,", len(off) + 2, "tournaments")
 
 

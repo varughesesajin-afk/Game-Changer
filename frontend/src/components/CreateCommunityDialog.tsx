@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SportPills from "@/components/SportPills";
-import { ApiError, apiPost } from "@/lib/api";
+import { apiPost } from "@/lib/api";
 import { WEEKDAYS, errMsg, refreshAll } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -32,9 +32,7 @@ export default function CreateCommunityDialog({ open, onOpenChange }: { open: bo
       nav(`/communities/${c.id}`);
     },
     onError: (e) => {
-      if (e instanceof ApiError && e.status === 402) {
-        toast.error(errMsg(e), { action: { label: "Go Pro", onClick: () => nav("/monetize") } });
-      } else toast.error(errMsg(e));
+      toast.error(errMsg(e));
     },
   });
 

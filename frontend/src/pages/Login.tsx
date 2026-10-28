@@ -12,12 +12,12 @@ export default function Login() {
       <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-b from-page/40 via-page/90 to-page" />
       <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-end space-y-6 p-6 pb-10">
-        <div className="font-heading text-2xl font-black">Play<span className="text-energy">Hub</span></div>
-        <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">Get on the team sheet.</h1>
+        <img src="/logo-512.jpg" alt="Green Ocean Sporting Events" data-testid="login-logo" className="w-40 rounded-3xl shadow-2xl shadow-black/50 ring-1 ring-white/10" />
+        <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">Game on.<br /><span className="text-brand">Get on the team sheet.</span></h1>
         <ul className="space-y-2 text-sm text-slate-300">
           <li className="flex items-center gap-2"><CalendarCheck className="size-4 text-ice" />Add your name to weekly games in one tap</li>
           <li className="flex items-center gap-2"><Users className="size-4 text-ice" />Join groups & build tournament squads</li>
-          <li className="flex items-center gap-2"><Trophy className="size-4 text-ice" />Play official PlayHub tournaments</li>
+          <li className="flex items-center gap-2"><Trophy className="size-4 text-ice" />Play official Green Ocean tournaments</li>
         </ul>
         <motion.div whileTap={{ scale: 0.96 }}>
           <Button data-testid="google-login-button" size="lg" className="h-12 w-full bg-white text-base font-semibold text-slate-900 hover:bg-slate-100" onClick={loginWithGoogle}>

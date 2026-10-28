@@ -61,7 +61,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
   };
 
   const canRemove = (addedBy: string, uid: string | null) =>
-    !!me && (canManage || me.role === "admin" || addedBy === me.user_id || uid === me.user_id);
+    !!me && (canManage || addedBy === me.user_id || uid === me.user_id);
 
   const Column = ({ side, list }: { side: TeamSide; list: Game["roster"] }) => (
     <div className="min-w-0 flex-1 rounded-xl bg-elevated/60 p-2.5">
@@ -76,7 +76,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
             data-testid={`roster-entry-${r.id}`}
             className={cn("group flex items-center justify-between gap-1 truncate text-sm", r.user_id && r.user_id === me?.user_id ? "font-bold text-white" : "text-slate-300")}
           >
-            <span className="truncate">{r.name}{!r.user_id && <span className="ml-1 text-[10px] text-slate-500">guest</span>}</span>
+            <span className="truncate">{r.name}{!r.user_id && <span className="ml-1 text-[10px] text-slate-500">guest</span>}{canManage && r.paid && <span data-testid={`roster-paid-${r.id}`} className="ml-1 text-[10px] font-bold text-energy">PAID</span>}</span>
             {canRemove(r.added_by, r.user_id) && (
               <button
                 type="button"
@@ -121,7 +121,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
         </div>
       </div>
       <div className="mt-2 h-1 overflow-hidden rounded-full bg-elevated">
-        <div className="h-full rounded-full bg-gradient-to-r from-energy to-amber-400 transition-[width] duration-500" style={{ width: `${Math.min(100, (game.roster.length / game.max_players) * 100)}%` }} />
+        <div className="h-full rounded-full bg-gradient-to-r from-ice to-energy transition-[width] duration-500" style={{ width: `${Math.min(100, (game.roster.length / game.max_players) * 100)}%` }} />
       </div>
 
       {!compact && (

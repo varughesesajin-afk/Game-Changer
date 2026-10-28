@@ -50,11 +50,25 @@ class CommunityCreate(BaseModel):
     image: Optional[str] = None
 
 
+class CommunityUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=2, max_length=80)
+    sport: Optional[str] = None
+    city: Optional[str] = None
+    venue: Optional[str] = None
+    description: Optional[str] = None
+    days: Optional[List[str]] = None
+    time: Optional[str] = None
+    max_players: Optional[int] = Field(None, ge=2, le=200)
+    fee: Optional[float] = Field(None, ge=0)
+
+
 class Community(CommunityCreate):
     id: str = Field(default_factory=_id)
     owner_id: str
     owner_name: str
     members: List[Member] = Field(default_factory=list)
+    manage_until: Optional[str] = None  # YYYY-MM-DD; Manage subscription paid through this date
+    manage_active: bool = False  # computed on read, never trusted from storage
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -65,6 +79,7 @@ class RosterEntry(BaseModel):
     name: str
     team: Literal["A", "B"] = "A"
     added_by: str
+    paid: bool = False
 
 
 class GameCreate(BaseModel):
@@ -88,6 +103,10 @@ class Game(BaseModel):
 
 class JoinGameIn(BaseModel):
     team: Literal["A", "B"] = "A"
+
+
+class PaidIn(BaseModel):
+    paid: bool
 
 
 class GuestIn(BaseModel):
@@ -176,16 +195,42 @@ class Plan(BaseModel):
     perks: List[str]
 
 
-class SubscribeIn(BaseModel):
-    plan_id: str
-
-
 class PaymentRecord(BaseModel):
     id: str = Field(default_factory=_id)
     user_id: str
+    user_name: str = ""
+    community_id: Optional[str] = None
+    community_name: Optional[str] = None
     plan_id: str
     amount: float
     currency: str
     status: Literal["paid", "cancelled"] = "paid"
     mocked: bool = True
     created_at: datetime = Field(default_factory=_now)
+
+
+# ---------- admin ----------
+class AdminStats(BaseModel):
+    users: int
+    communities: int
+    managed_communities: int
+    tournaments: int
+    upcoming_games: int
+    revenue_total: float
+    revenue_30d: float
+    currency: str = "OMR"
+
+
+class AdminUser(BaseModel):
+    user_id: str
+    name: str
+    email: str
+    role: str
+    communities_owned: int
+
+
+class AdminOverview(BaseModel):
+    stats: AdminStats
+    users: List[AdminUser]
+    communities: List[Community]
+    payments: List[PaymentRecord]

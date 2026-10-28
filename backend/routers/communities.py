@@ -1,18 +1,19 @@
 from datetime import date, timedelta
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException
 
 from lib.auth import current_user, is_admin, optional_user
+from lib.community_access import get_community as _get_community, require_manage, to_community
 from lib.dates import today_iso
 from lib.db import db
-from models.schemas import (Community, CommunityCreate, Feed, Game, GameCreate, GuestIn,
-                            JoinGameIn, Member, RosterEntry, Tournament, User)
+from models.schemas import (Community, CommunityCreate, CommunityUpdate, Feed, Game, GameCreate, GuestIn,
+                            JoinGameIn, Member, PaidIn, RosterEntry, Tournament, User)
 
 router = APIRouter(tags=["communities"])
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-FREE_COMMUNITY_LIMIT = 1
+OWNED_COMMUNITY_LIMIT = 1  # an organiser can run exactly one community (admins exempt)
 
 
 def next_dates(days: List[str]) -> List[str]:
@@ -23,13 +24,6 @@ def next_dates(days: List[str]) -> List[str]:
             delta = (WEEKDAYS.index(d) - today.weekday()) % 7
             out.append((today + timedelta(days=delta)).isoformat())
     return sorted(set(out))
-
-
-async def _get_community(cid: str) -> Community:
-    doc = await db.communities.find_one({"id": cid}, {"_id": 0})
-    if not doc:
-        raise HTTPException(404, "Community not found")
-    return Community(**doc)
 
 
 async def _get_game(gid: str) -> Game:
@@ -54,7 +48,7 @@ async def feed(sport: Optional[str] = None):
     games = await db.games.find({**q, "date": {"$gte": today_iso()}}, {"_id": 0}).sort([("date", 1), ("time", 1)]).to_list(10)
     comms = await db.communities.find(q, {"_id": 0}).sort("created_at", -1).to_list(10)
     return Feed(official=[Tournament(**t) for t in official], community_tournaments=[Tournament(**t) for t in comm_t],
-                upcoming_games=[Game(**g) for g in games], communities=[Community(**c) for c in comms])
+                upcoming_games=[Game(**g) for g in games], communities=[to_community(c) for c in comms])
 
 
 # ---------- communities ----------
@@ -71,18 +65,20 @@ async def list_communities(sport: Optional[str] = None, mine: bool = False, q: O
             raise HTTPException(401, "Not authenticated")
         query["$or"] = [{"owner_id": user.user_id}, {"members.user_id": user.user_id}]
     docs = await db.communities.find(query, {"_id": 0}).sort("created_at", -1).to_list(200)
-    return [Community(**d) for d in docs]
+    return [to_community(d) for d in docs]
 
 
 @router.post("/communities", response_model=Community)
 async def create_community(body: CommunityCreate, user: User = Depends(current_user)):
-    if not (user.is_pro or is_admin(user)):
+    if not is_admin(user):
         owned = await db.communities.count_documents({"owner_id": user.user_id})
-        if owned >= FREE_COMMUNITY_LIMIT:
-            raise HTTPException(402, "Free plan allows 1 community. Upgrade to Organiser Pro to host more.")
+        if owned >= OWNED_COMMUNITY_LIMIT:
+            raise HTTPException(409, "You already organise a community — each organiser can run one community.")
     c = Community(**body.model_dump(), owner_id=user.user_id, owner_name=user.name,
                   members=[Member(user_id=user.user_id, name=user.name, picture=user.picture)])
-    await db.communities.insert_one(c.model_dump())
+    doc = c.model_dump()
+    doc.pop("manage_active", None)
+    await db.communities.insert_one(doc)
     for d in next_dates(c.days):
         await db.games.insert_one(_game_from(c, d).model_dump())
     return c
@@ -90,6 +86,23 @@ async def create_community(body: CommunityCreate, user: User = Depends(current_u
 
 @router.get("/communities/{cid}", response_model=Community)
 async def get_community(cid: str):
+    return await _get_community(cid)
+
+
+@router.patch("/communities/{cid}", response_model=Community)
+async def update_community(cid: str, body: CommunityUpdate, user: User = Depends(current_user)):
+    c = await _get_community(cid)
+    require_manage(c, user)
+    changes = body.model_dump(exclude_none=True)
+    if changes:
+        await db.communities.update_one({"id": cid}, {"$set": changes})
+        game_fields = {k: changes[k] for k in ("venue", "fee", "max_players", "sport") if k in changes}
+        if "name" in changes:
+            game_fields["community_name"] = changes["name"]
+        if game_fields:
+            await db.games.update_many({"community_id": cid, "date": {"$gte": today_iso()}}, {"$set": game_fields})
+        if "name" in changes:
+            await db.tournaments.update_many({"community_id": cid}, {"$set": {"community_name": changes["name"]}})
     return await _get_community(cid)
 
 
@@ -122,6 +135,17 @@ async def leave_community(cid: str, user: User = Depends(current_user)):
     return await _get_community(cid)
 
 
+@router.delete("/communities/{cid}/members/{uid}", response_model=Community)
+async def remove_member(cid: str, uid: str, user: User = Depends(current_user)):
+    c = await _get_community(cid)
+    require_manage(c, user)
+    if uid == c.owner_id:
+        raise HTTPException(400, "The organiser cannot be removed")
+    await db.communities.update_one({"id": cid}, {"$pull": {"members": {"user_id": uid}}})
+    await db.games.update_many({"community_id": cid, "date": {"$gte": today_iso()}}, {"$pull": {"roster": {"user_id": uid}}})
+    return await _get_community(cid)
+
+
 @router.get("/communities/{cid}/games", response_model=List[Game])
 async def community_games(cid: str):
     docs = await db.games.find({"community_id": cid, "date": {"$gte": today_iso()}}, {"_id": 0}) \
@@ -132,8 +156,7 @@ async def community_games(cid: str):
 @router.post("/communities/{cid}/games", response_model=Game)
 async def create_game(cid: str, body: GameCreate, user: User = Depends(current_user)):
     c = await _get_community(cid)
-    if c.owner_id != user.user_id and not is_admin(user):
-        raise HTTPException(403, "Only the organiser can schedule games")
+    require_manage(c, user)
     if body.date < today_iso():
         raise HTTPException(400, "Date must be today or later")
     g = _game_from(c, body.date, body.time)
@@ -145,8 +168,7 @@ async def create_game(cid: str, body: GameCreate, user: User = Depends(current_u
 async def schedule_next_week(cid: str, user: User = Depends(current_user)):
     """Create the next occurrence (after the latest scheduled one) for each recurring day."""
     c = await _get_community(cid)
-    if c.owner_id != user.user_id and not is_admin(user):
-        raise HTTPException(403, "Only the organiser can schedule games")
+    require_manage(c, user)
     created = []
     for d in c.days:
         if d not in WEEKDAYS:
@@ -188,7 +210,6 @@ async def join_game(gid: str, body: JoinGameIn, user: User = Depends(current_use
             raise HTTPException(409, "This game is full")
         entry = RosterEntry(user_id=user.user_id, name=user.name, team=body.team, added_by=user.user_id)
         await db.games.update_one({"id": gid}, {"$push": {"roster": entry.model_dump()}})
-        # joining a game also makes you a community member
         await db.communities.update_one(
             {"id": g.community_id, "members.user_id": {"$ne": user.user_id}},
             {"$push": {"members": Member(user_id=user.user_id, name=user.name, picture=user.picture).model_dump()}},
@@ -219,8 +240,18 @@ async def remove_entry(gid: str, entry_id: str, user: User = Depends(current_use
     entry = next((r for r in g.roster if r.id == entry_id), None)
     if not entry:
         raise HTTPException(404, "Entry not found")
-    c = await _get_community(g.community_id)
-    if user.user_id not in (entry.added_by, entry.user_id, c.owner_id) and not is_admin(user):
-        raise HTTPException(403, "Not allowed")
+    if user.user_id not in (entry.added_by, entry.user_id):
+        # removing someone else's name is a Manage action
+        require_manage(await _get_community(g.community_id), user)
     await db.games.update_one({"id": gid}, {"$pull": {"roster": {"id": entry_id}}})
+    return await _get_game(gid)
+
+
+@router.post("/games/{gid}/roster/{entry_id}/paid", response_model=Game)
+async def set_paid(gid: str, entry_id: str, body: PaidIn, user: User = Depends(current_user)):
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    res = await db.games.update_one({"id": gid, "roster.id": entry_id}, {"$set": {"roster.$.paid": body.paid}})
+    if not res.matched_count:
+        raise HTTPException(404, "Entry not found")
     return await _get_game(gid)

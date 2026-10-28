@@ -33,7 +33,7 @@ export default function TournamentCard({ t, wide = false }: { t: Tournament; wid
           <div className="absolute left-3 top-3 flex gap-1.5">
             <StatusBadge status={t.status} />
             {t.kind === "official" && (
-              <span className="rounded-full bg-energy px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">Official</span>
+              <span className="rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">Official</span>
             )}
           </div>
           <div className="absolute bottom-2 right-3 text-right">

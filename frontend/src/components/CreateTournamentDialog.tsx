@@ -42,7 +42,7 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
       nav(`/tournaments/${t.id}`);
     },
     onError: (e) => {
-      if (e instanceof ApiError && e.status === 402) toast.error(errMsg(e), { action: { label: "Go Pro", onClick: () => nav("/monetize") } });
+      if (e instanceof ApiError && e.status === 402) toast.error(errMsg(e), { action: { label: "Manage plan", onClick: () => nav("/monetize") } });
       else toast.error(errMsg(e));
     },
   });

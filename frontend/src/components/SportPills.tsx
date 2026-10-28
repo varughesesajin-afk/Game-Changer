@@ -21,7 +21,7 @@ export default function SportPills({ value, onChange, includeAll = true, testPre
           className={cn(
             "shrink-0 rounded-full border px-4 py-1.5 text-sm font-semibold transition-[background-color,color,border-color,transform] duration-200 active:scale-95",
             value === s
-              ? "border-energy bg-energy text-white"
+              ? "border-transparent bg-brand text-white"
               : "border-line bg-surface text-slate-300 hover:border-slate-500",
           )}
         >

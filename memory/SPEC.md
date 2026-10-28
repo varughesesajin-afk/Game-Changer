@@ -1,4 +1,5 @@
-# PlayHub — SPEC
+# Green Ocean Sporting Events ("Game on") — SPEC
+Branding: blue→green gradient (bg-brand / text-brand utilities in index.css).
 
 Mobile-first web app (max-w-md frame, bottom nav) for community sports games + tournaments, all sports. Currency OMR.
 
@@ -17,14 +18,16 @@ Mobile-first web app (max-w-md frame, bottom nav) for community sports games + t
 - payment_transactions (MOCKED billing records)
 
 ## Business rules
-- Free users: max 1 owned community (402 otherwise). Pro/admin: unlimited.
-- Community tournaments: Pro or admin, must own the community. Official tournaments: admin only.
+- Each organiser (non-admin) can own exactly 1 community (409 otherwise).
+- "Manage" button on community page (owner/admin). Owner must have an active per-community Manage subscription (OMR 1/month, communities.manage_until; manage_active computed on read) — else 402. Admin manages everything free.
+- Manage unlocks: PATCH community details, schedule games (schedule-week / one-off), host community tournaments, remove members (DELETE /communities/{id}/members/{uid}) and other people's roster names, match-fee tracking (POST /games/{gid}/roster/{eid}/paid).
+- Official tournaments: admin only. Admin dashboard /admin (GET /api/admin/overview: stats, users, communities, payments).
 - Organiser (or admin) starts tournament (>=2 teams) => bracket; reports scores (no draws) => winner advances; final => completed.
 - Team captain (or organiser) adds players.
-- Organiser Pro: 5 OMR/month or 50 OMR/year — PAYMENTS ARE MOCKED (POST /api/billing/subscribe flips is_pro immediately). Stripe sandbox unavailable in Oman.
+- Billing — PAYMENTS ARE MOCKED: POST /api/billing/communities/{cid}/subscribe extends manage_until +30 days; /cancel clears it. Old Organiser Pro plans removed (user.is_pro unused).
 
 ## Endpoints (all /api)
 auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games, schedule-week); games/mine, games/{id}/join|leave|guests, games/{id}/roster/{entry}; tournaments (list/create/get/delete, teams, players, start, matches/{mid}/result); billing/plans|subscribe|cancel|history.
 
 ## Seed (cd backend && python seed.py)
-5 communities (Sunday Champions 7v7 Sun/Tue owned by admin, Tuesday Padel Night & Friday Hoops Run owned by Test Player, Beach Volley Crew, Weekend Tape-Ball Cricket), 4 official tournaments, 2 community tournaments (Sunday Champions Mini League ongoing with bracket; Padel Night Americano in registration organised by Test Player).
+5 communities (Sunday Champions 7v7 Sun/Tue owned by admin, Tuesday Padel Night (Manage ACTIVE) owned by Test Player; Friday Hoops Run owned by admin, Beach Volley Crew, Weekend Tape-Ball Cricket), 4 official tournaments, 2 community tournaments (Sunday Champions Mini League ongoing with bracket; Padel Night Americano in registration organised by Test Player).

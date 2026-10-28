@@ -9,6 +9,7 @@ import TournamentDetail from "@/pages/TournamentDetail";
 import HostPro from "@/pages/HostPro";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
+import Admin from "@/pages/Admin";
 
 export default function App() {
   const location = useLocation();
@@ -25,6 +26,7 @@ export default function App() {
         <Route path="/monetize" element={<HostPro />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/admin" element={<Admin />} />
         <Route path="*" element={<Explore />} />
       </Route>
     </Routes>

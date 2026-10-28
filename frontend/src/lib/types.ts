@@ -40,8 +40,12 @@ export interface Community extends CommunityCreate {
   owner_name: string;
   members: Member[];
   image: string | null;
+  manage_until: string | null;
+  manage_active: boolean;
   created_at: string;
 }
+
+export type CommunityUpdate = Partial<Omit<CommunityCreate, "image">>;
 
 export interface RosterEntry {
   id: string;
@@ -49,6 +53,7 @@ export interface RosterEntry {
   name: string;
   team: TeamSide;
   added_by: string;
+  paid: boolean;
 }
 
 export interface Game {
@@ -134,10 +139,39 @@ export interface Plan {
 export interface PaymentRecord {
   id: string;
   user_id: string;
+  user_name: string;
+  community_id: string | null;
+  community_name: string | null;
   plan_id: string;
   amount: number;
   currency: string;
   status: "paid" | "cancelled";
   mocked: boolean;
   created_at: string;
+}
+
+export interface AdminStats {
+  users: number;
+  communities: number;
+  managed_communities: number;
+  tournaments: number;
+  upcoming_games: number;
+  revenue_total: number;
+  revenue_30d: number;
+  currency: string;
+}
+
+export interface AdminUser {
+  user_id: string;
+  name: string;
+  email: string;
+  role: string;
+  communities_owned: number;
+}
+
+export interface AdminOverview {
+  stats: AdminStats;
+  users: AdminUser[];
+  communities: Community[];
+  payments: PaymentRecord[];
 }

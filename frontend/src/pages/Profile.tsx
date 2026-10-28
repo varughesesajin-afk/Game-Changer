@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { BadgeCheck, LogOut, ShieldCheck } from "lucide-react";
+import { LogOut, ShieldCheck } from "lucide-react";
 import { Button, buttonVariants } from "@/components/ui/button";
 import GameCard from "@/components/GameCard";
 import CommunityCard from "@/components/CommunityCard";
@@ -34,17 +34,12 @@ export default function Profile() {
         {me.picture ? (
           <img src={me.picture} alt="" className="size-16 rounded-2xl object-cover" />
         ) : (
-          <div className="grid size-16 place-items-center rounded-2xl bg-energy font-heading text-2xl font-bold">{me.name[0]}</div>
+          <div className="grid size-16 place-items-center rounded-2xl bg-brand font-heading text-2xl font-bold text-white">{me.name[0]}</div>
         )}
         <div className="min-w-0 flex-1">
           <h1 data-testid="profile-name" className="truncate font-heading text-2xl font-bold">{me.name}</h1>
           <div className="truncate text-sm text-slate-400">{me.email}</div>
           <div className="mt-1 flex gap-1.5">
-            {me.is_pro && (
-              <span data-testid="profile-pro-badge" className="inline-flex items-center gap-1 rounded-full bg-emerald-400/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-emerald-300">
-                <BadgeCheck className="size-3" /> Pro
-              </span>
-            )}
             {me.role === "admin" && (
               <span data-testid="profile-admin-badge" className="inline-flex items-center gap-1 rounded-full bg-energy/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-energy">
                 <ShieldCheck className="size-3" /> Admin
@@ -57,9 +52,13 @@ export default function Profile() {
         </Button>
       </div>
 
-      {!me.is_pro && (
-        <Link to="/monetize" data-testid="profile-go-pro-link" className="block rounded-2xl border border-energy/40 bg-energy/10 p-4 text-sm">
-          <span className="font-semibold text-energy">Organise more?</span> Get Organiser Pro for unlimited groups and tournaments.
+      {me.role === "admin" ? (
+        <Link to="/admin" data-testid="profile-admin-dashboard-link" className="block rounded-2xl border border-ice/40 bg-gradient-to-r from-ice/15 to-energy/15 p-4 text-sm">
+          <span className="font-semibold text-ice">Site admin dashboard</span> — users, communities, subscriptions and revenue.
+        </Link>
+      ) : (
+        <Link to="/monetize" data-testid="profile-manage-link" className="block rounded-2xl border border-energy/40 bg-energy/10 p-4 text-sm">
+          <span className="font-semibold text-energy">Run a community?</span> Unlock Manage for OMR 1/month.
         </Link>
       )}
 
