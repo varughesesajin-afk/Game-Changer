@@ -2,9 +2,18 @@ const content = document.getElementById("content");
 const logoutLink = document.getElementById("logout-link");
 
 let admin = { isAdmin: false };
-let dashState = { events: [], matchdays: [], section: "events", showCreateForm: false, showCreateMatchdayForm: false };
+let dashState = {
+  events: [],
+  matchdays: [],
+  communities: [],
+  section: "events",
+  showCreateForm: false,
+  showCreateMatchdayForm: false,
+  showCreateCommunityForm: false,
+};
 let eventState = null;
 let matchdayState = null;
+let communityState = null;
 let penaltyExtraRounds = {}; // matchId -> extra sudden-death rounds added beyond the base 5
 let goalEventExtraRows = {}; // matchId -> extra blank goal-entry rows added beyond the default
 
@@ -33,8 +42,10 @@ function route() {
   const params = new URLSearchParams(hash);
   const eventId = params.get("event");
   const matchdayId = params.get("matchday");
+  const communityId = params.get("community");
   if (eventId) return renderEventView(eventId);
   if (matchdayId) return renderMatchdayView(matchdayId);
+  if (communityId) return renderCommunityView(communityId);
   return renderDashboard();
 }
 
@@ -68,12 +79,14 @@ function renderLogin() {
 async function renderDashboard() {
   content.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
   try {
-    const [events, matchdays] = await Promise.all([
+    const [events, matchdays, communities] = await Promise.all([
       api.get("/api/admin/events"),
       api.get("/api/admin/matchdays"),
+      api.get("/api/admin/communities"),
     ]);
     dashState.events = events;
     dashState.matchdays = matchdays;
+    dashState.communities = communities;
   } catch (e) {
     content.innerHTML = `<div class="alert error">${escapeHtml(e.message)}</div>`;
     return;
@@ -81,36 +94,36 @@ async function renderDashboard() {
   drawDashboard();
 }
 
+const DASH_SECTIONS = {
+  events: { label: "Events", noun: "events", newLabel: "+ New event", formHtml: createEventFormHtml, wire: wireCreateEventForm, row: (x) => dashboardEventRow(x), empty: "No events yet. Create your first one above.", showKey: "showCreateForm", openKey: "openEvent", hashKey: "event" },
+  matchdays: { label: "Match Days", noun: "match days", newLabel: "+ New match day", formHtml: createMatchdayFormHtml, wire: wireCreateMatchdayForm, row: (x) => dashboardMatchdayRow(x), empty: "No match days yet. Create your first one above.", showKey: "showCreateMatchdayForm", openKey: "openMatchday", hashKey: "matchday" },
+  communities: { label: "Communities", noun: "communities", newLabel: "+ New community", formHtml: createCommunityFormHtml, wire: wireCreateCommunityForm, row: (x) => dashboardCommunityRow(x), empty: "No communities yet. Create your first one above.", showKey: "showCreateCommunityForm", openKey: "openCommunity", hashKey: "community" },
+};
+
 function drawDashboard() {
-  const { events, matchdays, section, showCreateForm, showCreateMatchdayForm } = dashState;
-  const isMatchdays = section === "matchdays";
-  const showingCreate = isMatchdays ? showCreateMatchdayForm : showCreateForm;
+  const { section } = dashState;
+  const cfg = DASH_SECTIONS[section];
+  const list = dashState[section];
+  const showingCreate = dashState[cfg.showKey];
 
   content.innerHTML = `
     <div class="page-hero">
       <div class="flex-between">
-        <h1 style="margin:0;">Your ${isMatchdays ? "match days" : "events"}</h1>
-        <button class="btn" id="new-item-btn">${showingCreate ? "Cancel" : isMatchdays ? "+ New match day" : "+ New event"}</button>
+        <h1 style="margin:0;">Your ${cfg.noun}</h1>
+        <button class="btn" id="new-item-btn">${showingCreate ? "Cancel" : cfg.newLabel}</button>
       </div>
     </div>
 
     <div class="tabs" style="margin-top:18px;">
-      <div class="tab ${!isMatchdays ? "active" : ""}" data-dash-section="events">Events</div>
-      <div class="tab ${isMatchdays ? "active" : ""}" data-dash-section="matchdays">Match Days</div>
+      ${Object.entries(DASH_SECTIONS)
+        .map(([key, c]) => `<div class="tab ${section === key ? "active" : ""}" data-dash-section="${key}">${c.label}</div>`)
+        .join("")}
     </div>
 
-    ${showingCreate ? `<div class="card" style="margin-top:16px;">${isMatchdays ? createMatchdayFormHtml() : createEventFormHtml()}</div>` : ""}
+    ${showingCreate ? `<div class="card" style="margin-top:16px;">${cfg.formHtml()}</div>` : ""}
 
     <div class="stack" style="margin-top:20px;">
-      ${
-        isMatchdays
-          ? matchdays.length
-            ? matchdays.map(dashboardMatchdayRow).join("")
-            : `<div class="empty-state">No match days yet. Create your first one above.</div>`
-          : events.length
-            ? events.map(dashboardEventRow).join("")
-            : `<div class="empty-state">No events yet. Create your first one above.</div>`
-      }
+      ${list.length ? list.map(cfg.row).join("") : `<div class="empty-state">${cfg.empty}</div>`}
     </div>
   `;
 
@@ -122,15 +135,11 @@ function drawDashboard() {
   });
 
   document.getElementById("new-item-btn").addEventListener("click", () => {
-    if (isMatchdays) dashState.showCreateMatchdayForm = !dashState.showCreateMatchdayForm;
-    else dashState.showCreateForm = !dashState.showCreateForm;
+    dashState[cfg.showKey] = !dashState[cfg.showKey];
     drawDashboard();
   });
 
-  if (showingCreate) {
-    if (isMatchdays) wireCreateMatchdayForm();
-    else wireCreateEventForm();
-  }
+  if (showingCreate) cfg.wire();
 
   content.querySelectorAll("[data-open-event]").forEach((el) => {
     el.addEventListener("click", () => {
@@ -140,6 +149,11 @@ function drawDashboard() {
   content.querySelectorAll("[data-open-matchday]").forEach((el) => {
     el.addEventListener("click", () => {
       location.hash = `matchday=${el.dataset.openMatchday}`;
+    });
+  });
+  content.querySelectorAll("[data-open-community]").forEach((el) => {
+    el.addEventListener("click", () => {
+      location.hash = `community=${el.dataset.openCommunity}`;
     });
   });
 }
@@ -1456,6 +1470,419 @@ function capacityBarHtml(md) {
     <div class="capacity-bar"><div class="capacity-bar-fill" style="width:${pct}%;"></div></div>
     <div class="capacity-label">${md.signupCount} / ${md.maxPlayers} players signed up</div>
   `;
+}
+
+// ----- Communities: clubs/groups with member lists and slot-based games -----
+
+function dashboardCommunityRow(c) {
+  const open = c.status === "open";
+  return `
+    <div class="card" style="cursor:pointer;" data-open-community="${c.id}">
+      <div class="flex-between">
+        <div>
+          <span class="badge ${open ? "accent" : ""}">${open ? "Open" : "Closed"}</span>
+          <h3 style="margin:8px 0 4px;">${escapeHtml(c.name)}</h3>
+          <div class="small muted">
+            ${c.host ? escapeHtml(c.host) + " · " : ""}${c.memberCount} member${c.memberCount === 1 ? "" : "s"} · ${c.upcomingGamesCount} upcoming game${c.upcomingGamesCount === 1 ? "" : "s"}
+          </div>
+        </div>
+        <div class="small muted">Manage →</div>
+      </div>
+    </div>
+  `;
+}
+
+function createCommunityFormHtml() {
+  const sportOptions = `<option value="">General / mixed</option>` + SPORTS_CACHE.map((s) => `<option value="${s.key}">${escapeHtml(s.label)}</option>`).join("");
+  return `
+    <h3 style="margin-top:0;">Create a new community</h3>
+    <div id="create-community-alert"></div>
+    <form id="create-community-form">
+      <div class="row">
+        <div class="field" style="flex:2;">
+          <label>Community name</label>
+          <input name="name" required maxlength="100" placeholder="e.g. Lineup Badminton">
+        </div>
+        <div class="field">
+          <label>Sport (optional)</label>
+          <select name="sport">${sportOptions}</select>
+        </div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Host (optional)</label><input name="host" maxlength="80" placeholder="e.g. Lineup"></div>
+        <div class="field"><label>Venue / area (optional)</label><input name="venue" maxlength="120" placeholder="e.g. Business Bay, Dubai"></div>
+      </div>
+      <div class="field">
+        <label>Description (optional)</label>
+        <textarea name="description" rows="2"></textarea>
+      </div>
+      <button class="btn" type="submit">Create community</button>
+    </form>
+  `;
+}
+
+function wireCreateCommunityForm() {
+  document.getElementById("create-community-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      const c = await api.post("/api/admin/communities", payload);
+      dashState.showCreateCommunityForm = false;
+      location.hash = `community=${c.id}`;
+    } catch (err) {
+      document.getElementById("create-community-alert").innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+}
+
+async function renderCommunityView(id) {
+  content.innerHTML = `<div class="empty-state"><span class="spinner"></span></div>`;
+  try {
+    const [c, members, games] = await Promise.all([
+      api.get(`/api/admin/communities/${id}`),
+      api.get(`/api/admin/communities/${id}/members`),
+      api.get(`/api/admin/communities/${id}/games`),
+    ]);
+    communityState = { id, community: c, members, games, showCreateGameForm: false, openGameId: null };
+  } catch (e) {
+    content.innerHTML = `<div class="alert error">${escapeHtml(e.message)}</div><p><a href="#">← Back</a></p>`;
+    return;
+  }
+  drawCommunityView();
+}
+
+async function reloadCommunityState() {
+  const id = communityState.id;
+  const [c, members, games] = await Promise.all([
+    api.get(`/api/admin/communities/${id}`),
+    api.get(`/api/admin/communities/${id}/members`),
+    api.get(`/api/admin/communities/${id}/games`),
+  ]);
+  Object.assign(communityState, { community: c, members, games });
+}
+
+function communityGameRow(g) {
+  const expanded = communityState.openGameId === g.id;
+  const full = g.filledSlots >= g.totalSlots;
+  const badgeCls = g.status !== "open" ? "" : full ? "warning" : "accent";
+  const badgeLabel = g.status !== "open" ? (g.status === "completed" ? "Completed" : "Closed") : full ? "Full" : "Open";
+  return `
+    <div class="card" style="margin-top:10px;">
+      <div class="flex-between">
+        <div>
+          <span class="badge ${badgeCls}">${badgeLabel}</span>
+          <h3 style="margin:8px 0 4px;">${escapeHtml(g.title || g.sportLabel || "Game")}</h3>
+          <div class="small muted">
+            ${g.venue ? escapeHtml(g.venue) + " · " : ""}${escapeHtml(fmtDateOnly(g.date))}${g.time ? " · " + escapeHtml(g.time) : ""}
+            · ${g.teamSize}v${g.teamSize} · ${g.filledSlots}/${g.totalSlots} players · ${g.entryFee ? "AED " + g.entryFee : "Free"}
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+          <button class="btn secondary small" data-toggle-game="${g.id}">${expanded ? "Hide" : "Manage"}</button>
+          <select class="input-like" data-game-status="${g.id}" style="padding:5px 8px; border-radius:8px; border:1px solid var(--border); background:var(--surface); color:var(--text); font-size:0.82rem;">
+            <option value="open" ${g.status === "open" ? "selected" : ""}>Open</option>
+            <option value="closed" ${g.status === "closed" ? "selected" : ""}>Closed</option>
+            <option value="completed" ${g.status === "completed" ? "selected" : ""}>Completed</option>
+          </select>
+          <button class="btn danger small" data-delete-game="${g.id}">Delete</button>
+        </div>
+      </div>
+      ${expanded ? communityGameSlots(g) : ""}
+    </div>
+  `;
+}
+
+function communityGameSlots(g) {
+  const teamA = g.slots.filter((s) => s.team === "A");
+  const teamB = g.slots.filter((s) => s.team === "B");
+  const slotRow = (s) => `
+    <div class="reg-list-item">
+      <div>Slot ${s.slotIndex}${s.playerName ? ": <strong>" + escapeHtml(s.playerName) + "</strong>" : ""}</div>
+      ${
+        s.playerName
+          ? `<button class="btn secondary small" data-clear-slot="${s.id}">Clear</button>`
+          : `<form class="assign-slot-form" data-slot="${s.id}" style="display:flex; gap:6px;">
+              <input name="name" placeholder="Assign a name" maxlength="60" style="width:150px;">
+              <button class="btn secondary small" type="submit">Assign</button>
+            </form>`
+      }
+    </div>
+  `;
+  return `
+    <div style="margin-top:14px; border-top:1px solid var(--border); padding-top:14px;">
+      <div class="row">
+        <div style="flex:1;"><div class="small muted" style="margin-bottom:4px; font-weight:700;">Team A</div>${teamA.map(slotRow).join("")}</div>
+        <div style="flex:1;"><div class="small muted" style="margin-bottom:4px; font-weight:700;">Team B</div>${teamB.map(slotRow).join("")}</div>
+      </div>
+    </div>
+  `;
+}
+
+function createCommunityGameFormHtml() {
+  const sportOptions = `<option value="">Same as community</option>` + SPORTS_CACHE.map((s) => `<option value="${s.key}">${escapeHtml(s.label)}</option>`).join("");
+  return `
+    <h3 style="margin-top:0;">Create a new game</h3>
+    <div id="create-game-alert"></div>
+    <form id="create-game-form">
+      <div class="row">
+        <div class="field"><label>Title (optional)</label><input name="title" maxlength="100" placeholder="e.g. Doubles night"></div>
+        <div class="field"><label>Sport</label><select name="sport">${sportOptions}</select></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Venue</label><input name="venue" maxlength="120"></div>
+        <div class="field"><label>Date</label><input name="date" type="date" required></div>
+        <div class="field"><label>Time</label><input name="time" type="time"></div>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Players per team</label>
+          <div class="row" style="align-items:center; gap:6px;">
+            <button type="button" class="btn secondary small" data-team-preset="2">2</button>
+            <button type="button" class="btn secondary small" data-team-preset="3">3</button>
+            <button type="button" class="btn secondary small" data-team-preset="4">4</button>
+            <button type="button" class="btn secondary small" data-team-preset="6">6</button>
+            <input name="teamSize" type="number" min="1" max="11" value="2" style="max-width:80px;" required>
+          </div>
+        </div>
+        <div class="field"><label>Duration (mins)</label><input name="durationMins" type="number" min="15" max="480" value="90"></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Entry fee (AED)</label><input name="entryFee" type="number" min="0" step="0.5" value="0"></div>
+        <div class="field"><label>Original fee (optional)</label><input name="originalFee" type="number" min="0" step="0.5"></div>
+        <div class="field" style="display:flex; align-items:flex-end; padding-bottom:9px;">
+          <label style="display:flex; align-items:center; gap:6px; font-weight:500; margin:0;"><input name="friendly" type="checkbox" style="width:auto;" checked> Friendly</label>
+        </div>
+      </div>
+      <div class="field"><label>Notes (optional)</label><textarea name="notes" rows="2"></textarea></div>
+      <button class="btn" type="submit">Create game</button>
+    </form>
+  `;
+}
+
+function wireCreateCommunityGameForm() {
+  const form = document.getElementById("create-game-form");
+  form.querySelectorAll("[data-team-preset]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      form.querySelector('[name="teamSize"]').value = btn.dataset.teamPreset;
+    });
+  });
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    payload.friendly = fd.get("friendly") === "on";
+    try {
+      await api.post(`/api/admin/communities/${communityState.id}/games`, payload);
+      communityState.showCreateGameForm = false;
+      await reloadCommunityState();
+      drawCommunityView();
+    } catch (err) {
+      document.getElementById("create-game-alert").innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+}
+
+function drawCommunityView() {
+  const { community: c, members, games, showCreateGameForm } = communityState;
+  const sportOptions =
+    `<option value="">General / mixed</option>` +
+    SPORTS_CACHE.map((s) => `<option value="${s.key}" ${c.sport === s.key ? "selected" : ""}>${escapeHtml(s.label)}</option>`).join("");
+
+  content.innerHTML = `
+    <a href="#" class="small">← All communities</a>
+
+    <div class="event-hero">
+      <div class="event-hero-top">
+        <div>
+          <span class="badge">${c.status === "open" ? "Open" : "Closed"}</span>
+          <h1>${escapeHtml(c.name)}</h1>
+          <div class="muted">${escapeHtml(c.sportLabel || "")}${c.host ? " · Host " + escapeHtml(c.host) : ""}</div>
+        </div>
+        <a class="small" style="color:#fff;" href="/community.html?id=${c.id}" target="_blank">View public page ↗</a>
+      </div>
+      <div class="event-hero-chips">
+        ${c.venue ? `<div class="event-hero-chip"><span class="ehc-icon">📍</span><div><label>Venue</label><div class="ehc-val">${escapeHtml(c.venue)}</div></div></div>` : ""}
+        <div class="event-hero-chip"><span class="ehc-icon">👥</span><div><label>Members</label><div class="ehc-val">${c.memberCount}</div></div></div>
+        <div class="event-hero-chip"><span class="ehc-icon">🗓️</span><div><label>Games</label><div class="ehc-val">${games.length}</div></div></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:20px;">
+      <div id="community-settings-alert"></div>
+      <form id="community-settings-form">
+        <div class="row">
+          <div class="field" style="flex:2;"><label>Name</label><input name="name" value="${escapeHtml(c.name)}" maxlength="100" required></div>
+          <div class="field"><label>Sport</label><select name="sport">${sportOptions}</select></div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Host</label><input name="host" value="${escapeHtml(c.host || "")}" maxlength="80"></div>
+          <div class="field"><label>Venue / area</label><input name="venue" value="${escapeHtml(c.venue || "")}" maxlength="120"></div>
+          <div class="field">
+            <label>Membership</label>
+            <select name="status">
+              <option value="open" ${c.status === "open" ? "selected" : ""}>Open</option>
+              <option value="closed" ${c.status === "closed" ? "selected" : ""}>Closed</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Description</label><textarea name="description" rows="2">${escapeHtml(c.description || "")}</textarea></div>
+        <button class="btn" type="submit">Save changes</button>
+      </form>
+    </div>
+
+    <div class="card" style="margin-top:14px;">
+      <h3 style="margin-top:0;">Members (${members.length})</h3>
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th></th></tr></thead>
+        <tbody>
+          ${
+            members.length
+              ? members
+                  .map(
+                    (m, i) => `
+            <tr>
+              <td>${i + 1}</td>
+              <td>${escapeHtml(m.name)}</td>
+              <td><button class="btn secondary small" data-remove-member="${m.id}">Remove</button></td>
+            </tr>`
+                  )
+                  .join("")
+              : `<tr><td colspan="3" class="muted">No members yet.</td></tr>`
+          }
+        </tbody>
+      </table>
+      <div id="manual-member-alert" style="margin-top:10px;"></div>
+      <form id="manual-member-form" style="margin-top:10px;">
+        <div class="row" style="align-items:flex-end;">
+          <div class="field"><label>Add a member manually</label><input name="name" required maxlength="60"></div>
+          <button class="btn secondary" type="submit">Add</button>
+        </div>
+      </form>
+    </div>
+
+    <div class="flex-between" style="margin-top:20px;">
+      <h2 style="margin:0;">Games</h2>
+      <button class="btn" id="new-game-btn">${showCreateGameForm ? "Cancel" : "+ New game"}</button>
+    </div>
+    ${showCreateGameForm ? `<div class="card" style="margin-top:12px;">${createCommunityGameFormHtml()}</div>` : ""}
+    ${games.length ? games.map(communityGameRow).join("") : `<div class="empty-state" style="margin-top:12px;">No games scheduled yet.</div>`}
+
+    <div class="card" style="margin-top:20px; border-color: var(--danger);">
+      <h3 style="margin-top:0; color:var(--danger);">Danger zone</h3>
+      <p class="small muted">Deleting a community permanently removes its members and games.</p>
+      <button class="btn danger" id="delete-community-btn">Delete this community</button>
+    </div>
+  `;
+
+  document.getElementById("community-settings-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api.patch(`/api/admin/communities/${communityState.id}`, payload);
+      await reloadCommunityState();
+      drawCommunityView();
+    } catch (err) {
+      document.getElementById("community-settings-alert").innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  document.getElementById("manual-member-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const payload = Object.fromEntries(new FormData(e.target).entries());
+    try {
+      await api.post(`/api/admin/communities/${communityState.id}/members`, payload);
+      await reloadCommunityState();
+      drawCommunityView();
+    } catch (err) {
+      document.getElementById("manual-member-alert").innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+    }
+  });
+
+  content.querySelectorAll("[data-remove-member]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Remove this member?")) return;
+      try {
+        await api.del(`/api/admin/community-members/${btn.dataset.removeMember}`);
+        await reloadCommunityState();
+        drawCommunityView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  document.getElementById("new-game-btn").addEventListener("click", () => {
+    communityState.showCreateGameForm = !communityState.showCreateGameForm;
+    drawCommunityView();
+  });
+  if (showCreateGameForm) wireCreateCommunityGameForm();
+
+  content.querySelectorAll("[data-toggle-game]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.toggleGame;
+      communityState.openGameId = communityState.openGameId === id ? null : id;
+      drawCommunityView();
+    });
+  });
+
+  content.querySelectorAll("[data-game-status]").forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      try {
+        await api.patch(`/api/admin/community-games/${sel.dataset.gameStatus}`, { status: sel.value });
+        await reloadCommunityState();
+        drawCommunityView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  content.querySelectorAll("[data-delete-game]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this game? This cannot be undone.")) return;
+      try {
+        await api.del(`/api/admin/community-games/${btn.dataset.deleteGame}`);
+        await reloadCommunityState();
+        drawCommunityView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  content.querySelectorAll(".assign-slot-form").forEach((form) => {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const name = new FormData(form).get("name");
+      try {
+        await api.patch(`/api/admin/community-slots/${form.dataset.slot}`, { name });
+        await reloadCommunityState();
+        drawCommunityView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  content.querySelectorAll("[data-clear-slot]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      try {
+        await api.del(`/api/admin/community-slots/${btn.dataset.clearSlot}`);
+        await reloadCommunityState();
+        drawCommunityView();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  document.getElementById("delete-community-btn").addEventListener("click", async () => {
+    if (!confirm(`Delete "${c.name}"? This cannot be undone.`)) return;
+    await api.del(`/api/admin/communities/${communityState.id}`);
+    location.hash = "";
+    dashState.section = "communities";
+    renderDashboard();
+  });
 }
 
 let SPORTS_CACHE = [];

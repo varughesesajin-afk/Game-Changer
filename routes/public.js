@@ -3,6 +3,7 @@ const db = require("../lib/db");
 const { getSport, SPORTS } = require("../lib/sports");
 const { suggestFormat } = require("../lib/fixtures");
 const matchService = require("../lib/matchService");
+const community = require("../lib/communityService");
 const { publicEvent, publicRegistration, publicMatch } = require("../lib/serialize");
 
 const router = new Router();
@@ -165,6 +166,57 @@ router.post("/matchdays/:id/join", (req, res) => {
   }
   const rec = db.insert("matchdaySignups", "player", { matchdayId: md.id, name: trimmed });
   res.status(201).json({ id: rec.id, name: rec.name });
+});
+
+// ----- Communities: clubs/groups with member lists and slot-based games -----
+
+router.get("/communities", (req, res) => {
+  res.json(community.listCommunities());
+});
+
+router.get("/communities/:id", (req, res) => {
+  const c = community.getCommunity(req.params.id);
+  if (!c) return res.status(404).json({ error: "Community not found" });
+  res.json(c);
+});
+
+router.get("/communities/:id/members", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  res.json(community.listMembers(existing.id).map((m) => ({ id: m.id, name: m.name })));
+});
+
+router.post("/communities/:id/join", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  if (existing.status !== "open") return res.status(400).json({ error: "This community isn't open to new members right now." });
+  try {
+    const m = community.addMember(existing.id, (req.body || {}).name);
+    res.status(201).json({ id: m.id, name: m.name });
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+router.get("/communities/:id/games", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  res.json(community.listGames(existing.id));
+});
+
+router.get("/community-games/:id", (req, res) => {
+  const g = community.getGame(req.params.id);
+  if (!g) return res.status(404).json({ error: "Game not found" });
+  res.json(g);
+});
+
+router.post("/community-games/:id/slots/:slotId/claim", (req, res) => {
+  try {
+    const slot = community.claimSlot(req.params.id, req.params.slotId, (req.body || {}).name);
+    res.json(slot);
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
 });
 
 module.exports = router;

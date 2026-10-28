@@ -12,6 +12,7 @@
     <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
     <nav class="topnav hide-on-mobile">
       <a href="/matchdays.html">Match Days</a>
+      <a href="/communities.html">Community</a>
       <a href="/admin.html">Organizer login</a>
     </nav>
   </div>
@@ -23,6 +24,17 @@
     <p>Browse events, register your team or yourself, and check fixtures, schedules and scores.</p>
   </div>
 
+  <div id="live-section" style="display:none;">
+    <h2 style="display:flex; align-items:center; gap:8px;"><span class="live-dot"></span> Live now</h2>
+    <div id="live-events" class="grid"></div>
+  </div>
+
+  <div id="recent-section" style="display:none;">
+    <h2>🕒 Recent (last 30 days)</h2>
+    <div id="recent-events" class="grid"></div>
+  </div>
+
+  <h2 id="all-events-heading" style="display:none;">All events</h2>
   <div id="events" class="grid" style="margin-top:20px;">
     <div class="empty-state"><span class="spinner"></span></div>
   </div>
@@ -38,6 +50,10 @@
   <a href="/matchdays.html">
     <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/></svg>
     <span>Match Days</span>
+  </a>
+  <a href="/communities.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.3 19c.7-3 2.9-4.8 5.7-4.8s5 1.8 5.7 4.8"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.4c2.2.3 3.9 1.9 4.5 4.3"/></svg>
+    <span>Community</span>
   </a>
   <a href="/admin.html">
     <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -55,6 +71,29 @@ async function load() {
       el.innerHTML = `<div class="empty-state">No events published yet. Check back soon.</div>`;
       return;
     }
+
+    const live = events.filter((e) => e.status === "in_progress");
+    const now = Date.now();
+    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+    const recent = events.filter((e) => {
+      if (!e.startDate || e.status === "in_progress") return false;
+      const t = new Date(e.startDate).getTime();
+      if (Number.isNaN(t)) return false;
+      return t <= now && now - t <= THIRTY_DAYS;
+    });
+
+    if (live.length) {
+      document.getElementById("live-section").style.display = "";
+      document.getElementById("live-events").innerHTML = live.map(eventCard).join("");
+    }
+    if (recent.length) {
+      document.getElementById("recent-section").style.display = "";
+      document.getElementById("recent-events").innerHTML = recent.map(eventCard).join("");
+    }
+    if (live.length || recent.length) {
+      document.getElementById("all-events-heading").style.display = "";
+    }
+
     el.innerHTML = events.map(eventCard).join("");
   } catch (e) {
     el.innerHTML = `<div class="alert error">Couldn't load events: ${escapeHtml(e.message)}</div>`;

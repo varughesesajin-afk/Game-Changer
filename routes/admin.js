@@ -3,6 +3,7 @@ const db = require("../lib/db");
 const { getSport } = require("../lib/sports");
 const { suggestFormat, shuffle } = require("../lib/fixtures");
 const matchService = require("../lib/matchService");
+const community = require("../lib/communityService");
 const { ADMIN_PASSWORD } = require("../lib/config");
 
 const router = new Router();
@@ -389,6 +390,123 @@ router.delete("/signups/:id", (req, res) => {
   if (!s) return res.status(404).json({ error: "Signup not found" });
   db.remove("matchdaySignups", s.id);
   res.json({ ok: true });
+});
+
+// ----- Communities: clubs/groups with member lists and slot-based games -----
+
+router.get("/communities", (req, res) => {
+  res.json(community.listCommunities());
+});
+
+router.post("/communities", (req, res) => {
+  const { name } = req.body || {};
+  if (!name || !String(name).trim()) return res.status(400).json({ error: "Community name is required." });
+  res.status(201).json(community.createCommunity(req.body || {}));
+});
+
+router.get("/communities/:id", (req, res) => {
+  const c = community.getCommunity(req.params.id);
+  if (!c) return res.status(404).json({ error: "Community not found" });
+  res.json(c);
+});
+
+router.patch("/communities/:id", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  const allowed = ["name", "sport", "host", "venue", "description", "status"];
+  const patch = {};
+  for (const key of allowed) {
+    if (key in (req.body || {})) patch[key] = req.body[key];
+  }
+  if (patch.status && !["open", "closed"].includes(patch.status)) {
+    return res.status(400).json({ error: "Invalid status." });
+  }
+  res.json(community.updateCommunity(existing.id, patch));
+});
+
+router.delete("/communities/:id", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  community.deleteCommunity(existing.id);
+  res.json({ ok: true });
+});
+
+router.get("/communities/:id/members", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  res.json(community.listMembers(existing.id));
+});
+
+router.post("/communities/:id/members", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  try {
+    res.status(201).json(community.addMember(existing.id, (req.body || {}).name));
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+router.delete("/community-members/:id", (req, res) => {
+  if (!community.removeMember(req.params.id)) return res.status(404).json({ error: "Member not found" });
+  res.json({ ok: true });
+});
+
+router.get("/communities/:id/games", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  res.json(community.listGames(existing.id));
+});
+
+router.post("/communities/:id/games", (req, res) => {
+  const existing = db.find("communities", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Community not found" });
+  try {
+    res.status(201).json(community.createGame(existing.id, req.body || {}));
+  } catch (err) {
+    res.status(err.status || 400).json({ error: err.message });
+  }
+});
+
+router.get("/community-games/:id", (req, res) => {
+  const g = community.getGame(req.params.id);
+  if (!g) return res.status(404).json({ error: "Game not found" });
+  res.json(g);
+});
+
+router.patch("/community-games/:id", (req, res) => {
+  const existing = db.find("communityGames", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Game not found" });
+  const allowed = ["title", "venue", "date", "time", "durationMins", "entryFee", "originalFee", "friendly", "notes", "status"];
+  const patch = {};
+  for (const key of allowed) {
+    if (key in (req.body || {})) patch[key] = req.body[key];
+  }
+  if (patch.status && !["open", "closed", "completed"].includes(patch.status)) {
+    return res.status(400).json({ error: "Invalid status." });
+  }
+  res.json(community.updateGame(existing.id, patch));
+});
+
+router.delete("/community-games/:id", (req, res) => {
+  const existing = db.find("communityGames", req.params.id);
+  if (!existing) return res.status(404).json({ error: "Game not found" });
+  community.deleteGame(existing.id);
+  res.json({ ok: true });
+});
+
+router.patch("/community-slots/:id", (req, res) => {
+  const slot = db.find("communityGameSlots", req.params.id);
+  if (!slot) return res.status(404).json({ error: "Slot not found" });
+  const name = (req.body || {}).name;
+  if (!name || !String(name).trim()) return res.status(400).json({ error: "Name is required." });
+  res.json(db.update("communityGameSlots", slot.id, { playerName: String(name).trim().slice(0, 60) }));
+});
+
+router.delete("/community-slots/:id", (req, res) => {
+  const slot = db.find("communityGameSlots", req.params.id);
+  if (!slot) return res.status(404).json({ error: "Slot not found" });
+  res.json(community.clearSlot(slot.id));
 });
 
 module.exports = router;

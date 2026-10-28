@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Communities · Games All Day</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="has-bottom-nav dark-theme">
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
+    <nav class="topnav hide-on-mobile">
+      <a href="/">Events</a>
+      <a href="/matchdays.html">Match Days</a>
+      <a href="/communities.html">Community</a>
+      <a href="/admin.html">Organizer login</a>
+    </nav>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="page-hero">
+    <h1>Join your people</h1>
+    <p>Browse clubs and casual groups, join the ones you play with, and see their upcoming games.</p>
+  </div>
+
+  <div class="field" style="margin-top:18px;">
+    <input id="community-search" placeholder="Search communities…" autocomplete="off">
+  </div>
+
+  <div class="tabs" id="community-tabs" style="margin-top:6px;">
+    <div class="tab active" data-ctab="mine">My communities</div>
+    <div class="tab" data-ctab="discover">Discover</div>
+  </div>
+
+  <div id="communities" class="grid" style="margin-top:4px;">
+    <div class="empty-state"><span class="spinner"></span></div>
+  </div>
+</div>
+
+<footer class="site-footer">Games All Day</footer>
+
+<nav class="bottom-nav">
+  <a href="/">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h3.5v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5H17.5a1 1 0 0 0 1-1v-9"/></svg>
+    <span>Home</span>
+  </a>
+  <a href="/matchdays.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/></svg>
+    <span>Match Days</span>
+  </a>
+  <a href="/communities.html" class="active">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.3 19c.7-3 2.9-4.8 5.7-4.8s5 1.8 5.7 4.8"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.4c2.2.3 3.9 1.9 4.5 4.3"/></svg>
+    <span>Community</span>
+  </a>
+  <a href="/admin.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
+    <span>Organizer</span>
+  </a>
+</nav>
+
+<script src="/js/api.js"></script>
+<script src="/js/communities-shared.js"></script>
+<script>
+let all = [];
+let activeTab = "mine";
+
+async function load() {
+  const el = document.getElementById("communities");
+  try {
+    all = await api.get("/api/communities");
+    draw();
+  } catch (e) {
+    el.innerHTML = `<div class="alert error">Couldn't load communities: ${escapeHtml(e.message)}</div>`;
+  }
+}
+
+function draw() {
+  const el = document.getElementById("communities");
+  const q = document.getElementById("community-search").value.trim().toLowerCase();
+  const joined = myCommunityIds();
+  let list = all.filter((c) => (activeTab === "mine" ? joined.includes(c.id) : true));
+  if (q) list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.host || "").toLowerCase().includes(q));
+
+  if (!list.length) {
+    el.innerHTML =
+      activeTab === "mine"
+        ? `<div class="empty-state">You haven't joined any communities yet. Check the Discover tab.</div>`
+        : `<div class="empty-state">No communities match your search.</div>`;
+    return;
+  }
+  el.innerHTML = list.map(communityCard).join("");
+}
+
+function communityCard(c) {
+  const closed = c.status !== "open";
+  return `
+    <a class="event-card community-card" href="/community.html?id=${encodeURIComponent(c.id)}">
+      <div class="community-banner">
+        <span class="badge ${closed ? "" : "accent"}">${closed ? "Closed" : "Open"}</span>
+      </div>
+      <h3>${escapeHtml(c.name)}</h3>
+      <div class="muted small">${c.host ? "Host · " + escapeHtml(c.host) : escapeHtml(c.sportLabel || "")}</div>
+      <div class="small muted">${c.memberCount} member${c.memberCount === 1 ? "" : "s"} · ${c.upcomingGamesCount} upcoming game${c.upcomingGamesCount === 1 ? "" : "s"}</div>
+    </a>
+  `;
+}
+
+document.getElementById("community-search").addEventListener("input", draw);
+document.querySelectorAll("[data-ctab]").forEach((t) => {
+  t.addEventListener("click", () => {
+    activeTab = t.dataset.ctab;
+    document.querySelectorAll("[data-ctab]").forEach((x) => x.classList.toggle("active", x === t));
+    draw();
+  });
+});
+
+load();
+</script>
+</body>
+</html>
