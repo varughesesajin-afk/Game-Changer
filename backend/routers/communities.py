@@ -254,4 +254,8 @@ async def set_paid(gid: str, entry_id: str, body: PaidIn, user: User = Depends(c
     res = await db.games.update_one({"id": gid, "roster.id": entry_id}, {"$set": {"roster.$.paid": body.paid}})
     if not res.matched_count:
         raise HTTPException(404, "Entry not found")
+    if body.paid:
+        entry = next((r for r in g.roster if r.id == entry_id), None)
+        if entry and entry.user_id:
+            await db.reminders.delete_one({"user_id": entry.user_id, "game_id": gid})
     return await _get_game(gid)

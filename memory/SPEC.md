@@ -31,3 +31,7 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 
 ## Seed (cd backend && python seed.py)
 5 communities (Sunday Champions 7v7 Sun/Tue owned by admin, Tuesday Padel Night (Manage ACTIVE) owned by Test Player; Friday Hoops Run owned by admin, Beach Volley Crew, Weekend Tape-Ball Cricket), 4 official tournaments, 2 community tournaments (Sunday Champions Mini League ongoing with bracket; Padel Night Americano in registration organised by Test Player).
+
+## In-app fee reminders
+- Manage → Fees → "Remind unpaid" (POST /api/games/{gid}/remind-unpaid, manage-gated) upserts a `reminders` doc per unpaid signed-in player (guests skipped). Returns {reminded, skipped_guests}.
+- Players see a banner at the top of every screen (GET /api/reminders/mine; only while still on roster & unpaid). Dismiss: POST /api/reminders/{id}/dismiss. Marking paid deletes the reminder. Nothing is emailed/sent.

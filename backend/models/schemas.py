@@ -234,3 +234,28 @@ class AdminOverview(BaseModel):
     users: List[AdminUser]
     communities: List[Community]
     payments: List[PaymentRecord]
+
+
+# ---------- in-app fee reminders ----------
+class Reminder(BaseModel):
+    id: str = Field(default_factory=_id)
+    user_id: str
+    game_id: str
+    community_id: str
+    community_name: str
+    game_date: str
+    game_time: str = ""
+    amount: float
+    currency: str = "OMR"
+    sent_by: str = ""
+    dismissed: bool = False
+    created_at: datetime = Field(default_factory=_now)
+
+    @staticmethod
+    def new_id() -> str:
+        return _id()
+
+
+class RemindResult(BaseModel):
+    reminded: int
+    skipped_guests: int

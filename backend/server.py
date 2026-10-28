@@ -12,7 +12,7 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from lib.db import client, ensure_indexes  # noqa: E402
-from routers import admin, auth, billing, communities, tournaments  # noqa: E402
+from routers import admin, auth, billing, communities, reminders, tournaments  # noqa: E402
 
 
 @asynccontextmanager
@@ -36,6 +36,7 @@ api_router.include_router(communities.router)
 api_router.include_router(tournaments.router)
 api_router.include_router(billing.router)
 api_router.include_router(admin.router)
+api_router.include_router(reminders.router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -2,6 +2,7 @@ import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { Flame, Sparkles, Trophy, User as UserIcon, Users } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
+import ReminderBanner from "@/components/ReminderBanner";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -16,6 +17,7 @@ export default function AppShell() {
   const location = useLocation();
   return (
     <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60">
+      <ReminderBanner />
       <motion.main
         key={location.pathname}
         initial={{ opacity: 0, y: 8 }}

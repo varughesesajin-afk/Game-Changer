@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarPlus, Check, Trash2, Trophy, UserMinus } from "lucide-react";
+import { BellRing, CalendarPlus, Check, Trash2, Trophy, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
-import type { Community, CommunityUpdate, Game, User } from "@/lib/types";
+import type { Community, CommunityUpdate, Game, RemindResult, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -213,8 +213,28 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
                   <div key={g.id} data-testid={`fees-game-${g.id}`} className="rounded-2xl border border-line bg-surface p-3">
                     <div className="mb-2 flex items-center justify-between">
                       <span className="font-heading font-bold">{fmtDate(g.date, "EEE d MMM")}</span>
+                      {g.roster.length - paid > 0 && (
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          data-testid={`fees-remind-${g.id}`}
+                          disabled={act.isPending}
+                          onClick={() =>
+                            act.mutate(() => apiPost<RemindResult>(`/games/${g.id}/remind-unpaid`), {
+                              onSuccess: (res) => {
+                                const r = res as RemindResult;
+                                toast.success(`Reminder sent to ${r.reminded} player${r.reminded === 1 ? "" : "s"}` + (r.skipped_guests ? ` · ${r.skipped_guests} guest name${r.skipped_guests === 1 ? "" : "s"} skipped` : ""));
+                              },
+                            })
+                          }
+                        >
+                          <BellRing className="size-3.5" /> Remind unpaid
+                        </Button>
+                      )}
+                    </div>
+                    <div className="mb-2 flex justify-end">
                       <span className="text-xs text-slate-400">
-                        <span className="font-semibold text-energy">{money(paid * g.fee)}</span> collected · {money((g.roster.length - paid) * g.fee)} due
+                        <span className="font-semibold text-energy">OMR {paid * g.fee}</span> collected · OMR {(g.roster.length - paid) * g.fee} due
                       </span>
                     </div>
                     <div className="space-y-1">

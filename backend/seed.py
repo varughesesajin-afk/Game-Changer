@@ -32,7 +32,7 @@ def d(offset: int) -> str:
 
 async def main():
     now = datetime.now(timezone.utc)
-    for c in ["communities", "games", "tournaments", "payment_transactions"]:
+    for c in ["communities", "games", "tournaments", "payment_transactions", "reminders"]:
         await db[c].drop()
     await ensure_indexes()
 

@@ -175,3 +175,23 @@ export interface AdminOverview {
   communities: Community[];
   payments: PaymentRecord[];
 }
+
+export interface Reminder {
+  id: string;
+  user_id: string;
+  game_id: string;
+  community_id: string;
+  community_name: string;
+  game_date: string;
+  game_time: string;
+  amount: number;
+  currency: string;
+  sent_by: string;
+  dismissed: boolean;
+  created_at: string;
+}
+
+export interface RemindResult {
+  reminded: number;
+  skipped_guests: number;
+}
