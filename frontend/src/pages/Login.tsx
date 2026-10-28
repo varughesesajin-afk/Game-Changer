@@ -1,0 +1,34 @@
+import { Navigate } from "react-router-dom";
+import { motion } from "motion/react";
+import { CalendarCheck, Trophy, Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { HERO_IMG, loginWithGoogle, useMe } from "@/lib/auth";
+
+export default function Login() {
+  const { data: me } = useMe();
+  if (me) return <Navigate to="/profile" replace />;
+  return (
+    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden" data-testid="auth-modal">
+      <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
+      <div className="absolute inset-0 bg-gradient-to-b from-page/40 via-page/90 to-page" />
+      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-end space-y-6 p-6 pb-10">
+        <div className="font-heading text-2xl font-black">Play<span className="text-energy">Hub</span></div>
+        <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">Get on the team sheet.</h1>
+        <ul className="space-y-2 text-sm text-slate-300">
+          <li className="flex items-center gap-2"><CalendarCheck className="size-4 text-ice" />Add your name to weekly games in one tap</li>
+          <li className="flex items-center gap-2"><Users className="size-4 text-ice" />Join groups & build tournament squads</li>
+          <li className="flex items-center gap-2"><Trophy className="size-4 text-ice" />Play official PlayHub tournaments</li>
+        </ul>
+        <motion.div whileTap={{ scale: 0.96 }}>
+          <Button data-testid="google-login-button" size="lg" className="h-12 w-full bg-white text-base font-semibold text-slate-900 hover:bg-slate-100" onClick={loginWithGoogle}>
+            <svg viewBox="0 0 24 24" className="size-5" aria-hidden>
+              <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.3-1.6 3.9-5.5 3.9-3.3 0-6-2.7-6-6.1s2.7-6.1 6-6.1c1.9 0 3.1.8 3.8 1.5l2.6-2.5C16.8 3.3 14.6 2.4 12 2.4 6.7 2.4 2.4 6.7 2.4 12s4.3 9.6 9.6 9.6c5.5 0 9.2-3.9 9.2-9.4 0-.6-.1-1.1-.2-1.6H12z" />
+            </svg>
+            Continue with Google
+          </Button>
+        </motion.div>
+        <p className="text-center text-xs text-slate-500">WhatsApp sign-in coming soon.</p>
+      </div>
+    </div>
+  );
+}

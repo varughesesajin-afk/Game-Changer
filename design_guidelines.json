@@ -1,0 +1,222 @@
+{
+  "theme": "dark",
+  "archetype": "The Performance Pro (Tactical Athleticism & Precision)",
+  "colors": {
+    "surfaces": [
+      {
+        "name": "page",
+        "kind": "solid",
+        "bg": "#0B0F17",
+        "on_bg": "#F8FAFC",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "link": "#38BDF8",
+          "error": "#F87171",
+          "success": "#34D399",
+          "warning": "#FBBF24"
+        }
+      },
+      {
+        "name": "card_surface",
+        "kind": "solid",
+        "bg": "#131B2A",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#A0ABBA",
+        "roles": {
+          "border": "#223147",
+          "highlight": "#38BDF8",
+          "energy": "#FF5722"
+        }
+      },
+      {
+        "name": "elevated_panel",
+        "kind": "solid",
+        "bg": "#1A2438",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#94A3B8",
+        "roles": {
+          "active_tab": "#FF5722",
+          "border": "#2B3B55"
+        }
+      },
+      {
+        "name": "hero_banner",
+        "kind": "image",
+        "contrast_against": "#080C14",
+        "guarantee": "scrim: linear-gradient(180deg, rgba(11,15,23,0.4) 0%, rgba(11,15,23,0.92) 85%, #0B0F17 100%)",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#CBD5E1",
+        "roles": {
+          "badge": "#FF5722",
+          "tag": "#38BDF8"
+        }
+      },
+      {
+        "name": "bottom_nav",
+        "kind": "glass",
+        "contrast_against": "#0F172A",
+        "guarantee": "backdrop-blur-xl bg-[#0B0F17]/85 border-t border-[#223147]/70",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#64748B",
+        "roles": {
+          "active_icon": "#FF5722",
+          "inactive_icon": "#64748B"
+        }
+      },
+      {
+        "name": "accent_badge",
+        "kind": "solid",
+        "bg": "#FF5722",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#FFE2D9"
+      },
+      {
+        "name": "secondary_badge",
+        "kind": "solid",
+        "bg": "#0284C7",
+        "on_bg": "#FFFFFF",
+        "on_bg_muted": "#BAE6FD"
+      }
+    ],
+    "accent": "#FF5722",
+    "on_accent": "#FFFFFF",
+    "secondary_accent": "#38BDF8",
+    "on_secondary_accent": "#080C14"
+  },
+  "typography": {
+    "font_family_heading": "Outfit Variable, sans-serif",
+    "font_family_body": "Plus Jakarta Sans Variable, sans-serif",
+    "font_import": "@import \"@fontsource-variable/outfit\";\n@import \"@fontsource-variable/plus-jakarta-sans\";",
+    "scale_px": {
+      "display": 48,
+      "h1": 36,
+      "h2": 28,
+      "h3": 20,
+      "body": 16,
+      "caption": 14
+    },
+    "rules": {
+      "headings": "Outfit font-bold tracking-tight text-white",
+      "body": "Plus Jakarta Sans font-normal leading-relaxed text-slate-200",
+      "labels": "uppercase font-semibold tracking-[0.15em] text-xs"
+    }
+  },
+  "entry_surfaces": {
+    "/": "mobile-first sports command center — hero story & live tournaments header, sport pill selectors, community pickup rosters & tournament brackets grid, bottom navigation bar",
+    "/login": "tactical athletic split-view modal/screen — dual tab Google OAuth & WhatsApp OTP auth with live verification feedback, community perks teaser"
+  },
+  "layouts": {
+    "viewport_model": "mobile-first responsive (max-w-md mx-auto min-h-screen relative shadow-2xl bg-[#0B0F17] pb-24 border-x border-[#1E293B]/40)",
+    "bottom_navigation": "fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 h-16 bg-[#0B0F17]/90 backdrop-blur-xl border-t border-[#223147] flex items-center justify-around px-2",
+    "tabs": [
+      {"id": "feed", "label": "Explore", "icon": "Flame", "route": "/"},
+      {"id": "communities", "label": "Communities", "icon": "Users", "route": "/communities"},
+      {"id": "tournaments", "label": "Tournaments", "icon": "Trophy", "route": "/tournaments"},
+      {"id": "pro", "label": "Host & Earn", "icon": "Sparkles", "route": "/monetize"},
+      {"id": "profile", "label": "My Games", "icon": "User", "route": "/profile"}
+    ],
+    "desktop_presentation": "On larger screens (lg/xl), center the device frame with an immersive tactical athletic backdrop pattern, showing mobile viewport in high fidelity while responsive for desktop interaction"
+  },
+  "component_hierarchy": [
+    {
+      "name": "NavigationHeader",
+      "path": "@/components/NavigationHeader.tsx",
+      "description": "Sticky app header with location/city picker, notification bell, sport category switcher (All, Football, Padel/Tennis, Basketball, Cricket, Volleyball), and quick search",
+      "test_id": "app-navigation-header"
+    },
+    {
+      "name": "LiveTournamentCard",
+      "path": "@/components/LiveTournamentCard.tsx",
+      "description": "High-impact tournament card with prize pool badge, live stage indicator, organizer profile, registered teams counter, entry fee (with OMR / USD support), and bracket preview CTA",
+      "test_id": "tournament-card"
+    },
+    {
+      "name": "CommunityPickupSession",
+      "path": "@/components/CommunityPickupSession.tsx",
+      "description": "Recurring match card (e.g. 'Sunday Champions 7v7', 'Tuesday Padel Night') with real-time RSVP roster, spot counter ('11/14 Joined'), team formation (Team Red vs Team White), and 1-tap join button",
+      "test_id": "community-session-card"
+    },
+    {
+      "name": "InteractiveTournamentBracket",
+      "path": "@/components/InteractiveTournamentBracket.tsx",
+      "description": "Horizontal swipeable knockout bracket (Quarterfinals, Semifinals, Grand Final) with live score updates, winner highlight, and match stats popup",
+      "test_id": "tournament-bracket-view"
+    },
+    {
+      "name": "HostMonetizationPaywall",
+      "path": "@/components/HostMonetizationPaywall.tsx",
+      "description": "Organiser Pro monetization dashboard & Stripe checkout paywall. Shows revenue projector ($450/month potential hosting 2 weekly matches), ticket management, automatic fee collection, payout stats, and subscription tier selection",
+      "test_id": "host-pro-paywall"
+    },
+    {
+      "name": "AuthWhatsAppGoogleModal",
+      "path": "@/components/AuthWhatsAppGoogleModal.tsx",
+      "description": "Dual auth modal supporting 1-tap Google login and fast WhatsApp OTP (+968 Oman and international country codes) with numeric code entry and immediate session launch",
+      "test_id": "auth-modal"
+    },
+    {
+      "name": "CreateCommunityModal",
+      "path": "@/components/CreateCommunityModal.tsx",
+      "description": "Form to start a recurring sports group (select days like Sun/Tue, sport, max players, venue, entry fee, public/private)",
+      "test_id": "create-community-dialog"
+    },
+    {
+      "name": "CreateTournamentModal",
+      "path": "@/components/CreateTournamentModal.tsx",
+      "description": "Tournament creator wizard (single elimination/group stage, team size, prize money, registration deadline, rulebook)",
+      "test_id": "create-tournament-dialog"
+    }
+  ],
+  "image_urls": [
+    {
+      "category": "hero_tournaments",
+      "description": "High intensity basketball tournament game action",
+      "url": "https://images.unsplash.com/photo-1512746804203-e53e69406f93?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHwzfHxzcG9ydHMlMjB0b3VybmFtZW50JTIwYXRobGV0ZXN8ZW58MHx8fHwxNzkzMjE3MjkzfDA&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "hero_community_football",
+      "description": "Community soccer/football friendly match on grass",
+      "url": "https://images.unsplash.com/photo-1543326727-cf6c39e8f84c?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwxfHxjb21tdW5pdHklMjBmb290YmFsbCUyMHNvY2NlciUyMG1hdGNofGVufDB8fHx8MTc5MzIxNzI5M3ww&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "community_match_indoor",
+      "description": "Fast-paced indoor basketball tournament match",
+      "url": "https://images.unsplash.com/photo-1518614368389-5160c0b0de72?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA1NzR8MHwxfHNlYXJjaHw0fHxzcG9ydHMlMjB0b3VybmFtZW50JTIwYXRobGV0ZXN8ZW58MHx8fHwxNzkzMjE3MjkzfDA&ixlib=rb-4.1.0&q=85"
+    },
+    {
+      "category": "community_football_action",
+      "description": "Competitive community football league players",
+      "url": "https://images.unsplash.com/photo-1571080096581-53aefc318ac3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzNTl8MHwxfHNlYXJjaHwyfHxjb21tdW5pdHklMjBmb290YmFsbCUyMHNvY2NlciUyMG1hdGNofGVufDB8fHx8MTc5MzIxNzI5M3ww&ixlib=rb-4.1.0&q=85"
+    }
+  ],
+  "motion": {
+    "engine": "motion/react",
+    "spring_transition": {
+      "type": "spring",
+      "stiffness": 380,
+      "damping": 30
+    },
+    "page_transitions": "Fade in with 8px Y slide up (0.22s ease-out)",
+    "micro_interactions": {
+      "card_tap": "whileTap={{ scale: 0.98 }}",
+      "button_press": "whileTap={{ scale: 0.96 }}",
+      "roster_avatar_stagger": "staggerChildren: 0.05"
+    }
+  },
+  "accessibility": {
+    "color_contrast_standard": "APCA & WCAG AA compliant: on_bg #F8FAFC and #FFFFFF against #0B0F17 (#131B2A) exceeds 14:1 contrast ratio. Primary CTA accent #FF5722 text is pure white with 4.7:1 ratio.",
+    "aria_roles": "All dialogs, tabs, and interactive bracket items have role and aria-selected / aria-expanded states",
+    "test_attributes": "All buttons, tabs, inputs, filters, and cards MUST include explicit data-testid attributes"
+  },
+  "instructions_to_main_agent": [
+    "1. IMPLEMENT MOBILE-FIRST CONTAINER: Render the entire application centered in a mobile viewport frame (w-full max-w-md mx-auto min-h-screen bg-[#0B0F17] text-white shadow-2xl relative).",
+    "2. BOTTOM NAVIGATION BAR: Keep the fixed bottom navigation with 5 distinct operational modes: Explore/Feed, Communities (Recurring groups), Tournaments (Brackets & Official events), Host & Earn (Stripe Monetization), and My Games (Profile & RSVP history).",
+    "3. SEED RICH TEST DATA: Provide 6+ sports (Football, Basketball, Padel, Tennis, Cricket, Volleyball) with real scheduled matches (Sunday 8 PM, Tuesday 7 PM), populated rosters with avatars, active tournaments with 8-team brackets, and community earnings data.",
+    "4. DUAL AUTHENTICATION: Support 1-click Google sign in and WhatsApp OTP phone login (with Oman +968 and global country codes) with test instant verification.",
+    "5. RECURRING COMMUNITY GAMES: Enable users to join recurring sessions, toggle their RSVP ('Add my name to team roster'), pick Team A / Team B, view match fee split, and create new weekly community groups.",
+    "6. TOURNAMENT MANAGEMENT: Include interactive knockout brackets, live score updates, match reporting, and prize pool breakdowns.",
+    "7. ORGANISER PRO MONETIZATION: Dedicated 'Host & Earn' tab featuring a dynamic revenue calculator, Stripe Checkout subscription modal, instant match ticket fee collection, and organizer analytics.",
+    "8. SHADCN UI COMPATIBILITY: Use Base-UI compliant Shadcn components from @/components/ui/ (Dialog, Tabs, Badge, Button, Input, Select, Sonner toasts). Always use sonner for all booking and creation alerts.",
+    "9. TEST IDS: Include rigorous data-testid attributes on every interactive element (e.g. data-testid=\"rsvp-join-btn\", data-testid=\"sport-filter-football\", data-testid=\"subscribe-pro-plan\")."
+  ]
+}
