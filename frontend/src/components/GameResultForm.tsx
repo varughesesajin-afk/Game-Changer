@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Minus, Plus } from "lucide-react";
+import { Minus, Plus, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiPost } from "@/lib/api";
@@ -13,11 +13,12 @@ export default function GameResultForm({ game }: { game: Game }) {
   const [winner, setWinner] = useState<GameResult["winner"]>(game.result?.winner ?? "A");
   const [sa, setSa] = useState(game.result?.score_a?.toString() ?? "");
   const [sb, setSb] = useState(game.result?.score_b?.toString() ?? "");
+  const [motm, setMotm] = useState<string | null>(game.result?.motm_entry_id ?? null);
   const [goals, setGoals] = useState<Record<string, number>>(() => Object.fromEntries(game.roster.map((r) => [r.id, r.goals])));
 
   const save = useMutation({
     mutationFn: () => {
-      const body: GameResultIn = { winner, score_a: sa === "" ? null : Number(sa), score_b: sb === "" ? null : Number(sb), goals };
+      const body: GameResultIn = { winner, score_a: sa === "" ? null : Number(sa), score_b: sb === "" ? null : Number(sb), motm_entry_id: motm, goals };
       return apiPost<Game>(`/games/${game.id}/result`, body);
     },
     onSuccess: () => {
@@ -58,7 +59,7 @@ export default function GameResultForm({ game }: { game: Game }) {
         <Input data-testid={`result-score-b-${game.id}`} type="number" min={0} placeholder="B" value={sb} onChange={(e) => setSb(e.target.value)} className="h-8 w-16" />
       </div>
       <div className="space-y-1">
-        <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Goals / points</div>
+        <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Goals / points · tap the star for man of the match</div>
         {game.roster.map((r) => (
           <div key={r.id} className="flex items-center justify-between rounded-lg bg-elevated/60 px-3 py-1 text-sm">
             <span className="truncate">
@@ -66,6 +67,15 @@ export default function GameResultForm({ game }: { game: Game }) {
               {r.name}
             </span>
             <span className="flex items-center gap-2">
+              <button
+                type="button"
+                aria-label={`Man of the match: ${r.name}`}
+                data-testid={`motm-toggle-${r.id}`}
+                onClick={() => setMotm((m) => (m === r.id ? null : r.id))}
+                className={cn("rounded-md p-1 transition-colors", motm === r.id ? "text-amber-400" : "text-slate-600 hover:text-amber-300")}
+              >
+                <Star className="size-4" fill={motm === r.id ? "currentColor" : "none"} />
+              </button>
               <button type="button" aria-label={`Less for ${r.name}`} data-testid={`goals-minus-${r.id}`} onClick={() => bump(r.id, -1)} className="rounded-md p-1 text-slate-400 hover:bg-line">
                 <Minus className="size-3.5" />
               </button>

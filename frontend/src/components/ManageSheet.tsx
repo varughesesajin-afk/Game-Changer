@@ -13,7 +13,7 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import GameResultForm from "@/components/GameResultForm";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
-import type { Community, CommunityUpdate, Game, RemindResult, User } from "@/lib/types";
+import type { Community, CommunityUpdate, Game, RemindResult, SeasonIn, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -188,6 +188,37 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
             </TabsContent>
 
             <TabsContent value="results" className="space-y-3 pt-4">
+              <div data-testid="season-controls" className="space-y-2 rounded-2xl border border-ice/30 bg-ice/5 p-3">
+                <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-ice">Leaderboard season</div>
+                <div className="flex gap-1.5">
+                  {(["manual", "month", "quarter"] as const).map((len) => (
+                    <button
+                      key={len}
+                      type="button"
+                      data-testid={`season-length-${len}`}
+                      onClick={() => act.mutate(() => apiPost(`/communities/${c.id}/season`, { season_length: len, start_now: false } satisfies SeasonIn), { onSuccess: () => toast.success("Season setting saved") })}
+                      className={cn(
+                        "flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-[background-color,color] duration-150",
+                        c.season_length === len ? "border-transparent bg-brand text-white" : "border-line text-slate-300",
+                      )}
+                    >
+                      {len === "manual" ? "I reset it" : len === "month" ? "Monthly" : "Quarterly"}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="w-full"
+                  data-testid="season-start-now"
+                  onClick={() => {
+                    if (window.confirm("Start a new season today? The leaderboard restarts from zero (all-time stats are kept)."))
+                      act.mutate(() => apiPost(`/communities/${c.id}/season`, { season_length: c.season_length, start_now: true } satisfies SeasonIn), { onSuccess: () => toast.success("New season started") });
+                  }}
+                >
+                  Start new season now
+                </Button>
+              </div>
               <p className="text-xs text-slate-400">Enter who won and each player's goals or points. This feeds the community leaderboard.</p>
               {pastGames.length === 0 && <p className="text-sm text-slate-400">No played games yet.</p>}
               {pastGames.map((g) => <GameResultForm key={g.id + (g.result ? "r" : "")} game={g} />)}

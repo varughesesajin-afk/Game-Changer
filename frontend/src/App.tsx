@@ -10,6 +10,7 @@ import HostPro from "@/pages/HostPro";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Admin from "@/pages/Admin";
+import PlayerProfilePage from "@/pages/PlayerProfile";
 
 export default function App() {
   const location = useLocation();
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/players/:key" element={<PlayerProfilePage />} />
         <Route path="*" element={<Explore />} />
       </Route>
     </Routes>

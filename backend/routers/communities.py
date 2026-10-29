@@ -1,5 +1,5 @@
 from datetime import date, timedelta
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 
@@ -8,8 +8,9 @@ from lib.community_access import get_community as _get_community, require_manage
 from lib.dates import today_iso
 from lib.db import db
 from models.schemas import (Community, CommunityCreate, CommunityUpdate, Feed, Game, GameCreate, GameNotice,
-                            GameResult, GameResultIn, GuestIn, JoinGameIn, LeaderboardRow, Member, PaidIn,
-                            RosterEntry, Tournament, User)
+                            GameResult, GameResultIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
+                            PaidIn, PlayerCommunityStats, PlayerGameLine, PlayerProfile, RosterEntry, SeasonIn,
+                            Tournament, User)
 
 router = APIRouter(tags=["communities"])
 
@@ -158,65 +159,120 @@ async def community_games(cid: str, past: bool = False):
     return [Game(**d) for d in docs]
 
 
-@router.get("/communities/{cid}/leaderboard", response_model=List[LeaderboardRow])
-async def leaderboard(cid: str):
-    await _get_community(cid)
-    played = await db.games.find(
-        {"community_id": cid, "$or": [{"result": {"$ne": None}}, {"date": {"$lt": today_iso()}}]}, {"_id": 0}
-    ).to_list(2000)
+def season_start_for(c: Community) -> tuple[Optional[str], str]:
+    """Effective season start (server-anchored) and a human label."""
+    today = date.fromisoformat(today_iso())
+    auto: Optional[str] = None
+    label = "All games"
+    if c.season_length == "month":
+        auto = today.replace(day=1).isoformat()
+        label = today.strftime("%b %Y")
+    elif c.season_length == "quarter":
+        q = (today.month - 1) // 3
+        auto = today.replace(month=q * 3 + 1, day=1).isoformat()
+        label = f"Q{q + 1} {today.year}"
+    start = max([d for d in (auto, c.season_start) if d], default=None)
+    if c.season_start and start == c.season_start and c.season_start != auto:
+        label = f"Since {date.fromisoformat(c.season_start).strftime('%d %b %Y')}"
+    return start, label
+
+
+def _key(r: RosterEntry) -> str:
+    return r.user_id or f"guest:{r.name.strip().lower()}"
+
+
+def _outcome(g: Game, team: str) -> str:
+    if not g.result:
+        return "pending"
+    if g.result.winner == "draw":
+        return "draw"
+    return "won" if g.result.winner == team else "lost"
+
+
+PLAYED = lambda extra: {**extra, "$or": [{"result": {"$ne": None}}, {"date": {"$lt": today_iso()}}]}  # noqa: E731
+
+
+@router.get("/communities/{cid}/leaderboard", response_model=Leaderboard)
+async def leaderboard(cid: str, scope: Literal["season", "all"] = "season"):
+    c = await _get_community(cid)
+    start, label = season_start_for(c)
+    q: dict = {"community_id": cid}
+    if scope == "season" and start:
+        q["date"] = {"$gte": start}
+    played = await db.games.find(PLAYED(q), {"_id": 0}).to_list(3000)
     rows: dict[str, LeaderboardRow] = {}
     for doc in played:
         g = Game(**doc)
         for r in g.roster:
-            key = r.user_id or f"guest:{r.name.strip().lower()}"
+            key = _key(r)
             row = rows.get(key) or LeaderboardRow(key=key, name=r.name, user_id=r.user_id, games=0, wins=0, goals=0)
             row.games += 1
             row.goals += r.goals
-            if g.result and g.result.winner == r.team:
+            if _outcome(g, r.team) == "won":
                 row.wins += 1
+            if g.result and g.result.motm_entry_id == r.id:
+                row.motm += 1
             rows[key] = row
-    return sorted(rows.values(), key=lambda x: (-x.games, -x.wins, -x.goals, x.name))
+    return Leaderboard(scope=scope, season_label=label if scope == "season" else "All time",
+                       season_start=start if scope == "season" else None,
+                       rows=sorted(rows.values(), key=lambda x: (-x.games, -x.wins, -x.goals, x.name)))
 
 
-@router.post("/communities/{cid}/games", response_model=Game)
-async def create_game(cid: str, body: GameCreate, user: User = Depends(current_user)):
+@router.post("/communities/{cid}/season", response_model=Community)
+async def set_season(cid: str, body: SeasonIn, user: User = Depends(current_user)):
     c = await _get_community(cid)
     require_manage(c, user)
-    if body.date < today_iso():
-        raise HTTPException(400, "Date must be today or later")
-    g = _game_from(c, body.date, body.time)
-    await db.games.insert_one(g.model_dump())
-    return g
+    changes: dict = {"season_length": body.season_length}
+    if body.start_now:
+        changes["season_start"] = today_iso()
+    await db.communities.update_one({"id": cid}, {"$set": changes})
+    return await _get_community(cid)
 
 
-@router.post("/communities/{cid}/schedule-week", response_model=List[Game])
-async def schedule_next_week(cid: str, user: User = Depends(current_user)):
-    """Create the next occurrence (after the latest scheduled one) for each recurring day."""
-    c = await _get_community(cid)
-    require_manage(c, user)
-    created = []
-    for d in c.days:
-        if d not in WEEKDAYS:
+@router.get("/players/{key}", response_model=PlayerProfile)
+async def player_profile(key: str, community_id: Optional[str] = None):
+    """Registered players (key = user_id) aggregate across all communities; guests (key = guest:<name>)
+    are only identifiable by name, so they're scoped to one community."""
+    if key.startswith("guest:"):
+        if not community_id:
+            raise HTTPException(400, "community_id is required for guest players")
+        name_l = key[6:]
+        q = PLAYED({"community_id": community_id, "roster.user_id": None})
+        match = lambda r: r.user_id is None and r.name.strip().lower() == name_l  # noqa: E731
+        user_doc = None
+    else:
+        q = PLAYED({"roster.user_id": key})
+        match = lambda r: r.user_id == key  # noqa: E731
+        user_doc = await db.users.find_one({"user_id": key}, {"_id": 0, "name": 1, "picture": 1})
+    games = [Game(**d) for d in await db.games.find(q, {"_id": 0}).sort("date", -1).to_list(3000)]
+    per: dict[str, PlayerCommunityStats] = {}
+    recent: List[PlayerGameLine] = []
+    name = user_doc["name"] if user_doc else None
+    for g in games:
+        r = next((x for x in g.roster if match(x)), None)
+        if not r:
             continue
-        latest = await db.games.find({"community_id": cid}, {"_id": 0, "date": 1}).sort("date", -1).to_list(200)
-        same_day = [g["date"] for g in latest if date.fromisoformat(g["date"]).weekday() == WEEKDAYS.index(d)]
-        base = max(same_day) if same_day else None
-        if base and base >= today_iso():
-            nd = (date.fromisoformat(base) + timedelta(days=7)).isoformat()
-        else:
-            nd = next_dates([d])[0]
-        g = _game_from(c, nd)
-        await db.games.insert_one(g.model_dump())
-        created.append(g)
-    return created
-
-
-# ---------- games / rosters ----------
-@router.get("/games/mine", response_model=List[Game])
-async def my_games(user: User = Depends(current_user)):
-    docs = await db.games.find({"roster.user_id": user.user_id, "date": {"$gte": today_iso()}}, {"_id": 0}) \
-        .sort([("date", 1), ("time", 1)]).to_list(100)
-    return [Game(**d) for d in docs]
+        name = name or r.name
+        out = _outcome(g, r.team)
+        motm = bool(g.result and g.result.motm_entry_id == r.id)
+        st = per.get(g.community_id) or PlayerCommunityStats(community_id=g.community_id, community_name=g.community_name,
+                                                             sport=g.sport, games=0, wins=0, goals=0, motm=0)
+        st.games += 1
+        st.wins += out == "won"
+        st.goals += r.goals
+        st.motm += motm
+        per[g.community_id] = st
+        if len(recent) < 15:
+            recent.append(PlayerGameLine(game_id=g.id, community_id=g.community_id, community_name=g.community_name,
+                                         sport=g.sport, date=g.date, team=r.team, goals=r.goals, outcome=out, motm=motm))
+    if name is None:
+        raise HTTPException(404, "Player not found")
+    comms = sorted(per.values(), key=lambda x: -x.games)
+    totals = PlayerCommunityStats(community_id="", community_name="All communities", sport="",
+                                  games=sum(x.games for x in comms), wins=sum(x.wins for x in comms),
+                                  goals=sum(x.goals for x in comms), motm=sum(x.motm for x in comms))
+    return PlayerProfile(key=key, name=name, user_id=None if key.startswith("guest:") else key,
+                         picture=(user_doc or {}).get("picture"), totals=totals, communities=comms, recent=recent)
 
 
 @router.get("/games/mine/soon", response_model=List[GameNotice])
@@ -304,7 +360,9 @@ async def record_result(gid: str, body: GameResultIn, user: User = Depends(curre
         raise HTTPException(400, "You can only enter results for games that have been played")
     for r in g.roster:
         r.goals = max(0, int(body.goals.get(r.id, 0)))
-    result = GameResult(winner=body.winner, score_a=body.score_a, score_b=body.score_b)
+    if body.motm_entry_id and not any(r.id == body.motm_entry_id for r in g.roster):
+        raise HTTPException(400, "Man of the match must be on this game's roster")
+    result = GameResult(winner=body.winner, score_a=body.score_a, score_b=body.score_b, motm_entry_id=body.motm_entry_id)
     await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(),
                                                      "roster": [r.model_dump() for r in g.roster]}})
     return await _get_game(gid)

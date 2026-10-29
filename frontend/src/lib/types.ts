@@ -42,7 +42,16 @@ export interface Community extends CommunityCreate {
   image: string | null;
   manage_until: string | null;
   manage_active: boolean;
+  season_length: SeasonLength;
+  season_start: string | null;
   created_at: string;
+}
+
+export type SeasonLength = "manual" | "month" | "quarter";
+
+export interface SeasonIn {
+  season_length: SeasonLength;
+  start_now: boolean;
 }
 
 export type CommunityUpdate = Partial<Omit<CommunityCreate, "image">>;
@@ -61,6 +70,7 @@ export interface GameResult {
   winner: TeamSide | "draw";
   score_a: number | null;
   score_b: number | null;
+  motm_entry_id: string | null;
 }
 
 export interface GameResultIn extends GameResult {
@@ -94,6 +104,46 @@ export interface LeaderboardRow {
   games: number;
   wins: number;
   goals: number;
+  motm: number;
+}
+
+export interface Leaderboard {
+  scope: "season" | "all";
+  season_label: string;
+  season_start: string | null;
+  rows: LeaderboardRow[];
+}
+
+export interface PlayerCommunityStats {
+  community_id: string;
+  community_name: string;
+  sport: string;
+  games: number;
+  wins: number;
+  goals: number;
+  motm: number;
+}
+
+export interface PlayerGameLine {
+  game_id: string;
+  community_id: string;
+  community_name: string;
+  sport: string;
+  date: string;
+  team: TeamSide;
+  goals: number;
+  outcome: "won" | "lost" | "draw" | "pending";
+  motm: boolean;
+}
+
+export interface PlayerProfile {
+  key: string;
+  name: string;
+  user_id: string | null;
+  picture: string | null;
+  totals: PlayerCommunityStats;
+  communities: PlayerCommunityStats[];
+  recent: PlayerGameLine[];
 }
 
 export interface Team {

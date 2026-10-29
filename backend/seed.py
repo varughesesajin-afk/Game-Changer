@@ -89,7 +89,9 @@ async def main():
                                             added_by=TESTER["user_id"], paid=True, goals=rnd.choice([1, 2])))
             ga = sum(r.goals for r in g.roster if r.team == "A")
             gb = sum(r.goals for r in g.roster if r.team == "B")
-            g.result = GameResult(winner="A" if ga > gb else "B" if gb > ga else "draw", score_a=ga, score_b=gb)
+            best = max(g.roster, key=lambda r: r.goals)
+            g.result = GameResult(winner="A" if ga > gb else "B" if gb > ga else "draw", score_a=ga, score_b=gb,
+                                  motm_entry_id=best.id)
             await db.games.insert_one(g.model_dump())
 
     def teams(names, size, captain):

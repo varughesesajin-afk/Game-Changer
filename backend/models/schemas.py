@@ -69,6 +69,8 @@ class Community(CommunityCreate):
     members: List[Member] = Field(default_factory=list)
     manage_until: Optional[str] = None  # YYYY-MM-DD; Manage subscription paid through this date
     manage_active: bool = False  # computed on read, never trusted from storage
+    season_length: Literal["manual", "month", "quarter"] = "manual"
+    season_start: Optional[str] = None  # set by "start new season now"
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -92,6 +94,7 @@ class GameResult(BaseModel):
     winner: Literal["A", "B", "draw"]
     score_a: Optional[int] = Field(None, ge=0)
     score_b: Optional[int] = Field(None, ge=0)
+    motm_entry_id: Optional[str] = None  # man of the match (roster entry id)
 
 
 class GameResultIn(GameResult):
@@ -125,6 +128,51 @@ class LeaderboardRow(BaseModel):
     games: int
     wins: int
     goals: int
+    motm: int = 0
+
+
+class Leaderboard(BaseModel):
+    scope: Literal["season", "all"]
+    season_label: str
+    season_start: Optional[str] = None
+    rows: List[LeaderboardRow]
+
+
+class SeasonIn(BaseModel):
+    season_length: Literal["manual", "month", "quarter"]
+    start_now: bool = False
+
+
+class PlayerCommunityStats(BaseModel):
+    community_id: str
+    community_name: str
+    sport: str
+    games: int
+    wins: int
+    goals: int
+    motm: int
+
+
+class PlayerGameLine(BaseModel):
+    game_id: str
+    community_id: str
+    community_name: str
+    sport: str
+    date: str
+    team: Literal["A", "B"]
+    goals: int
+    outcome: Literal["won", "lost", "draw", "pending"]
+    motm: bool
+
+
+class PlayerProfile(BaseModel):
+    key: str
+    name: str
+    user_id: Optional[str] = None
+    picture: Optional[str] = None
+    totals: PlayerCommunityStats
+    communities: List[PlayerCommunityStats]
+    recent: List[PlayerGameLine]
 
 
 class JoinGameIn(BaseModel):
