@@ -35,3 +35,10 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 ## In-app fee reminders
 - Manage → Fees → "Remind unpaid" (POST /api/games/{gid}/remind-unpaid, manage-gated) upserts a `reminders` doc per unpaid signed-in player (guests skipped). Returns {reminded, skipped_guests}.
 - Players see a banner at the top of every screen (GET /api/reminders/mine; only while still on roster & unpaid). Dismiss: POST /api/reminders/{id}/dismiss. Marking paid deletes the reminder. Nothing is emailed/sent.
+
+## Results, leaderboards, game notices, sharing
+- Game.result {winner A|B|draw, score_a, score_b}; RosterEntry.goals. POST /api/games/{gid}/result (manage-gated, only for date <= today) with goals map {entry_id: n}. Manage → Results tab lists played games (GET /communities/{cid}/games?past=true).
+- GET /api/communities/{cid}/leaderboard → rows {name, user_id, games, wins, goals} over played games (result recorded or date < today); guests keyed by name. Shown on community page (Most games / Most wins / Top scorers).
+- GET /api/games/mine/soon → games the user is on for today/tomorrow → in-app notice banner (dismiss stored in localStorage).
+- WhatsApp share (wa.me link) + copy-link on community and tournament pages. Sign-in returns to the last visited page (sessionStorage returnTo).
+- Seed adds 3 past games with results for the first 3 communities.

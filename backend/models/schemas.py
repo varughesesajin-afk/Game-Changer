@@ -1,7 +1,7 @@
 """Pydantic models — mirrored by hand in frontend/src/lib/types.ts. Keep both in sync."""
 import uuid
 from datetime import datetime, timezone
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from pydantic import BaseModel, Field
 
@@ -80,11 +80,22 @@ class RosterEntry(BaseModel):
     team: Literal["A", "B"] = "A"
     added_by: str
     paid: bool = False
+    goals: int = 0
 
 
 class GameCreate(BaseModel):
     date: str  # YYYY-MM-DD
     time: Optional[str] = None
+
+
+class GameResult(BaseModel):
+    winner: Literal["A", "B", "draw"]
+    score_a: Optional[int] = Field(None, ge=0)
+    score_b: Optional[int] = Field(None, ge=0)
+
+
+class GameResultIn(GameResult):
+    goals: Dict[str, int] = Field(default_factory=dict)  # roster entry id -> goals/points
 
 
 class Game(BaseModel):
@@ -98,7 +109,22 @@ class Game(BaseModel):
     max_players: int
     fee: float = 0.0
     roster: List[RosterEntry] = Field(default_factory=list)
+    result: Optional[GameResult] = None
     created_at: datetime = Field(default_factory=_now)
+
+
+class GameNotice(BaseModel):
+    game: Game
+    when: Literal["today", "tomorrow"]
+
+
+class LeaderboardRow(BaseModel):
+    key: str
+    name: str
+    user_id: Optional[str] = None
+    games: int
+    wins: int
+    goals: int
 
 
 class JoinGameIn(BaseModel):

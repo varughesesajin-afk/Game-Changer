@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import GameCard from "@/components/GameCard";
 import TournamentCard from "@/components/TournamentCard";
 import ManageSheet from "@/components/ManageSheet";
+import Leaderboard from "@/components/Leaderboard";
+import ShareButtons from "@/components/ShareButtons";
 import ManageSubscribeDialog from "@/components/ManageSubscribeDialog";
 import { apiGet, apiPost } from "@/lib/api";
 import { errMsg, money, refreshAll, sportImage, useMe } from "@/lib/auth";
@@ -108,7 +110,12 @@ export default function CommunityDetail() {
             <p className="flex items-center gap-1 text-slate-400"><Crown className="size-4 text-amber-400" />Organised by {c.owner_name}</p>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <ShareButtons
+              path={`/communities/${c.id}`}
+              text={`Join ${c.name} (${c.sport}, ${c.days.join(" & ") || "weekly"} ${c.time}) on Green Ocean Sporting Events — add your name to the next game!`}
+              testid="community-share"
+            />
             {!isMember ? (
               <Button data-testid="community-join-button" onClick={() => (me ? act.mutate(() => apiPost(`/communities/${id}/join`), { onSuccess: () => toast.success("Welcome to the community!") }) : needLogin())}>
                 Join community
@@ -128,6 +135,8 @@ export default function CommunityDetail() {
               <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No upcoming games scheduled.</div>
             )}
           </section>
+
+          <Leaderboard communityId={c.id} />
 
           <section className="space-y-3">
             <h2 className="font-heading text-xl font-bold">Community tournaments</h2>

@@ -22,7 +22,9 @@ export default function AuthCallback() {
       .then((user) => {
         beginSession();
         queryClient.setQueryData(["me"], user);
-        nav("/profile", { replace: true });
+        const back = sessionStorage.getItem("returnTo");
+        sessionStorage.removeItem("returnTo");
+        nav(back || "/profile", { replace: true });
       })
       .catch(() => nav("/login", { replace: true }));
   }, [location.hash, nav]);

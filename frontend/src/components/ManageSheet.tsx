@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { BellRing, CalendarPlus, Check, Trash2, Trophy, UserMinus } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
-import { apiDelete, apiPatch, apiPost } from "@/lib/api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
+import GameResultForm from "@/components/GameResultForm";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Community, CommunityUpdate, Game, RemindResult, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,8 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
   const [tOpen, setTOpen] = useState(false);
   const set = <K extends keyof CommunityUpdate>(k: K, v: CommunityUpdate[K]) => setF((p) => ({ ...p, [k]: v }));
   const isOwner = c.owner_id === me.user_id;
+  const past = useQuery({ queryKey: ["games", c.id, "past"], queryFn: () => apiGet<Game[]>(`/communities/${c.id}/games?past=true`), enabled: open });
+  const pastGames = past.isError ? [] : past.data ?? [];
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
@@ -55,6 +58,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
             <TabsList className="w-full">
               <TabsTrigger value="details" data-testid="manage-tab-details" className="flex-1">Details</TabsTrigger>
               <TabsTrigger value="games" data-testid="manage-tab-games" className="flex-1">Games</TabsTrigger>
+              <TabsTrigger value="results" data-testid="manage-tab-results" className="flex-1">Results</TabsTrigger>
               <TabsTrigger value="members" data-testid="manage-tab-members" className="flex-1">Members</TabsTrigger>
               <TabsTrigger value="fees" data-testid="manage-tab-fees" className="flex-1">Fees</TabsTrigger>
             </TabsList>
@@ -181,6 +185,12 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
                   </div>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="results" className="space-y-3 pt-4">
+              <p className="text-xs text-slate-400">Enter who won and each player's goals or points. This feeds the community leaderboard.</p>
+              {pastGames.length === 0 && <p className="text-sm text-slate-400">No played games yet.</p>}
+              {pastGames.map((g) => <GameResultForm key={g.id + (g.result ? "r" : "")} game={g} />)}
             </TabsContent>
 
             <TabsContent value="members" className="space-y-2 pt-4">

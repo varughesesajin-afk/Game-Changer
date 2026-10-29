@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 
 from lib.dates import today_iso
 from lib.db import db, ensure_indexes
-from models.schemas import Community, Member, PaymentRecord, RosterEntry, Team, Tournament
+from models.schemas import Community, GameResult, Member, PaymentRecord, RosterEntry, Team, Tournament
 from routers.communities import _game_from, next_dates
 from routers.tournaments import _advance, build_bracket
 
@@ -73,6 +73,23 @@ async def main():
             g = _game_from(c, gd)
             for k in range(min(mx - 3, 6 + i + j)):
                 g.roster.append(RosterEntry(name=NAMES[k % len(NAMES)], team="A" if k % 2 == 0 else "B", added_by=owner["user_id"]))
+            await db.games.insert_one(g.model_dump())
+
+    # past games with results for leaderboards
+    import random
+    rnd = random.Random(7)
+    for c in communities[:3]:
+        for back in (7, 14, 21):
+            g = _game_from(c, d(-back))
+            for k in range(min(c.max_players, 10)):
+                g.roster.append(RosterEntry(name=NAMES[k % len(NAMES)], team="A" if k % 2 == 0 else "B",
+                                            added_by=c.owner_id, paid=True, goals=rnd.choice([0, 0, 1, 1, 2, 3])))
+            if c.owner_id == TESTER["user_id"] or c.owner_id == admin["user_id"]:
+                g.roster.append(RosterEntry(user_id=TESTER["user_id"], name=TESTER["name"], team="A",
+                                            added_by=TESTER["user_id"], paid=True, goals=rnd.choice([1, 2])))
+            ga = sum(r.goals for r in g.roster if r.team == "A")
+            gb = sum(r.goals for r in g.roster if r.team == "B")
+            g.result = GameResult(winner="A" if ga > gb else "B" if gb > ga else "draw", score_a=ga, score_b=gb)
             await db.games.insert_one(g.model_dump())
 
     def teams(names, size, captain):

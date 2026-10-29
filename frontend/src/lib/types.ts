@@ -54,6 +54,17 @@ export interface RosterEntry {
   team: TeamSide;
   added_by: string;
   paid: boolean;
+  goals: number;
+}
+
+export interface GameResult {
+  winner: TeamSide | "draw";
+  score_a: number | null;
+  score_b: number | null;
+}
+
+export interface GameResultIn extends GameResult {
+  goals: Record<string, number>;
 }
 
 export interface Game {
@@ -67,7 +78,22 @@ export interface Game {
   max_players: number;
   fee: number;
   roster: RosterEntry[];
+  result: GameResult | null;
   created_at: string;
+}
+
+export interface GameNotice {
+  game: Game;
+  when: "today" | "tomorrow";
+}
+
+export interface LeaderboardRow {
+  key: string;
+  name: string;
+  user_id: string | null;
+  games: number;
+  wins: number;
+  goals: number;
 }
 
 export interface Team {

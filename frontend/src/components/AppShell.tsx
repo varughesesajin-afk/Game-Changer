@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { Flame, Sparkles, Trophy, User as UserIcon, Users } from "lucide-react";
@@ -16,6 +17,10 @@ const TABS = [
 
 export default function AppShell() {
   const location = useLocation();
+  // remember where the visitor was (e.g. a shared community link) so sign-in returns them there
+  useEffect(() => {
+    if (location.pathname !== "/login") sessionStorage.setItem("returnTo", location.pathname);
+  }, [location.pathname]);
   return (
     <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60">
       <ReminderBanner />

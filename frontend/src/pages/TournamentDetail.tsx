@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Bracket from "@/components/Bracket";
+import ShareButtons from "@/components/ShareButtons";
 import { StatusBadge } from "@/components/TournamentCard";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll, sportImage, useMe } from "@/lib/auth";
@@ -145,6 +146,12 @@ export default function TournamentDetail() {
             <p className="flex items-center gap-1.5 text-slate-400"><Users className="size-4" />{t.sport} · organised by {t.organiser_name}</p>
             {t.description && <p className="pt-1">{t.description}</p>}
           </div>
+
+          <ShareButtons
+            path={`/tournaments/${t.id}`}
+            text={`${t.title} — ${t.sport} tournament on ${fmtDate(t.start_date, "d MMM")}. ${t.status === "registration" ? "Register your team" : "Follow the bracket"} on Green Ocean Sporting Events:`}
+            testid="tournament-share"
+          />
 
           {canManage && t.status === "registration" && (
             <Button data-testid="tournament-start-button" className="w-full" disabled={t.teams.length < 2 || start.isPending} onClick={() => start.mutate()}>

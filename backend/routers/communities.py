@@ -7,8 +7,9 @@ from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community as _get_community, require_manage, to_community
 from lib.dates import today_iso
 from lib.db import db
-from models.schemas import (Community, CommunityCreate, CommunityUpdate, Feed, Game, GameCreate, GuestIn,
-                            JoinGameIn, Member, PaidIn, RosterEntry, Tournament, User)
+from models.schemas import (Community, CommunityCreate, CommunityUpdate, Feed, Game, GameCreate, GameNotice,
+                            GameResult, GameResultIn, GuestIn, JoinGameIn, LeaderboardRow, Member, PaidIn,
+                            RosterEntry, Tournament, User)
 
 router = APIRouter(tags=["communities"])
 
@@ -147,10 +148,34 @@ async def remove_member(cid: str, uid: str, user: User = Depends(current_user)):
 
 
 @router.get("/communities/{cid}/games", response_model=List[Game])
-async def community_games(cid: str):
-    docs = await db.games.find({"community_id": cid, "date": {"$gte": today_iso()}}, {"_id": 0}) \
-        .sort([("date", 1), ("time", 1)]).to_list(50)
+async def community_games(cid: str, past: bool = False):
+    if past:  # played games (today and earlier), most recent first
+        docs = await db.games.find({"community_id": cid, "date": {"$lte": today_iso()}}, {"_id": 0}) \
+            .sort([("date", -1), ("time", -1)]).to_list(30)
+    else:
+        docs = await db.games.find({"community_id": cid, "date": {"$gte": today_iso()}}, {"_id": 0}) \
+            .sort([("date", 1), ("time", 1)]).to_list(50)
     return [Game(**d) for d in docs]
+
+
+@router.get("/communities/{cid}/leaderboard", response_model=List[LeaderboardRow])
+async def leaderboard(cid: str):
+    await _get_community(cid)
+    played = await db.games.find(
+        {"community_id": cid, "$or": [{"result": {"$ne": None}}, {"date": {"$lt": today_iso()}}]}, {"_id": 0}
+    ).to_list(2000)
+    rows: dict[str, LeaderboardRow] = {}
+    for doc in played:
+        g = Game(**doc)
+        for r in g.roster:
+            key = r.user_id or f"guest:{r.name.strip().lower()}"
+            row = rows.get(key) or LeaderboardRow(key=key, name=r.name, user_id=r.user_id, games=0, wins=0, goals=0)
+            row.games += 1
+            row.goals += r.goals
+            if g.result and g.result.winner == r.team:
+                row.wins += 1
+            rows[key] = row
+    return sorted(rows.values(), key=lambda x: (-x.games, -x.wins, -x.goals, x.name))
 
 
 @router.post("/communities/{cid}/games", response_model=Game)
@@ -192,6 +217,16 @@ async def my_games(user: User = Depends(current_user)):
     docs = await db.games.find({"roster.user_id": user.user_id, "date": {"$gte": today_iso()}}, {"_id": 0}) \
         .sort([("date", 1), ("time", 1)]).to_list(100)
     return [Game(**d) for d in docs]
+
+
+@router.get("/games/mine/soon", response_model=List[GameNotice])
+async def my_games_soon(user: User = Depends(current_user)):
+    """Games the user signed up for that are today or tomorrow (server-anchored dates)."""
+    today = today_iso()
+    tomorrow = (date.fromisoformat(today) + timedelta(days=1)).isoformat()
+    docs = await db.games.find({"roster.user_id": user.user_id, "date": {"$in": [today, tomorrow]}}, {"_id": 0}) \
+        .sort([("date", 1), ("time", 1)]).to_list(20)
+    return [GameNotice(game=Game(**d), when="today" if d["date"] == today else "tomorrow") for d in docs]
 
 
 @router.get("/games/{gid}", response_model=Game)
@@ -258,4 +293,18 @@ async def set_paid(gid: str, entry_id: str, body: PaidIn, user: User = Depends(c
         entry = next((r for r in g.roster if r.id == entry_id), None)
         if entry and entry.user_id:
             await db.reminders.delete_one({"user_id": entry.user_id, "game_id": gid})
+    return await _get_game(gid)
+
+
+@router.post("/games/{gid}/result", response_model=Game)
+async def record_result(gid: str, body: GameResultIn, user: User = Depends(current_user)):
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    if g.date > today_iso():
+        raise HTTPException(400, "You can only enter results for games that have been played")
+    for r in g.roster:
+        r.goals = max(0, int(body.goals.get(r.id, 0)))
+    result = GameResult(winner=body.winner, score_a=body.score_a, score_b=body.score_b)
+    await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(),
+                                                     "roster": [r.model_dump() for r in g.roster]}})
     return await _get_game(gid)
