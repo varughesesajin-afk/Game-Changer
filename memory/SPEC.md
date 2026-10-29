@@ -47,3 +47,7 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - GameResult.motm_entry_id (must be on roster). Leaderboard rows include motm; MOTM tab + star badge.
 - Community.season_length manual|month|quarter, season_start (set by "Start new season now"). Effective season start = max(auto period start, season_start), server-anchored. POST /api/communities/{cid}/season {season_length, start_now} (manage-gated). GET leaderboard?scope=season|all returns {scope, season_label, season_start, rows}.
 - GET /api/players/{key}[?community_id=] — key = user_id (aggregated across communities) or guest:<name> (requires community_id). Page /players/:key, opened by tapping a leaderboard row.
+
+## Community cover photos
+- POST /api/images {data_url} (auth; jpeg/png/webp, <=2MB; client resizes to max 1600px JPEG) → {id, url:"/api/images/<id>"}; GET /api/images/{id} serves bytes (stored in Mongo `images`).
+- community.image holds that URL; set on /communities/new (CoverPhotoPicker) or Manage → Details (PATCH image; "" resets to sport default).

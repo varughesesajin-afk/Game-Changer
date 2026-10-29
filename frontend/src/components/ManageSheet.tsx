@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import GameResultForm from "@/components/GameResultForm";
+import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Community, CommunityUpdate, Game, RemindResult, SeasonIn, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -27,7 +28,7 @@ interface Props {
 export default function ManageSheet({ c, games, me, open, onOpenChange }: Props) {
   const nav = useNavigate();
   const [f, setF] = useState<CommunityUpdate>({
-    name: c.name, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
+    name: c.name, image: c.image ?? "", venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
   });
   const [gameDate, setGameDate] = useState("");
   const [tOpen, setTOpen] = useState(false);
@@ -64,6 +65,10 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
             </TabsList>
 
             <TabsContent value="details" className="space-y-3 pt-4">
+              <div className="space-y-1.5">
+                <Label>Cover photo</Label>
+                <CoverPhotoPicker sport={c.sport} value={f.image} onChange={(url) => set("image", url)} testid="manage-cover" />
+              </div>
               <div className="space-y-1.5">
                 <Label htmlFor="m-name">Name</Label>
                 <Input id="m-name" data-testid="manage-name-input" value={f.name ?? ""} onChange={(e) => set("name", e.target.value)} />

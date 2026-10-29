@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SportPills from "@/components/SportPills";
+import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import { apiGet, apiPost } from "@/lib/api";
 import { WEEKDAYS, errMsg, refreshAll, useMe } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
@@ -60,6 +61,11 @@ export default function NewCommunity() {
       <div className="space-y-1.5">
         <Label htmlFor="cc-name">Community name</Label>
         <Input id="cc-name" data-testid="community-name-input" placeholder="Sunday Ballers" value={f.name} onChange={(e) => set("name", e.target.value)} />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Cover photo</Label>
+        <CoverPhotoPicker sport={f.sport} value={f.image} onChange={(url) => set("image", url || null)} testid="community-cover" />
       </div>
 
       <div className="space-y-2">

@@ -64,6 +64,7 @@ class CommunityUpdate(BaseModel):
     time: Optional[str] = None
     max_players: Optional[int] = Field(None, ge=2, le=200)
     fee: Optional[float] = Field(None, ge=0)
+    image: Optional[str] = None  # "/api/images/<id>" from POST /api/images, or "" to reset to the sport default
 
 
 class Community(CommunityCreate):
@@ -337,3 +338,13 @@ class Reminder(BaseModel):
 class RemindResult(BaseModel):
     reminded: int
     skipped_guests: int
+
+
+# ---------- uploaded images ----------
+class ImageUploadIn(BaseModel):
+    data_url: str  # data:image/jpeg;base64,... (client resizes before upload)
+
+
+class ImageUploadOut(BaseModel):
+    id: str
+    url: str

@@ -54,7 +54,7 @@ export interface SeasonIn {
   start_now: boolean;
 }
 
-export type CommunityUpdate = Partial<Omit<CommunityCreate, "image">>;
+export type CommunityUpdate = Partial<Omit<CommunityCreate, "image">> & { image?: string | null };
 
 export interface RosterEntry {
   id: string;
@@ -270,4 +270,13 @@ export interface Reminder {
 export interface RemindResult {
   reminded: number;
   skipped_guests: number;
+}
+
+export interface ImageUploadIn {
+  data_url: string;
+}
+
+export interface ImageUploadOut {
+  id: string;
+  url: string;
 }
