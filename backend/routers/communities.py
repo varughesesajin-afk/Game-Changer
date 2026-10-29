@@ -275,6 +275,46 @@ async def player_profile(key: str, community_id: Optional[str] = None):
                          picture=(user_doc or {}).get("picture"), totals=totals, communities=comms, recent=recent)
 
 
+@router.post("/communities/{cid}/games", response_model=Game)
+async def create_game(cid: str, body: GameCreate, user: User = Depends(current_user)):
+    c = await _get_community(cid)
+    require_manage(c, user)
+    if body.date < today_iso():
+        raise HTTPException(400, "Date must be today or later")
+    g = _game_from(c, body.date, body.time)
+    await db.games.insert_one(g.model_dump())
+    return g
+
+
+@router.post("/communities/{cid}/schedule-week", response_model=List[Game])
+async def schedule_next_week(cid: str, user: User = Depends(current_user)):
+    """Create the next occurrence (after the latest scheduled one) for each recurring day."""
+    c = await _get_community(cid)
+    require_manage(c, user)
+    created = []
+    for d in c.days:
+        if d not in WEEKDAYS:
+            continue
+        latest = await db.games.find({"community_id": cid}, {"_id": 0, "date": 1}).sort("date", -1).to_list(200)
+        same_day = [g["date"] for g in latest if date.fromisoformat(g["date"]).weekday() == WEEKDAYS.index(d)]
+        base = max(same_day) if same_day else None
+        if base and base >= today_iso():
+            nd = (date.fromisoformat(base) + timedelta(days=7)).isoformat()
+        else:
+            nd = next_dates([d])[0]
+        g = _game_from(c, nd)
+        await db.games.insert_one(g.model_dump())
+        created.append(g)
+    return created
+
+
+@router.get("/games/mine", response_model=List[Game])
+async def my_games(user: User = Depends(current_user)):
+    docs = await db.games.find({"roster.user_id": user.user_id, "date": {"$gte": today_iso()}}, {"_id": 0}) \
+        .sort([("date", 1), ("time", 1)]).to_list(100)
+    return [Game(**d) for d in docs]
+
+
 @router.get("/games/mine/soon", response_model=List[GameNotice])
 async def my_games_soon(user: User = Depends(current_user)):
     """Games the user signed up for that are today or tomorrow (server-anchored dates)."""

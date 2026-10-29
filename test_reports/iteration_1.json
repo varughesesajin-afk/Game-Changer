@@ -1,0 +1,79 @@
+{
+  "iteration": 1,
+  "summary": "All 6 acceptance-matrix criteria exercised: 4 backend test files (6 tests, all passing) + 5 browser checks (all passing, one run against the public preview URL).",
+  "passed": 11,
+  "failed": 0,
+  "bugs": [],
+  "action_items": [],
+  "retest_needed": false,
+  "checks": [
+    {
+      "criterion": "Bottom nav tab renamed to Profile",
+      "name": "profile-nav-renamed",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "nav-profile text matches /PROFILE/i; clicking it navigates to /profile. Verified on localhost and re-run against public preview URL https://community-cup--4uo0krk9.preview.emergentagent.com/ (both passed)."
+    },
+    {
+      "criterion": "Profile shows user name in CAPITALS on top",
+      "name": "profile-name-uppercase",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "data-testid=profile-name text is 'Test Player' with computed text-transform: uppercase (renders as TEST PLAYER)."
+    },
+    {
+      "criterion": "Profile lists upcoming games the user joined / GET /api/games/mine restored",
+      "name": "test_games_mine_returns_200 + test_games_mine_includes_joined_game",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/games/mine -> 200 []. After POST /api/games/{id}/join (team A) on a Friday Hoops Run game, GET /api/games/mine includes that game id; cleaned up via POST .../leave."
+    },
+    {
+      "criterion": "Profile lists upcoming games the user joined (UI)",
+      "name": "profile-shows-joined-game",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Joined Team A on a Friday Hoops Run game via UI (POST .../join returned 200), then /profile 'My upcoming games' no longer shows the empty-state message."
+    },
+    {
+      "criterion": "Profile lists communities (Host badge) and tournaments (Organiser badge)",
+      "name": "test_communities_mine_includes_owned_and_joined + test_tournaments_mine_includes_organised",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "GET /api/communities?mine=true -> 200, includes Tuesday Padel Night owned by user_test_player. GET /api/tournaments?mine=true -> 200, includes Padel Night Americano organised by user_test_player."
+    },
+    {
+      "criterion": "Profile lists communities with Host badge, tournaments with Organiser badge (UI)",
+      "name": "profile-communities-and-tournaments-badges",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Sunday Champions 7v7 and Tuesday Padel Night cards visible under 'My communities'; community-badge-c5827c7d... reads 'Host'. Padel Night Americano visible under 'My tournaments'; tournament-badge-0623eae9... reads 'Organiser'."
+    },
+    {
+      "criterion": "Restored organiser endpoints in Manage sheet Games tab",
+      "name": "test_schedule_next_week_returns_200_and_adds_games + test_add_one_off_game_returns_200_and_appears",
+      "lane": "backend",
+      "status": "passed",
+      "evidence": "POST /api/communities/{Tuesday Padel Night id}/schedule-week -> 200. POST /api/communities/{id}/games {date, time} -> 200, new game id present in subsequent GET .../games list."
+    },
+    {
+      "criterion": "Restored organiser endpoints in Manage sheet Games tab (UI)",
+      "name": "manage-schedule-next-week",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "On Tuesday Padel Night as Test Player: Manage -> Games tab -> 'Schedule next week' click triggered POST .../schedule-week returning 200."
+    },
+    {
+      "criterion": "Restored organiser endpoints in Manage sheet Games tab (UI, one-off game)",
+      "name": "manage-add-one-off-game",
+      "lane": "browser",
+      "status": "passed",
+      "evidence": "Filled date input, clicked 'Add' -> POST /api/communities/{id}/games returned 200."
+    }
+  ],
+  "notes": [
+    "Matrix has 6 stated criteria; some map to two paired artifacts (backend+browser) per the rules, giving 11 total checks as listed above.",
+    "First attempt at the Manage-sheet browser checks hit a transient 'Target page... closed' failure caused by missing an explicit page load wait after SPA navigation (fixed by adding waitForLoadState('load') before interacting) — classified as a script-authoring fix, not an app bug, since the retry passed cleanly and curl/backend tests for the same endpoints were already green.",
+    "profile-shows-joined-game leaves Test Player joined to one Friday Hoops Run game roster entry (a normal user action matching the criterion, not an edit/delete of seeded data)."
+  ]
+}

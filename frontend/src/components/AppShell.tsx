@@ -12,7 +12,7 @@ const TABS = [
   { id: "communities", label: "Community", icon: Users, to: "/communities" },
   { id: "tournaments", label: "Tourneys", icon: Trophy, to: "/tournaments" },
   { id: "host", label: "Host & Earn", icon: Sparkles, to: "/monetize" },
-  { id: "profile", label: "My Games", icon: UserIcon, to: "/profile" },
+  { id: "profile", label: "Profile", icon: UserIcon, to: "/profile" },
 ];
 
 export default function AppShell() {

@@ -37,7 +37,7 @@ export default function Profile() {
           <div className="grid size-16 place-items-center rounded-2xl bg-brand font-heading text-2xl font-bold text-white">{me.name[0]}</div>
         )}
         <div className="min-w-0 flex-1">
-          <h1 data-testid="profile-name" className="truncate font-heading text-2xl font-bold">{me.name}</h1>
+          <h1 data-testid="profile-name" className="truncate font-heading text-2xl font-bold uppercase tracking-wide">{me.name}</h1>
           <div className="truncate text-sm text-slate-400">{me.email}</div>
           <div className="mt-1 flex gap-1.5">
             {me.role === "admin" && (
@@ -75,14 +75,14 @@ export default function Profile() {
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-bold">My communities</h2>
-        {comms.data?.length ? comms.data.map((c) => <CommunityCard key={c.id} c={c} />) : (
+        {comms.data?.length ? comms.data.map((c) => <CommunityCard key={c.id} c={c} badge={c.owner_id === me.user_id ? "Host" : undefined} />) : (
           <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No groups yet.</div>
         )}
       </section>
 
       <section className="space-y-3 pb-4">
         <h2 className="font-heading text-xl font-bold">My tournaments</h2>
-        {tours.data?.length ? tours.data.map((t) => <TournamentCard key={t.id} t={t} />) : (
+        {tours.data?.length ? tours.data.map((t) => <TournamentCard key={t.id} t={t} badge={t.organiser_id === me.user_id ? "Organiser" : undefined} />) : (
           <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No tournaments yet.</div>
         )}
       </section>

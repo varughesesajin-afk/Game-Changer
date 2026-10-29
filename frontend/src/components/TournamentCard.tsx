@@ -19,7 +19,7 @@ export function StatusBadge({ status }: { status: Tournament["status"] }) {
   );
 }
 
-export default function TournamentCard({ t, wide = false }: { t: Tournament; wide?: boolean }) {
+export default function TournamentCard({ t, wide = false, badge }: { t: Tournament; wide?: boolean; badge?: string }) {
   return (
     <motion.div whileTap={{ scale: 0.98 }} className={cn(wide ? "w-72 shrink-0" : "w-full")}>
       <Link
@@ -43,7 +43,14 @@ export default function TournamentCard({ t, wide = false }: { t: Tournament; wid
         </div>
         <div className="space-y-2 p-4 pt-2">
           <div className="text-[10px] font-semibold uppercase tracking-[0.15em] text-ice">{t.sport}{t.community_name ? ` · ${t.community_name}` : ""}</div>
-          <h3 className="font-heading text-lg font-bold leading-tight text-white">{t.title}</h3>
+          <div className="flex items-start gap-2">
+            <h3 className="font-heading text-lg font-bold leading-tight text-white">{t.title}</h3>
+            {badge && (
+              <span data-testid={`tournament-badge-${t.id}`} className="mt-0.5 shrink-0 rounded-full bg-brand px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.12em] text-white">
+                {badge}
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-400">
             <span className="inline-flex items-center gap-1"><CalendarDays className="size-3.5" />{fmtDate(t.start_date)}</span>
             <span className="inline-flex items-center gap-1"><Users className="size-3.5" />{t.teams.length}/{t.max_teams} teams</span>
