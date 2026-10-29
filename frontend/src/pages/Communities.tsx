@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import SportPills from "@/components/SportPills";
 import CommunityCard from "@/components/CommunityCard";
-import CreateCommunityDialog from "@/components/CreateCommunityDialog";
 import { apiGet } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import type { Community } from "@/lib/types";
@@ -17,7 +16,6 @@ export default function Communities() {
   const { data: me } = useMe();
   const [sport, setSport] = useState("All");
   const [q, setQ] = useState("");
-  const [open, setOpen] = useState(false);
   const list = useQuery({
     queryKey: ["communities", sport, q],
     queryFn: () => apiGet<Community[]>(`/communities?sport=${encodeURIComponent(sport)}&q=${encodeURIComponent(q)}`),
@@ -29,7 +27,7 @@ export default function Communities() {
       nav("/login");
       return;
     }
-    setOpen(true);
+    nav("/communities/new");
   };
 
   return (
@@ -57,7 +55,6 @@ export default function Communities() {
         )}
         {list.isLoading && <div className="h-24 animate-pulse rounded-2xl bg-surface" />}
       </div>
-      <CreateCommunityDialog open={open} onOpenChange={setOpen} />
     </div>
   );
 }

@@ -25,18 +25,23 @@ async def plans():
     return [MANAGE_PLAN]
 
 
-@router.post("/communities/{cid}/subscribe", response_model=Community)
-async def subscribe(cid: str, user: User = Depends(current_user)):
-    c = await get_community(cid)
-    if c.owner_id != user.user_id:
-        raise HTTPException(403, "Only this community's organiser can subscribe")
+async def activate_manage(c: Community, user: User) -> None:
+    """Record a (MOCKED) OMR 1 payment and extend Manage by 30 days."""
     today = date.fromisoformat(today_iso())
     start = max(today, date.fromisoformat(c.manage_until)) if c.manage_active and c.manage_until else today
     until = (start + timedelta(days=30)).isoformat()
     rec = PaymentRecord(user_id=user.user_id, user_name=user.name, community_id=c.id, community_name=c.name,
                         plan_id=MANAGE_PLAN.id, amount=MANAGE_PLAN.price, currency=MANAGE_PLAN.currency)
     await db.payment_transactions.insert_one(rec.model_dump())
-    await db.communities.update_one({"id": cid}, {"$set": {"manage_until": until}})
+    await db.communities.update_one({"id": c.id}, {"$set": {"manage_until": until}})
+
+
+@router.post("/communities/{cid}/subscribe", response_model=Community)
+async def subscribe(cid: str, user: User = Depends(current_user)):
+    c = await get_community(cid)
+    if c.owner_id != user.user_id:
+        raise HTTPException(403, "Only this community's organiser can subscribe")
+    await activate_manage(c, user)
     return await get_community(cid)
 
 

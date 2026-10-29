@@ -82,7 +82,7 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
           )}
           <div className="space-y-1.5">
             <Label>Sport</Label>
-            <SportPills value={f.sport} onChange={(s) => set("sport", s)} includeAll={false} testPrefix="tournament-sport" />
+            <SportPills value={f.sport} onChange={(s) => set("sport", s)} includeAll={false} wrap testPrefix="tournament-sport" />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">

@@ -6,12 +6,13 @@ interface Props {
   onChange: (s: string) => void;
   includeAll?: boolean;
   testPrefix?: string;
+  wrap?: boolean; // wrap onto rows (forms) instead of a sideways-scrolling strip
 }
 
-export default function SportPills({ value, onChange, includeAll = true, testPrefix = "sport-filter" }: Props) {
+export default function SportPills({ value, onChange, includeAll = true, testPrefix = "sport-filter", wrap = false }: Props) {
   const list = includeAll ? ["All", ...SPORTS] : SPORTS;
   return (
-    <div className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-1">
+    <div className={cn(wrap ? "flex flex-wrap gap-2" : "no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 py-1")}>
       {list.map((s) => (
         <button
           key={s}

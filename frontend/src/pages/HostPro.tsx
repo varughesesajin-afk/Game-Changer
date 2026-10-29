@@ -43,7 +43,7 @@ export default function HostPro() {
           <Sparkles className="size-3.5" /> Host & Earn
         </div>
         <h1 className="mt-1 font-heading text-3xl font-bold leading-tight tracking-tight">Turn your weekly game into a real club.</h1>
-        <p className="mt-2 text-sm text-slate-400">Every organiser runs one community. Unlock Manage for OMR 1/month to run it properly.</p>
+        <p className="mt-2 text-sm text-slate-400">Each community has one host. Unlock Manage for OMR 1/month per community — hosting another community costs OMR 1/month again.</p>
       </div>
 
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-5">
@@ -72,7 +72,7 @@ export default function HostPro() {
           {!me ? (
             <Button data-testid="plan-signin-button" className="w-full bg-brand text-white" onClick={() => { toast("Sign in first"); nav("/login"); }}>Sign in to get started</Button>
           ) : owned.length === 0 ? (
-            <Link to="/communities" data-testid="plan-start-community-link" className={buttonVariants({ className: "w-full bg-brand text-white" })}>Start your community first</Link>
+            <Link to="/communities/new" data-testid="plan-start-community-link" className={buttonVariants({ className: "w-full bg-brand text-white" })}>Start your community first</Link>
           ) : (
             owned.map((c) => (
               <div key={c.id} data-testid={`plan-community-${c.id}`} className="flex items-center justify-between gap-2 rounded-xl border border-line bg-page/60 px-3 py-2">

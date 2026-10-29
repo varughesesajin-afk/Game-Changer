@@ -18,7 +18,7 @@ Mobile-first web app (max-w-md frame, bottom nav) for community sports games + t
 - payment_transactions (MOCKED billing records)
 
 ## Business rules
-- Each organiser (non-admin) can own exactly 1 community (409 otherwise).
+- One host (owner) per community. First community is free to create; each additional community requires paying OMR 1 at creation (POST /communities with pay_manage=true → MOCKED payment, Manage active 30 days), else 402. Start-a-community is a full page at /communities/new (vertical scroll only).
 - "Manage" button on community page (owner/admin). Owner must have an active per-community Manage subscription (OMR 1/month, communities.manage_until; manage_active computed on read) — else 402. Admin manages everything free.
 - Manage unlocks: PATCH community details, schedule games (schedule-week / one-off), host community tournaments, remove members (DELETE /communities/{id}/members/{uid}) and other people's roster names, match-fee tracking (POST /games/{gid}/roster/{eid}/paid).
 - Official tournaments: admin only. Admin dashboard /admin (GET /api/admin/overview: stats, users, communities, payments).

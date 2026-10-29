@@ -50,6 +50,10 @@ class CommunityCreate(BaseModel):
     image: Optional[str] = None
 
 
+class CommunityCreateIn(CommunityCreate):
+    pay_manage: bool = False  # required (OMR 1, includes Manage) when the organiser already hosts a community
+
+
 class CommunityUpdate(BaseModel):
     name: Optional[str] = Field(None, min_length=2, max_length=80)
     sport: Optional[str] = None

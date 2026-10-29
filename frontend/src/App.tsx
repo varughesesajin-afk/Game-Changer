@@ -4,6 +4,7 @@ import AuthCallback from "@/components/AuthCallback";
 import Explore from "@/pages/Explore";
 import Communities from "@/pages/Communities";
 import CommunityDetail from "@/pages/CommunityDetail";
+import NewCommunity from "@/pages/NewCommunity";
 import Tournaments from "@/pages/Tournaments";
 import TournamentDetail from "@/pages/TournamentDetail";
 import HostPro from "@/pages/HostPro";
@@ -21,6 +22,7 @@ export default function App() {
       <Route element={<AppShell />}>
         <Route path="/" element={<Explore />} />
         <Route path="/communities" element={<Communities />} />
+        <Route path="/communities/new" element={<NewCommunity />} />
         <Route path="/communities/:id" element={<CommunityDetail />} />
         <Route path="/tournaments" element={<Tournaments />} />
         <Route path="/tournaments/:id" element={<TournamentDetail />} />
