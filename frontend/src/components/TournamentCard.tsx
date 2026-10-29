@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: Tournament["status"] }) {
   const map = {
-    registration: { label: "Open", cls: "bg-ice/15 text-ice border-ice/30" },
+    registration: { label: "Open", cls: "bg-ice text-page border-ice" },
     ongoing: { label: "Live", cls: "bg-energy/15 text-energy border-energy/40" },
     completed: { label: "Finished", cls: "bg-slate-500/15 text-slate-300 border-slate-500/30" },
   }[status];

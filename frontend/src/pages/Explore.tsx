@@ -59,10 +59,10 @@ export default function Explore() {
             <div className="inline-flex items-center gap-1.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">
               <Trophy className="size-3" /> Game on
             </div>
-            <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">
-              Your Sunday game.<br />Your city's tournaments.
+            <h1 data-testid="hero-title" className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">
+              <span className="text-brand">Green Ocean</span><br />Sporting Events
             </h1>
-            <p className="text-sm text-slate-300">Add your name to the roster, build a team, chase the trophy.</p>
+            <p className="text-sm text-slate-200">Game on. Your weekly game, your city's tournaments — every sport.</p>
           </div>
         </div>
       </header>
