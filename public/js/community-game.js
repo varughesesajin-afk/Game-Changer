@@ -2,13 +2,20 @@ const params = new URLSearchParams(location.search);
 const gameId = params.get("id");
 const content = document.getElementById("content");
 
-let state = { game: null, claimingSlotId: null };
+let state = { game: null, community: null, claimingSlotId: null, me: null, claimError: "", isAdmin: false };
+
+function canManage() {
+  const c = state.community;
+  return !!(c && (state.isAdmin || (state.me && c.hostUserId === state.me.id)));
+}
 
 async function init() {
   if (!gameId) {
     content.innerHTML = `<div class="alert error">No game specified.</div>`;
     return;
   }
+  const loginError = readLoginError();
+  if (loginError) state.claimError = loginError;
   try {
     await load();
   } catch (e) {
@@ -17,19 +24,46 @@ async function init() {
 }
 
 async function load() {
-  state.game = await api.get(`/api/community-games/${gameId}`);
+  const [game, me, isAdmin] = await Promise.all([api.get(`/api/community-games/${gameId}`), whoAmI(true), checkIsAdmin()]);
+  state.game = game;
+  state.me = me.user;
+  state.isAdmin = isAdmin;
+  try {
+    state.community = await api.get(`/api/communities/${game.communityId}`);
+  } catch (e) {
+    state.community = null;
+  }
   render();
+}
+
+function initials(name) {
+  return String(name)
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("");
 }
 
 function slotCircle(s) {
   const open = !s.playerName;
   const claiming = state.claimingSlotId === s.id;
   if (claiming) {
+    if (!state.me) {
+      return `
+        <div class="slot-cell">
+          <div class="slot-claim-form" style="display:flex; flex-direction:column; gap:4px; align-items:center;">
+            <span class="small muted">Sign in to claim this spot</span>
+            <a class="btn small" href="${signInUrl()}">Continue with Google</a>
+            <button class="btn small secondary" type="button" data-cancel-claim>Cancel</button>
+          </div>
+        </div>`;
+    }
     return `
       <div class="slot-cell">
         <form class="slot-claim-form" data-slot="${s.id}">
-          <input name="name" placeholder="Name" maxlength="60" autofocus required>
-          <div style="display:flex; gap:4px; margin-top:4px;">
+          <div class="small" style="margin-bottom:4px;">Join as ${escapeHtml(state.me.name)}?</div>
+          <div style="display:flex; gap:4px;">
             <button class="btn small" type="submit">Join</button>
             <button class="btn small secondary" type="button" data-cancel-claim>✕</button>
           </div>
@@ -43,17 +77,9 @@ function slotCircle(s) {
         ${open ? "+" : escapeHtml(initials(s.playerName))}
       </button>
       <div class="small muted slot-name">${open ? "Open" : escapeHtml(s.playerName)}</div>
+      ${!open && canManage() ? `<button class="btn small secondary" type="button" data-clear-slot="${s.id}" style="margin-top:4px; padding:2px 8px; font-size:0.7rem;">Clear</button>` : ""}
     </div>
   `;
-}
-
-function initials(name) {
-  return String(name)
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("");
 }
 
 function render() {
@@ -84,9 +110,19 @@ function render() {
       </div>
     </div>
 
+    ${state.isAdmin ? manageLinkHtml(`#community=${g.communityId}`, "Site admin dashboard") : ""}
+    ${
+      canManage()
+        ? `<div class="flex-between" style="margin-top:10px;">
+             <span class="small muted">⚙️ You manage this game</span>
+             <button class="btn small secondary" type="button" id="toggle-game-status-btn">${closed ? "Reopen" : "Close game"}</button>
+           </div>`
+        : ""
+    }
     ${g.notes ? `<p style="margin-top:14px;">${escapeHtml(g.notes)}</p>` : ""}
     ${!closed && !full ? `<div class="alert info" style="margin-top:14px;">${g.totalSlots - g.filledSlots} spot${g.totalSlots - g.filledSlots === 1 ? "" : "s"} left to fill this game.</div>` : ""}
     ${closed ? `<div class="alert info" style="margin-top:14px;">This game is no longer open to new players.</div>` : ""}
+    ${state.claimError ? `<div class="alert error" style="margin-top:14px;">${escapeHtml(state.claimError)}</div>` : ""}
 
     <div class="card" style="margin-top:16px;">
       <div class="flex-between" style="margin-bottom:4px;"><h3 style="margin:0;">Players</h3><span class="muted small">${g.filledSlots} / ${g.totalSlots}</span></div>
@@ -109,10 +145,37 @@ function render() {
     history.length > 1 ? history.back() : (location.href = "/communities.html");
   });
 
+  content.querySelectorAll("[data-clear-slot]").forEach((btn) => {
+    btn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      try {
+        await api.del(`/api/community-slots/${btn.dataset.clearSlot}`);
+        await load();
+      } catch (err) {
+        alert(err.message);
+      }
+    });
+  });
+
+  const toggleGameStatusBtn = document.getElementById("toggle-game-status-btn");
+  if (toggleGameStatusBtn) {
+    toggleGameStatusBtn.addEventListener("click", async () => {
+      toggleGameStatusBtn.disabled = true;
+      try {
+        await api.patch(`/api/community-games/${gameId}`, { status: g.status === "open" ? "closed" : "open" });
+        await load();
+      } catch (err) {
+        alert(err.message);
+        toggleGameStatusBtn.disabled = false;
+      }
+    });
+  }
+
   if (!closed) {
     content.querySelectorAll("[data-claim-slot]").forEach((btn) => {
       btn.addEventListener("click", () => {
         state.claimingSlotId = btn.dataset.claimSlot;
+        state.claimError = "";
         render();
       });
     });
@@ -123,17 +186,21 @@ function render() {
       });
     });
     const form = content.querySelector(".slot-claim-form");
-    if (form) {
+    if (form && form.tagName === "FORM") {
       form.addEventListener("submit", async (e) => {
         e.preventDefault();
-        const name = new FormData(form).get("name");
         const slotId = form.dataset.slot;
+        const btn = form.querySelector("button[type='submit']");
+        btn.disabled = true;
         try {
-          await api.post(`/api/community-games/${gameId}/slots/${slotId}/claim`, { name });
+          await api.post(`/api/community-games/${gameId}/slots/${slotId}/claim`, {});
           state.claimingSlotId = null;
+          state.claimError = "";
           await load();
         } catch (err) {
-          alert(err.message);
+          state.claimingSlotId = null;
+          state.claimError = err.message;
+          render();
         }
       });
     }

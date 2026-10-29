@@ -11,107 +11,177 @@
   <div class="wrap">
     <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
     <nav class="topnav hide-on-mobile">
-      <a href="/matchdays.html">Match Days</a>
+      <a href="/" class="active">Explore</a>
       <a href="/communities.html">Community</a>
-      <a href="/admin.html">Organizer login</a>
+      <a href="/tourneys.html">Tourneys</a>
+      <a href="/host-earn.html">Host & Earn</a>
+      <a href="/profile.html">My Games</a>
     </nav>
+    <span id="header-auth"></span>
   </div>
 </header>
 
 <div class="wrap">
-  <div class="page-hero">
-    <h1>Upcoming &amp; ongoing events</h1>
-    <p>Browse events, register your team or yourself, and check fixtures, schedules and scores.</p>
+  <p class="eyebrow">Games All Day</p>
+  <div id="hero" class="photo-hero" style="--hero-img:url('/images/sports/default.svg');">
+    <span class="badge brand">🔥 Explore</span>
+    <h1>Find your next game</h1>
+    <p>Tournaments, pickup games and community sport happening around you.</p>
+  </div>
+
+  <div class="search-field">
+    <input id="explore-search" placeholder="Search tournaments, sports, venues…" autocomplete="off">
+  </div>
+
+  <div class="chip-row" id="sport-chips">
+    <div class="chip active" data-sport="">All sports</div>
   </div>
 
   <div id="live-section" style="display:none;">
-    <h2 style="display:flex; align-items:center; gap:8px;"><span class="live-dot"></span> Live now</h2>
-    <div id="live-events" class="grid"></div>
+    <div class="section-head"><h2 style="display:flex; align-items:center; gap:8px;"><span class="live-dot"></span> Live now</h2></div>
+    <div id="live-events" class="hscroll"></div>
   </div>
 
-  <div id="recent-section" style="display:none;">
-    <h2>🕒 Recent (last 30 days)</h2>
-    <div id="recent-events" class="grid"></div>
+  <div class="section-head"><h2>🏆 Featured tournaments</h2></div>
+  <div id="featured-events" class="hscroll">
+    <div class="empty-state"><span class="spinner"></span></div>
   </div>
 
-  <h2 id="all-events-heading" style="display:none;">All events</h2>
-  <div id="events" class="grid" style="margin-top:20px;">
+  <div class="section-head"><h2 id="all-events-heading">Upcoming near you</h2></div>
+  <div id="events" style="display:flex; flex-direction:column; gap:10px;">
     <div class="empty-state"><span class="spinner"></span></div>
   </div>
 </div>
 
-<footer class="site-footer">Games All Day</footer>
+<footer class="site-footer">Games All Day · <a href="/matchdays.html" class="small">Match Days</a> · <a href="/admin.html" class="small">Organizer login</a></footer>
 
 <nav class="bottom-nav">
   <a href="/" class="active">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h3.5v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5H17.5a1 1 0 0 0 1-1v-9"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="/matchdays.html">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/></svg>
-    <span>Match Days</span>
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+    <span>Explore</span>
   </a>
   <a href="/communities.html">
     <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.3 19c.7-3 2.9-4.8 5.7-4.8s5 1.8 5.7 4.8"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.4c2.2.3 3.9 1.9 4.5 4.3"/></svg>
     <span>Community</span>
   </a>
-  <a href="/admin.html">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
-    <span>Organizer</span>
+  <a href="/tourneys.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 5H5a2 2 0 0 0 0 4h1"/><path d="M17 5h2a2 2 0 0 1 0 4h-1"/></svg>
+    <span>Tourneys</span>
+  </a>
+  <a href="/host-earn.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>
+    <span>Host & Earn</span>
+  </a>
+  <a href="/profile.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.9-3.6 3.5-5.7 6.5-5.7s5.6 2.1 6.5 5.7"/></svg>
+    <span>My Games</span>
   </a>
 </nav>
 
 <script src="/js/api.js"></script>
 <script>
+let allEvents = [];
+let activeSport = "";
+let searchQ = "";
+
 async function load() {
-  const el = document.getElementById("events");
   try {
-    const events = await api.get("/api/events");
-    if (!events.length) {
-      el.innerHTML = `<div class="empty-state">No events published yet. Check back soon.</div>`;
-      return;
-    }
-
-    const live = events.filter((e) => e.status === "in_progress");
-    const now = Date.now();
-    const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
-    const recent = events.filter((e) => {
-      if (!e.startDate || e.status === "in_progress") return false;
-      const t = new Date(e.startDate).getTime();
-      if (Number.isNaN(t)) return false;
-      return t <= now && now - t <= THIRTY_DAYS;
-    });
-
-    if (live.length) {
-      document.getElementById("live-section").style.display = "";
-      document.getElementById("live-events").innerHTML = live.map(eventCard).join("");
-    }
-    if (recent.length) {
-      document.getElementById("recent-section").style.display = "";
-      document.getElementById("recent-events").innerHTML = recent.map(eventCard).join("");
-    }
-    if (live.length || recent.length) {
-      document.getElementById("all-events-heading").style.display = "";
-    }
-
-    el.innerHTML = events.map(eventCard).join("");
+    const [sports, events] = await Promise.all([api.get("/api/sports"), api.get("/api/events")]);
+    renderChips(sports);
+    allEvents = events;
+    draw();
   } catch (e) {
-    el.innerHTML = `<div class="alert error">Couldn't load events: ${escapeHtml(e.message)}</div>`;
+    document.getElementById("events").innerHTML = `<div class="alert error">Couldn't load events: ${escapeHtml(e.message)}</div>`;
   }
 }
 
-function eventCard(ev) {
-  const badgeClass = statusBadgeClass(ev.status);
+function renderChips(sports) {
+  const used = new Set(allEvents.map((e) => e.sport));
+  const row = document.getElementById("sport-chips");
+  const present = sports.filter((s) => used.has(s.key) || true); // show all sports as filters
+  row.innerHTML = `<div class="chip active" data-sport="">All sports</div>` +
+    sports.map((s) => `<div class="chip" data-sport="${escapeHtml(s.key)}">${escapeHtml(s.label)}</div>`).join("");
+  row.querySelectorAll(".chip").forEach((c) => {
+    c.addEventListener("click", () => {
+      activeSport = c.dataset.sport;
+      row.querySelectorAll(".chip").forEach((x) => x.classList.toggle("active", x === c));
+      draw();
+    });
+  });
+}
+
+function matches(ev) {
+  if (activeSport && ev.sport !== activeSport) return false;
+  if (!searchQ) return true;
+  const hay = `${ev.name} ${ev.sportLabel} ${ev.venue || ""}`.toLowerCase();
+  return hay.includes(searchQ);
+}
+
+function draw() {
+  const filtered = allEvents.filter(matches);
+  const live = filtered.filter((e) => e.status === "in_progress");
+  const liveSection = document.getElementById("live-section");
+  if (live.length) {
+    liveSection.style.display = "";
+    document.getElementById("live-events").innerHTML = live.map(photoCard).join("");
+  } else {
+    liveSection.style.display = "none";
+  }
+
+  const featured = filtered.filter((e) => e.prizeAmount).slice(0, 8);
+  const featuredEl = document.getElementById("featured-events");
+  featuredEl.innerHTML = featured.length
+    ? featured.map(photoCard).join("")
+    : `<div class="empty-state" style="width:100%;">No featured tournaments yet.</div>`;
+
+  const rest = filtered.filter((e) => !featured.includes(e) || featured.length === 0);
+  const listEl = document.getElementById("events");
+  listEl.innerHTML = filtered.length
+    ? filtered.map(listCard).join("")
+    : `<div class="empty-state">No events match. Check back soon.</div>`;
+}
+
+function photoCard(ev) {
+  const img = sportImageUrl(ev.sport);
   return `
-    <a class="event-card" href="/event.html?id=${encodeURIComponent(ev.id)}">
-      <span class="badge ${badgeClass}">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
+    <a class="photo-card" style="--card-img:url('${img}');" href="/event.html?id=${encodeURIComponent(ev.id)}">
+      <div class="pc-badges">
+        <span class="badge outline">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
+      </div>
+      ${ev.prizeAmount ? `<div class="pc-prize"><label>Prize</label><div>₹${escapeHtml(String(ev.prizeAmount))}</div></div>` : ""}
+      <div class="pc-sport">${escapeHtml(ev.sportLabel)}</div>
       <h3>${escapeHtml(ev.name)}</h3>
-      <div class="muted small">${escapeHtml(ev.sportLabel)}${ev.venue ? " · " + escapeHtml(ev.venue) : ""}</div>
-      ${ev.startDate ? `<div class="small muted">📅 ${escapeHtml(fmtDateOnly(ev.startDate))}</div>` : ""}
-      <div class="small muted">${ev.registrationCount} ${ev.category === "individual" ? "players" : "teams"} registered</div>
+      <div class="pc-meta">
+        ${ev.venue ? `<span>📍 ${escapeHtml(ev.venue)}</span>` : ""}
+        ${ev.startDate ? `<span>📅 ${escapeHtml(fmtDateOnly(ev.startDate))}</span>` : ""}
+      </div>
     </a>
   `;
 }
+
+function listCard(ev) {
+  const img = sportImageUrl(ev.sport);
+  return `
+    <a class="card list-card" href="/event.html?id=${encodeURIComponent(ev.id)}">
+      <div class="lc-thumb" style="background-image:url('${img}');"></div>
+      <div class="lc-body">
+        <span class="badge ${statusBadgeClass(ev.status)}">${escapeHtml(STATUS_LABELS[ev.status] || ev.status)}</span>
+        <h3>${escapeHtml(ev.name)}</h3>
+        <div class="lc-meta">
+          <span>${escapeHtml(ev.sportLabel)}</span>
+          ${ev.venue ? `<span>📍 ${escapeHtml(ev.venue)}</span>` : ""}
+          ${ev.startDate ? `<span>📅 ${escapeHtml(fmtDateOnly(ev.startDate))}</span>` : ""}
+        </div>
+        <div class="small muted" style="margin-top:4px;">${ev.registrationCount} ${ev.category === "individual" ? "players" : "teams"} registered</div>
+      </div>
+    </a>
+  `;
+}
+
+document.getElementById("explore-search").addEventListener("input", (e) => {
+  searchQ = e.target.value.trim().toLowerCase();
+  draw();
+});
 
 load();
 </script>

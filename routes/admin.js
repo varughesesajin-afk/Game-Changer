@@ -42,9 +42,13 @@ router.get("/events", (req, res) => {
 });
 
 router.post("/events", (req, res) => {
-  const { name, sport, description, venue, startDate, regDeadline } = req.body || {};
+  const { name, sport, description, venue, startDate, regDeadline, prizeAmount } = req.body || {};
   if (!name || !String(name).trim()) return res.status(400).json({ error: "Event name is required." });
   if (!getSport(sport)) return res.status(400).json({ error: "Unknown sport." });
+  if (prizeAmount !== undefined && prizeAmount !== "" && prizeAmount != null) {
+    const n = Number(prizeAmount);
+    if (Number.isNaN(n) || n < 0) return res.status(400).json({ error: "Prize amount must be a non-negative number." });
+  }
 
   const event = db.insert("events", "event", {
     name: String(name).trim(),
@@ -53,6 +57,7 @@ router.post("/events", (req, res) => {
     venue: venue ? String(venue).trim() : "",
     startDate: startDate || null,
     regDeadline: regDeadline || null,
+    prizeAmount: prizeAmount === "" || prizeAmount == null ? null : Number(prizeAmount),
     status: "registration_open",
     format: null,
   });
@@ -69,7 +74,7 @@ router.patch("/events/:id", (req, res) => {
   const event = db.find("events", req.params.id);
   if (!event) return res.status(404).json({ error: "Event not found" });
 
-  const allowed = ["name", "description", "venue", "startDate", "regDeadline", "status"];
+  const allowed = ["name", "description", "venue", "startDate", "regDeadline", "status", "prizeAmount"];
   const patch = {};
   for (const key of allowed) {
     if (key in (req.body || {})) patch[key] = req.body[key];
@@ -413,7 +418,7 @@ router.get("/communities/:id", (req, res) => {
 router.patch("/communities/:id", (req, res) => {
   const existing = db.find("communities", req.params.id);
   if (!existing) return res.status(404).json({ error: "Community not found" });
-  const allowed = ["name", "sport", "host", "venue", "description", "status"];
+  const allowed = ["name", "sport", "host", "venue", "description", "status", "scheduleText", "pricePerGame"];
   const patch = {};
   for (const key of allowed) {
     if (key in (req.body || {})) patch[key] = req.body[key];

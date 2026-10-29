@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Host &amp; Earn · Games All Day</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body class="has-bottom-nav dark-theme">
+<header class="topbar">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
+    <nav class="topnav hide-on-mobile">
+      <a href="/">Explore</a>
+      <a href="/communities.html">Community</a>
+      <a href="/tourneys.html">Tourneys</a>
+      <a href="/host-earn.html" class="active">Host & Earn</a>
+      <a href="/profile.html">My Games</a>
+    </nav>
+    <span id="header-auth"></span>
+  </div>
+</header>
+
+<div class="wrap">
+  <p class="eyebrow">Host &amp; Earn</p>
+  <div class="photo-hero" style="--hero-img:url('/images/sports/default.svg'); min-height:220px;">
+    <span class="badge brand">✨ For hosts</span>
+    <h1>Turn your games into income</h1>
+    <p>Run your own community, charge a price per game, and keep every seat filled.</p>
+  </div>
+
+  <div class="alert info" style="margin-top:18px;">
+    This page is a preview — the numbers below are estimates only. No real payments are collected or processed by Games All Day.
+  </div>
+
+  <h2>Estimate your earnings</h2>
+  <div class="card">
+    <div class="row">
+      <div class="field">
+        <label>Players per game</label>
+        <input id="he-players" type="number" min="1" max="60" value="10">
+      </div>
+      <div class="field">
+        <label>Price per player (AED)</label>
+        <input id="he-price" type="number" min="0" step="1" value="25">
+      </div>
+      <div class="field">
+        <label>Games per month</label>
+        <input id="he-games" type="number" min="1" max="60" value="8">
+      </div>
+    </div>
+    <div class="section-head" style="margin-top:10px; margin-bottom:6px;"><h3 style="margin:0;">Estimated monthly revenue</h3></div>
+    <div id="he-result" style="font-family:var(--font-display); font-weight:700; font-size:2rem; color:var(--brand-green);">AED 0</div>
+    <div class="small muted" id="he-breakdown" style="margin-top:4px;"></div>
+  </div>
+
+  <div class="section-head"><h2>How hosting works</h2></div>
+  <div class="hscroll">
+    <div class="photo-card" style="--card-img:url('/images/sports/football.svg');">
+      <div class="pc-sport">Step 1</div>
+      <h3>Start a community</h3>
+      <div class="pc-meta"><span>Create your group in under a minute, free.</span></div>
+    </div>
+    <div class="photo-card" style="--card-img:url('/images/sports/basketball.svg');">
+      <div class="pc-sport">Step 2</div>
+      <h3>Add games &amp; set a price</h3>
+      <div class="pc-meta"><span>Pick a date, format and price per player.</span></div>
+    </div>
+    <div class="photo-card" style="--card-img:url('/images/sports/volleyball.svg');">
+      <div class="pc-sport">Step 3</div>
+      <h3>Players claim a spot</h3>
+      <div class="pc-meta"><span>Members join with one tap and show up.</span></div>
+    </div>
+  </div>
+
+  <div class="section-head"><h2>Plans</h2></div>
+  <div class="grid">
+    <div class="card">
+      <span class="badge">Starter</span>
+      <h3 style="margin-top:6px;">Free</h3>
+      <p class="small muted">Unlimited communities and games, member management, and game listings. Perfect for casual hosts just getting started.</p>
+    </div>
+    <div class="card" style="border-color: var(--brand-teal);">
+      <span class="badge solid-brand" style="background:var(--brand-gradient); color:#fff;">Pro · Preview</span>
+      <h3 style="margin-top:6px;">A small % per paid booking</h3>
+      <p class="small muted">Priority placement in Tourneys, advanced attendance stats, and faster payouts. Pricing shown for preview purposes only — billing isn't live yet.</p>
+    </div>
+  </div>
+
+  <div style="text-align:center; margin-top:28px;">
+    <a href="/communities.html" class="btn" style="padding:12px 28px;">+ Start your community</a>
+  </div>
+</div>
+
+<footer class="site-footer">Games All Day · <a href="/matchdays.html" class="small">Match Days</a> · <a href="/admin.html" class="small">Organizer login</a></footer>
+
+<nav class="bottom-nav">
+  <a href="/">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+    <span>Explore</span>
+  </a>
+  <a href="/communities.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.3 19c.7-3 2.9-4.8 5.7-4.8s5 1.8 5.7 4.8"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.4c2.2.3 3.9 1.9 4.5 4.3"/></svg>
+    <span>Community</span>
+  </a>
+  <a href="/tourneys.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 5H5a2 2 0 0 0 0 4h1"/><path d="M17 5h2a2 2 0 0 1 0 4h-1"/></svg>
+    <span>Tourneys</span>
+  </a>
+  <a href="/host-earn.html" class="active">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>
+    <span>Host & Earn</span>
+  </a>
+  <a href="/profile.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.9-3.6 3.5-5.7 6.5-5.7s5.6 2.1 6.5 5.7"/></svg>
+    <span>My Games</span>
+  </a>
+</nav>
+
+<script src="/js/api.js"></script>
+<script>
+function calc() {
+  const players = Math.max(0, Number(document.getElementById("he-players").value) || 0);
+  const price = Math.max(0, Number(document.getElementById("he-price").value) || 0);
+  const games = Math.max(0, Number(document.getElementById("he-games").value) || 0);
+  const total = players * price * games;
+  document.getElementById("he-result").textContent = `AED ${total.toLocaleString()}`;
+  document.getElementById("he-breakdown").textContent = `${players} players × AED ${price} × ${games} games/month`;
+}
+["he-players", "he-price", "he-games"].forEach((id) => document.getElementById(id).addEventListener("input", calc));
+calc();
+</script>
+</body>
+</html>

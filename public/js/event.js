@@ -2,7 +2,7 @@ const params = new URLSearchParams(location.search);
 const eventId = params.get("id");
 const content = document.getElementById("content");
 
-let state = { event: null, registrations: [], matches: [], standings: null, stats: null, players: [], activeTab: "register" };
+let state = { event: null, registrations: [], matches: [], standings: null, stats: null, players: [], activeTab: "register", isAdmin: false };
 
 async function init() {
   if (!eventId) {
@@ -10,13 +10,14 @@ async function init() {
     return;
   }
   try {
-    const [event, registrations, matches, standings, stats, players] = await Promise.all([
+    const [event, registrations, matches, standings, stats, players, isAdmin] = await Promise.all([
       api.get(`/api/events/${eventId}`),
       api.get(`/api/events/${eventId}/registrations`),
       api.get(`/api/events/${eventId}/fixtures`),
       api.get(`/api/events/${eventId}/standings`),
       api.get(`/api/events/${eventId}/stats`),
       api.get(`/api/events/${eventId}/players`),
+      checkIsAdmin(),
     ]);
     state.event = event;
     state.registrations = registrations;
@@ -24,6 +25,7 @@ async function init() {
     state.standings = standings;
     state.stats = stats;
     state.players = players;
+    state.isAdmin = isAdmin;
     state.activeTab = event.status === "registration_open" ? "register" : "participants";
     render();
   } catch (e) {
@@ -88,6 +90,7 @@ function render() {
       </div>
     </div>
 
+    ${state.isAdmin ? manageLinkHtml(`#event=${eventId}`, "Manage this event") : ""}
     ${ev.description ? `<p style="margin-top:14px;">${escapeHtml(ev.description)}</p>` : ""}
 
     <div class="card" style="margin-top:16px;">

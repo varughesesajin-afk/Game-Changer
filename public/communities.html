@@ -11,52 +11,99 @@
   <div class="wrap">
     <a class="brand" href="/"><span class="logo">🏆</span> Games All Day</a>
     <nav class="topnav hide-on-mobile">
-      <a href="/">Events</a>
-      <a href="/matchdays.html">Match Days</a>
-      <a href="/communities.html">Community</a>
-      <a href="/admin.html">Organizer login</a>
+      <a href="/">Explore</a>
+      <a href="/communities.html" class="active">Community</a>
+      <a href="/tourneys.html">Tourneys</a>
+      <a href="/host-earn.html">Host & Earn</a>
+      <a href="/profile.html">My Games</a>
     </nav>
+    <span id="header-auth"></span>
   </div>
 </header>
 
 <div class="wrap">
-  <div class="page-hero">
+  <p class="eyebrow">Community</p>
+  <div class="page-head">
     <h1>Join your people</h1>
-    <p>Browse clubs and casual groups, join the ones you play with, and see their upcoming games.</p>
+    <button class="btn secondary" id="start-community-btn">+ Start one</button>
   </div>
+  <p class="muted" style="margin-top:4px;">Browse clubs and casual groups, join the ones you play with, and see their upcoming games.</p>
 
-  <div class="field" style="margin-top:18px;">
+  <div class="search-field">
     <input id="community-search" placeholder="Search communities…" autocomplete="off">
   </div>
 
-  <div class="tabs" id="community-tabs" style="margin-top:6px;">
-    <div class="tab active" data-ctab="mine">My communities</div>
-    <div class="tab" data-ctab="discover">Discover</div>
+  <div class="segmented" id="community-tabs">
+    <button class="active" data-ctab="mine">My communities</button>
+    <button data-ctab="discover">Discover</button>
   </div>
 
-  <div id="communities" class="grid" style="margin-top:4px;">
+  <div id="communities" style="margin-top:16px; display:flex; flex-direction:column; gap:10px;">
     <div class="empty-state"><span class="spinner"></span></div>
   </div>
 </div>
 
-<footer class="site-footer">Games All Day</footer>
+<div id="start-community-overlay" class="modal-overlay" style="display:none;">
+  <div class="modal-sheet">
+    <div class="modal-head">
+      <h3 style="margin:0;">Start a community</h3>
+      <button class="modal-close" id="start-community-close" aria-label="Close">×</button>
+    </div>
+    <form id="start-community-form">
+      <div class="field">
+        <label>Name</label>
+        <input id="sc-name" required maxlength="100" placeholder="e.g. Marina Weekend Footballers">
+      </div>
+      <div class="field">
+        <label>Sport</label>
+        <select id="sc-sport"></select>
+      </div>
+      <div class="row">
+        <div class="field">
+          <label>Venue</label>
+          <input id="sc-venue" maxlength="120" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Price per game</label>
+          <input id="sc-price" type="number" min="0" step="1" placeholder="Optional">
+        </div>
+      </div>
+      <div class="field">
+        <label>Usual schedule</label>
+        <input id="sc-schedule" maxlength="60" placeholder="e.g. Fridays 7pm">
+      </div>
+      <div class="field">
+        <label>Description</label>
+        <textarea id="sc-description" rows="3" maxlength="500" placeholder="Optional"></textarea>
+      </div>
+      <div id="start-community-alert"></div>
+      <button class="btn" type="submit" style="width:100%;">Create community</button>
+    </form>
+  </div>
+</div>
+
+<footer class="site-footer">Games All Day · <a href="/matchdays.html" class="small">Match Days</a> · <a href="/admin.html" class="small">Organizer login</a></footer>
 
 <nav class="bottom-nav">
   <a href="/">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9a1 1 0 0 0 1 1h3.5v-5a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v5H17.5a1 1 0 0 0 1-1v-9"/></svg>
-    <span>Home</span>
-  </a>
-  <a href="/matchdays.html">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17"/><path d="M8 3v4M16 3v4"/></svg>
-    <span>Match Days</span>
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg>
+    <span>Explore</span>
   </a>
   <a href="/communities.html" class="active">
     <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.3 19c.7-3 2.9-4.8 5.7-4.8s5 1.8 5.7 4.8"/><circle cx="17" cy="9.5" r="2.4"/><path d="M15.8 14.4c2.2.3 3.9 1.9 4.5 4.3"/></svg>
     <span>Community</span>
   </a>
-  <a href="/admin.html">
-    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5 19 6v5.5c0 4.5-3 7.8-7 9-4-1.2-7-4.5-7-9V6z"/><path d="m9 12 2 2 4-4"/></svg>
-    <span>Organizer</span>
+  <a href="/tourneys.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21h8"/><path d="M12 17v4"/><path d="M7 4h10v5a5 5 0 0 1-10 0V4z"/><path d="M7 5H5a2 2 0 0 0 0 4h1"/><path d="M17 5h2a2 2 0 0 1 0 4h-1"/></svg>
+    <span>Tourneys</span>
+  </a>
+  <a href="/host-earn.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3z"/></svg>
+    <span>Host & Earn</span>
+  </a>
+  <a href="/profile.html">
+    <svg class="bn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.2"/><path d="M5.5 20c.9-3.6 3.5-5.7 6.5-5.7s5.6 2.1 6.5 5.7"/></svg>
+    <span>My Games</span>
   </a>
 </nav>
 
@@ -76,44 +123,115 @@ async function load() {
   }
 }
 
-function draw() {
+async function draw() {
   const el = document.getElementById("communities");
   const q = document.getElementById("community-search").value.trim().toLowerCase();
-  const joined = myCommunityIds();
-  let list = all.filter((c) => (activeTab === "mine" ? joined.includes(c.id) : true));
-  if (q) list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.host || "").toLowerCase().includes(q));
 
-  if (!list.length) {
-    el.innerHTML =
-      activeTab === "mine"
-        ? `<div class="empty-state">You haven't joined any communities yet. Check the Discover tab.</div>`
-        : `<div class="empty-state">No communities match your search.</div>`;
+  if (activeTab === "mine") {
+    const me = await whoAmI();
+    if (!me.user) {
+      el.innerHTML = `
+        <div class="empty-state">
+          <p>Sign in to see the communities you've joined.</p>
+          ${signInButtonHtml()}
+        </div>`;
+      return;
+    }
+    let mine;
+    try {
+      mine = await api.get("/api/me/communities");
+    } catch (e) {
+      el.innerHTML = `<div class="alert error">Couldn't load your communities: ${escapeHtml(e.message)}</div>`;
+      return;
+    }
+    let list = mine;
+    if (q) list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.host || "").toLowerCase().includes(q));
+    el.innerHTML = list.length
+      ? list.map(communityCard).join("")
+      : `<div class="empty-state">You haven't joined any communities yet. Check the Discover tab.</div>`;
     return;
   }
-  el.innerHTML = list.map(communityCard).join("");
+
+  let list = all;
+  if (q) list = list.filter((c) => c.name.toLowerCase().includes(q) || (c.host || "").toLowerCase().includes(q));
+  el.innerHTML = list.length ? list.map(communityCard).join("") : `<div class="empty-state">No communities match your search.</div>`;
 }
 
 function communityCard(c) {
   const closed = c.status !== "open";
+  const img = sportImageUrl(c.sport);
   return `
-    <a class="event-card community-card" href="/community.html?id=${encodeURIComponent(c.id)}">
-      <div class="community-banner">
+    <a class="card list-card" href="/community.html?id=${encodeURIComponent(c.id)}">
+      <div class="lc-thumb" style="background-image:url('${img}');"></div>
+      <div class="lc-body">
         <span class="badge ${closed ? "" : "accent"}">${closed ? "Closed" : "Open"}</span>
+        <h3>${escapeHtml(c.name)}</h3>
+        <div class="lc-meta">
+          <span>${c.host ? "Host · " + escapeHtml(c.host) : escapeHtml(c.sportLabel || "")}</span>
+          <span>${c.memberCount} member${c.memberCount === 1 ? "" : "s"}</span>
+          <span>${c.upcomingGamesCount} upcoming game${c.upcomingGamesCount === 1 ? "" : "s"}</span>
+        </div>
+        ${c.pricePerGame ? `<div class="lc-price">AED ${escapeHtml(String(c.pricePerGame))} / game</div>` : ""}
       </div>
-      <h3>${escapeHtml(c.name)}</h3>
-      <div class="muted small">${c.host ? "Host · " + escapeHtml(c.host) : escapeHtml(c.sportLabel || "")}</div>
-      <div class="small muted">${c.memberCount} member${c.memberCount === 1 ? "" : "s"} · ${c.upcomingGamesCount} upcoming game${c.upcomingGamesCount === 1 ? "" : "s"}</div>
     </a>
   `;
 }
 
 document.getElementById("community-search").addEventListener("input", draw);
-document.querySelectorAll("[data-ctab]").forEach((t) => {
+document.querySelectorAll("#community-tabs [data-ctab]").forEach((t) => {
   t.addEventListener("click", () => {
     activeTab = t.dataset.ctab;
-    document.querySelectorAll("[data-ctab]").forEach((x) => x.classList.toggle("active", x === t));
+    document.querySelectorAll("#community-tabs [data-ctab]").forEach((x) => x.classList.toggle("active", x === t));
     draw();
   });
+});
+
+// ----- "+ Start one" modal -----
+const scOverlay = document.getElementById("start-community-overlay");
+const scForm = document.getElementById("start-community-form");
+
+async function openStartCommunity() {
+  const me = await whoAmI();
+  if (!me.user) {
+    location.href = signInUrl();
+    return;
+  }
+  const sportSelect = document.getElementById("sc-sport");
+  if (!sportSelect.options.length) {
+    try {
+      const sports = await api.get("/api/sports");
+      sportSelect.innerHTML = sports.map((s) => `<option value="${escapeHtml(s.key)}">${escapeHtml(s.label)}</option>`).join("");
+    } catch (e) {}
+  }
+  scOverlay.style.display = "flex";
+}
+
+document.getElementById("start-community-btn").addEventListener("click", openStartCommunity);
+document.getElementById("start-community-close").addEventListener("click", () => { scOverlay.style.display = "none"; });
+scOverlay.addEventListener("click", (e) => { if (e.target === scOverlay) scOverlay.style.display = "none"; });
+
+scForm.addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const alertEl = document.getElementById("start-community-alert");
+  alertEl.innerHTML = "";
+  const payload = {
+    name: document.getElementById("sc-name").value.trim(),
+    sport: document.getElementById("sc-sport").value,
+    venue: document.getElementById("sc-venue").value.trim(),
+    pricePerGame: document.getElementById("sc-price").value,
+    scheduleText: document.getElementById("sc-schedule").value.trim(),
+    description: document.getElementById("sc-description").value.trim(),
+  };
+  if (!payload.name) {
+    alertEl.innerHTML = `<div class="alert error">Community name is required.</div>`;
+    return;
+  }
+  try {
+    const created = await api.post("/api/communities", payload);
+    location.href = `/community.html?id=${encodeURIComponent(created.id)}`;
+  } catch (err) {
+    alertEl.innerHTML = `<div class="alert error">${escapeHtml(err.message)}</div>`;
+  }
 });
 
 load();

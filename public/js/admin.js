@@ -295,6 +295,11 @@ function createEventFormHtml() {
           <label>Registration deadline (optional)</label>
           <input name="regDeadline" type="date">
         </div>
+        <div class="field">
+          <label>Prize amount (optional)</label>
+          <input name="prizeAmount" type="number" min="0" step="1" placeholder="e.g. 2000">
+          <div class="hint">Set this to feature the event in "Featured tournaments" on Explore/Tourneys.</div>
+        </div>
       </div>
       <button class="btn" type="submit">Create event</button>
     </form>
@@ -572,6 +577,10 @@ function drawSettingsTab(body) {
           <div class="field">
             <label>Registration deadline</label>
             <input name="regDeadline" type="date" value="${e.regDeadline || ""}">
+          </div>
+          <div class="field">
+            <label>Prize amount</label>
+            <input name="prizeAmount" type="number" min="0" step="1" value="${e.prizeAmount != null ? e.prizeAmount : ""}" placeholder="Optional">
           </div>
         </div>
         <div class="field">
@@ -1724,6 +1733,10 @@ function drawCommunityView() {
               <option value="closed" ${c.status === "closed" ? "selected" : ""}>Closed</option>
             </select>
           </div>
+        </div>
+        <div class="row">
+          <div class="field"><label>Usual schedule</label><input name="scheduleText" value="${escapeHtml(c.scheduleText || "")}" maxlength="60" placeholder="e.g. Fridays 7pm"></div>
+          <div class="field"><label>Price per game</label><input name="pricePerGame" type="number" min="0" step="1" value="${c.pricePerGame != null ? c.pricePerGame : ""}" placeholder="Optional"></div>
         </div>
         <div class="field"><label>Description</label><textarea name="description" rows="2">${escapeHtml(c.description || "")}</textarea></div>
         <button class="btn" type="submit">Save changes</button>

@@ -2,7 +2,7 @@ const params = new URLSearchParams(location.search);
 const matchdayId = params.get("id");
 const content = document.getElementById("content");
 
-let state = { matchday: null, signups: [] };
+let state = { matchday: null, signups: [], isAdmin: false };
 
 async function init() {
   if (!matchdayId) {
@@ -17,12 +17,14 @@ async function init() {
 }
 
 async function load() {
-  const [matchday, signups] = await Promise.all([
+  const [matchday, signups, isAdmin] = await Promise.all([
     api.get(`/api/matchdays/${matchdayId}`),
     api.get(`/api/matchdays/${matchdayId}/signups`),
+    checkIsAdmin(),
   ]);
   state.matchday = matchday;
   state.signups = signups;
+  state.isAdmin = isAdmin;
   render();
 }
 
@@ -58,6 +60,7 @@ function render() {
         <div class="event-hero-chip"><span class="ehc-icon">👥</span><div><label>Players</label><div class="ehc-val">${md.signupCount}/${md.maxPlayers}</div></div></div>
       </div>
     </div>
+    ${state.isAdmin ? manageLinkHtml(`#matchday=${matchdayId}`, "Manage this match day") : ""}
     ${md.notes ? `<p style="margin-top:14px;">${escapeHtml(md.notes)}</p>` : ""}
 
     <div class="card" style="margin-top:20px;">
