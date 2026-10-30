@@ -9,6 +9,7 @@ import { apiGet } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { endSession } from "@/lib/session";
 import ProfilePicture from "@/components/ProfilePicture";
+import MyStats from "@/components/MyStats";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function Profile() {
@@ -58,6 +59,8 @@ export default function Profile() {
           <span className="font-semibold text-energy">Run a community?</span> Unlock Manage for OMR 1/month.
         </Link>
       )}
+
+      <MyStats userId={me.user_id} />
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-bold">My upcoming games</h2>

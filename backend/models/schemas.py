@@ -212,6 +212,13 @@ class Team(BaseModel):
     captain_id: str
     captain_name: str
     players: List[str] = Field(default_factory=list)
+    logo: Optional[str] = None
+
+
+class MatchGoal(BaseModel):
+    team_id: str
+    player: str
+    goals: int = Field(ge=0)
 
 
 class Match(BaseModel):
@@ -225,6 +232,36 @@ class Match(BaseModel):
     score_a: Optional[int] = None
     score_b: Optional[int] = None
     winner_id: Optional[str] = None
+    date: Optional[str] = None  # scheduled kick-off
+    time: Optional[str] = None
+    pitch: Optional[str] = None
+    goals: List[MatchGoal] = Field(default_factory=list)
+    motm_team_id: Optional[str] = None
+    motm_player: Optional[str] = None
+
+
+class MatchScheduleIn(BaseModel):
+    date: Optional[str] = None
+    time: Optional[str] = None
+    pitch: Optional[str] = Field(None, max_length=60)
+
+
+class MatchStatsIn(BaseModel):
+    goals: List[MatchGoal] = Field(default_factory=list)
+    motm_team_id: Optional[str] = None
+    motm_player: Optional[str] = None
+
+
+class TeamLogoIn(BaseModel):
+    logo: Optional[str] = None  # "/api/images/<id>" or None to remove
+
+
+class ScorerRow(BaseModel):
+    player: str
+    team_id: str
+    team_name: str
+    goals: int
+    motm: int
 
 
 TournamentFormat = Literal["league", "knockout", "groups_knockout", "league_playoffs", "other"]

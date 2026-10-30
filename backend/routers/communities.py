@@ -289,7 +289,7 @@ async def player_profile(key: str, community_id: Optional[str] = None):
     games = [Game(**d) for d in await db.games.find(q, {"_id": 0}).sort("date", -1).to_list(3000)]
     per: dict[str, PlayerCommunityStats] = {}
     recent: List[PlayerGameLine] = []
-    name = user_doc["name"] if user_doc else None
+    name = user_doc["name"] if user_doc else None  # registered users always resolve, even with 0 games
     for g in games:
         r = next((x for x in g.roster if match(x)), None)
         if not r:
@@ -308,7 +308,7 @@ async def player_profile(key: str, community_id: Optional[str] = None):
             recent.append(PlayerGameLine(game_id=g.id, community_id=g.community_id, community_name=g.community_name,
                                          sport=g.sport, date=g.date, team=r.team, goals=r.goals, outcome=out, motm=motm))
     if name is None:
-        raise HTTPException(404, "Player not found")
+        raise HTTPException(404, "Player not found")  # unknown user and no games
     comms = sorted(per.values(), key=lambda x: -x.games)
     totals = PlayerCommunityStats(community_id="", community_name="All communities", sport="",
                                   games=sum(x.games for x in comms), wins=sum(x.wins for x in comms),

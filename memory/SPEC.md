@@ -70,3 +70,9 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - League/group results allow draws; when the stage is fully played: league → champion = table leader; groups → top N per group seeded into bracket (A1 v B2…); league_playoffs → top playoff_teams into bracket.
 - GET /api/tournaments/{tid}/standings → [{group, rows: P W D L GF GA GD Pts}] (3/1/0; sort pts, GD, GF).
 - Tournament page tabs: Teams | Standings | Fixtures (Fixtures = matchdays + knockout bracket). Seed: "Winter Futsal League" (official, groups + knockout, part-played).
+
+## Tournament match centre, scorers, team badges, profile stats
+- Match: date, time, pitch, goals[{team_id, player, goals}], motm_team_id/motm_player. PATCH /api/tournaments/{tid}/matches/{mid}/schedule; POST .../matches/{mid}/stats (organiser/admin; players must be from the two teams). GET /api/tournaments/{tid}/scorers → top scorers (goals, motm).
+- Team.logo: PUT /api/tournaments/{tid}/teams/{team_id}/logo (captain/organiser; /api/images upload). Badges in Teams, Standings, Fixtures, Match centre.
+- MatchDialog (match centre) opens from Fixtures and Bracket for everyone (read-only for non-organisers).
+- Profile: MyStats tiles (Matches, Wins, Goals, MOTM) from GET /api/players/{user_id} (community games; tournament players are names, not accounts).

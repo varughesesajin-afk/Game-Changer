@@ -6,7 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community, require_manage
 from lib.db import db
-from models.schemas import (Match, PlayerIn, ResultIn, StandingRow, StandingsTable, Team, TeamCreate,
+from models.schemas import (Match, MatchScheduleIn, MatchStatsIn, PlayerIn, ResultIn, ScorerRow, StandingRow,
+                            StandingsTable, Team, TeamCreate, TeamLogoIn,
                             Tournament, TournamentCreate, User)
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
@@ -180,6 +181,66 @@ async def create_tournament(body: TournamentCreate, user: User = Depends(current
                    organiser_id=user.user_id, organiser_name=user.name)
     await db.tournaments.insert_one(t.model_dump())
     return t
+
+
+def _find_match(t: Tournament, mid: str) -> Match:
+    m = next((x for x in t.matches if x.id == mid), None)
+    if not m:
+        raise HTTPException(404, "Match not found")
+    return m
+
+
+@router.patch("/{tid}/matches/{mid}/schedule", response_model=Tournament)
+async def schedule_match(tid: str, mid: str, body: MatchScheduleIn, user: User = Depends(current_user)):
+    t = await _get(tid)
+    if not _can_manage(t, user):
+        raise HTTPException(403, "Only the organiser can schedule fixtures")
+    m = _find_match(t, mid)
+    m.date, m.time, m.pitch = body.date or None, body.time or None, (body.pitch or "").strip() or None
+    return await _save(t)
+
+
+@router.post("/{tid}/matches/{mid}/stats", response_model=Tournament)
+async def match_stats(tid: str, mid: str, body: MatchStatsIn, user: User = Depends(current_user)):
+    t = await _get(tid)
+    if not _can_manage(t, user):
+        raise HTTPException(403, "Only the organiser can record scorers")
+    m = _find_match(t, mid)
+    sides = {m.team_a_id, m.team_b_id} - {None}
+    if any(g.team_id not in sides for g in body.goals) or (body.motm_team_id and body.motm_team_id not in sides):
+        raise HTTPException(400, "Players must belong to the two teams in this match")
+    m.goals = [g for g in body.goals if g.goals > 0]
+    m.motm_team_id, m.motm_player = (body.motm_team_id, body.motm_player) if body.motm_player else (None, None)
+    return await _save(t)
+
+
+@router.get("/{tid}/scorers", response_model=List[ScorerRow])
+async def scorers(tid: str):
+    t = await _get(tid)
+    names = {x.id: x.name for x in t.teams}
+    rows: dict = {}
+    for m in t.matches:
+        for g in m.goals:
+            r = rows.setdefault((g.team_id, g.player), ScorerRow(player=g.player, team_id=g.team_id, team_name=names.get(g.team_id, "?"), goals=0, motm=0))
+            r.goals += g.goals
+        if m.motm_player and m.motm_team_id:
+            r = rows.setdefault((m.motm_team_id, m.motm_player), ScorerRow(player=m.motm_player, team_id=m.motm_team_id, team_name=names.get(m.motm_team_id, "?"), goals=0, motm=0))
+            r.motm += 1
+    return sorted(rows.values(), key=lambda r: (-r.goals, -r.motm, r.player))
+
+
+@router.put("/{tid}/teams/{team_id}/logo", response_model=Tournament)
+async def team_logo(tid: str, team_id: str, body: TeamLogoIn, user: User = Depends(current_user)):
+    t = await _get(tid)
+    team = next((x for x in t.teams if x.id == team_id), None)
+    if not team:
+        raise HTTPException(404, "Team not found")
+    if team.captain_id != user.user_id and not _can_manage(t, user):
+        raise HTTPException(403, "Only the captain can change the team badge")
+    if body.logo and not body.logo.startswith("/api/images/"):
+        raise HTTPException(400, "Upload the badge first")
+    team.logo = body.logo or None
+    return await _save(t)
 
 
 @router.get("/{tid}/standings", response_model=List[StandingsTable])

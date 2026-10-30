@@ -158,6 +158,7 @@ export interface Team {
   captain_id: string;
   captain_name: string;
   players: string[];
+  logo: string | null;
 }
 
 export interface Match {
@@ -171,6 +172,42 @@ export interface Match {
   score_a: number | null;
   score_b: number | null;
   winner_id: string | null;
+  date: string | null;
+  time: string | null;
+  pitch: string | null;
+  goals: MatchGoal[];
+  motm_team_id: string | null;
+  motm_player: string | null;
+}
+
+export interface MatchGoal {
+  team_id: string;
+  player: string;
+  goals: number;
+}
+
+export interface MatchScheduleIn {
+  date: string | null;
+  time: string | null;
+  pitch: string | null;
+}
+
+export interface MatchStatsIn {
+  goals: MatchGoal[];
+  motm_team_id: string | null;
+  motm_player: string | null;
+}
+
+export interface TeamLogoIn {
+  logo: string | null;
+}
+
+export interface ScorerRow {
+  player: string;
+  team_id: string;
+  team_name: string;
+  goals: number;
+  motm: number;
 }
 
 export interface TournamentCreate {

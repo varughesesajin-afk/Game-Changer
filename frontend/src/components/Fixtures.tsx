@@ -1,36 +1,20 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import Bracket from "@/components/Bracket";
-import { apiPost } from "@/lib/api";
-import { errMsg, refreshAll } from "@/lib/auth";
+import MatchDialog from "@/components/MatchDialog";
+import TeamBadge from "@/components/TeamBadge";
+import { fmtDate } from "@/lib/auth";
 import type { Match, Tournament } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 /** Fixtures tab: league / group matchdays (draws allowed) followed by the knockout bracket. */
 export default function Fixtures({ t, canManage }: { t: Tournament; canManage: boolean }) {
   const [sel, setSel] = useState<Match | null>(null);
-  const [a, setA] = useState("");
-  const [b, setB] = useState("");
   const name = (id: string | null) => (id ? t.teams.find((x) => x.id === id)?.name ?? "—" : "TBD");
   const table = t.matches.filter((m) => m.stage !== "knockout");
   const hasKnockout = t.format !== "league" && t.format !== "other";
   const groups = Array.from(new Set(table.map((m) => m.group ?? ""))).sort();
 
-  const report = useMutation({
-    mutationFn: () => apiPost<Tournament>(`/tournaments/${t.id}/matches/${sel?.id}/result`, { score_a: Number(a), score_b: Number(b) }),
-    onSuccess: (res) => {
-      const ko = res.matches.some((m) => m.stage === "knockout") && !t.matches.some((m) => m.stage === "knockout");
-      toast.success(res.status === "completed" ? "Final table locked — champion crowned!" : ko ? "Stage complete — knockout bracket drawn!" : "Result saved");
-      setSel(null);
-      refreshAll();
-    },
-    onError: (e) => toast.error(errMsg(e)),
-  });
+  const selected = sel ? t.matches.find((m) => m.id === sel.id) ?? null : null;
 
   if (t.format === "other") {
     return (
@@ -59,23 +43,30 @@ export default function Fixtures({ t, canManage }: { t: Tournament; canManage: b
                 {ms.filter((m) => m.round === d).map((m) => {
                   const played = m.score_a !== null && m.score_b !== null;
                   const can = canManage && !played;
+                  const ta = t.teams.find((x) => x.id === m.team_a_id);
+                  const tb = t.teams.find((x) => x.id === m.team_b_id);
                   return (
                     <button
                       type="button"
                       key={m.id}
-                      disabled={!can}
                       data-testid={`fixture-${m.id}`}
-                      onClick={() => { setSel(m); setA(""); setB(""); }}
+                      onClick={() => setSel(m)}
                       className={cn(
                         "grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 rounded-xl border bg-surface px-3 py-2 text-sm transition-[border-color] duration-150",
                         can ? "border-energy/50 hover:border-energy" : "border-line",
                       )}
                     >
-                      <span className={cn("truncate text-left", played && (m.score_a ?? 0) > (m.score_b ?? 0) && "font-bold text-white")}>{name(m.team_a_id)}</span>
+                      <span className={cn("flex min-w-0 items-center gap-1.5 text-left", played && (m.score_a ?? 0) > (m.score_b ?? 0) && "font-bold text-white")}><TeamBadge team={ta} className="size-5" /><span className="truncate">{name(m.team_a_id)}</span></span>
                       <span className="min-w-14 rounded-md bg-elevated px-2 py-0.5 text-center font-heading font-bold">
                         {played ? `${m.score_a} – ${m.score_b}` : can ? "Score" : "vs"}
                       </span>
-                      <span className={cn("truncate text-right", played && (m.score_b ?? 0) > (m.score_a ?? 0) && "font-bold text-white")}>{name(m.team_b_id)}</span>
+                      <span className={cn("flex min-w-0 items-center justify-end gap-1.5 text-right", played && (m.score_b ?? 0) > (m.score_a ?? 0) && "font-bold text-white")}><span className="truncate">{name(m.team_b_id)}</span><TeamBadge team={tb} className="size-5" /></span>
+                      {(m.date || m.pitch || m.goals.length > 0) && (
+                        <span className="col-span-3 text-center text-[10px] text-slate-400">
+                          {m.date ? `${fmtDate(m.date, "EEE d MMM")}${m.time ? ` · ${m.time}` : ""}` : ""}{m.pitch ? ` · ${m.pitch}` : ""}
+                          {m.goals.length > 0 ? ` · ⚽ ${m.goals.map((g) => `${g.player}${g.goals > 1 ? ` ×${g.goals}` : ""}`).join(", ")}` : ""}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
@@ -99,29 +90,7 @@ export default function Fixtures({ t, canManage }: { t: Tournament; canManage: b
         </section>
       )}
 
-      <Dialog open={!!sel} onOpenChange={(o: boolean) => !o && setSel(null)}>
-        <DialogContent data-testid="fixture-result-dialog" className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Enter score</DialogTitle>
-          </DialogHeader>
-          {sel && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{name(sel.team_a_id)}</Label>
-                <Input data-testid="fixture-score-a-input" type="number" min={0} value={a} onChange={(e) => setA(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{name(sel.team_b_id)}</Label>
-                <Input data-testid="fixture-score-b-input" type="number" min={0} value={b} onChange={(e) => setB(e.target.value)} />
-              </div>
-            </div>
-          )}
-          <p className="text-xs text-slate-500">Draws are allowed in league and group matches.</p>
-          <DialogFooter>
-            <Button data-testid="fixture-result-submit" disabled={a === "" || b === "" || report.isPending} onClick={() => report.mutate()}>Save score</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MatchDialog t={t} match={selected} onClose={() => setSel(null)} canManage={canManage} />
     </div>
   );
 }

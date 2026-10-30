@@ -1,13 +1,7 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Crown } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { apiPost } from "@/lib/api";
-import { errMsg, refreshAll } from "@/lib/auth";
+import MatchDialog from "@/components/MatchDialog";
+import { fmtDate } from "@/lib/auth";
 import type { Match, Tournament } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -21,21 +15,10 @@ function roundName(round: number, total: number): string {
 
 export default function Bracket({ t, canManage }: { t: Tournament; canManage: boolean }) {
   const [sel, setSel] = useState<Match | null>(null);
-  const [a, setA] = useState("");
-  const [b, setB] = useState("");
   const name = (id: string | null) => (id ? t.teams.find((x) => x.id === id)?.name ?? "—" : null);
   const ko = t.matches.filter((m) => m.stage === "knockout");
   const rounds = Math.max(0, ...ko.map((m) => m.round));
-
-  const report = useMutation({
-    mutationFn: () => apiPost<Tournament>(`/tournaments/${t.id}/matches/${sel?.id}/result`, { score_a: Number(a), score_b: Number(b) }),
-    onSuccess: (res) => {
-      toast.success(res.status === "completed" ? "Champion crowned!" : "Result saved — winner advances");
-      setSel(null);
-      refreshAll();
-    },
-    onError: (e) => toast.error(errMsg(e)),
-  });
+  const selected = sel ? t.matches.find((m) => m.id === sel.id) ?? null : null;
 
   if (!ko.length) {
     return (
@@ -63,12 +46,8 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
                       type="button"
                       key={m.id}
                       data-testid={`bracket-match-${m.round}-${m.slot}`}
-                      disabled={!(canManage && ready)}
-                      onClick={() => {
-                        setSel(m);
-                        setA("");
-                        setB("");
-                      }}
+                      disabled={!(m.team_a_id && m.team_b_id)}
+                      onClick={() => setSel(m)}
                       className={cn(
                         "overflow-hidden rounded-xl border bg-surface text-left transition-[border-color,transform] duration-200",
                         canManage && ready ? "border-energy/60 hover:-translate-y-0.5 hover:border-energy" : "border-line",
@@ -93,6 +72,9 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
                           </div>
                         );
                       })}
+                      {m.date && (
+                        <div className="px-3 py-1 text-[10px] text-slate-400">{fmtDate(m.date, "EEE d MMM")}{m.time ? ` · ${m.time}` : ""}{m.pitch ? ` · ${m.pitch}` : ""}</div>
+                      )}
                       {canManage && ready && (
                         <div className="bg-energy/15 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.15em] text-energy">Tap to report score</div>
                       )}
@@ -111,30 +93,7 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
         )}
       </div>
 
-      <Dialog open={!!sel} onOpenChange={(o: boolean) => !o && setSel(null)}>
-        <DialogContent data-testid="report-result-dialog" className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Report result</DialogTitle>
-          </DialogHeader>
-          {sel && (
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1.5">
-                <Label>{name(sel.team_a_id)}</Label>
-                <Input data-testid="result-score-a-input" type="number" min={0} value={a} onChange={(e) => setA(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>{name(sel.team_b_id)}</Label>
-                <Input data-testid="result-score-b-input" type="number" min={0} value={b} onChange={(e) => setB(e.target.value)} />
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button data-testid="result-submit-button" disabled={a === "" || b === "" || report.isPending} onClick={() => report.mutate()}>
-              Save result
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <MatchDialog t={t} match={selected} onClose={() => setSel(null)} canManage={canManage} />
     </>
   );
 }

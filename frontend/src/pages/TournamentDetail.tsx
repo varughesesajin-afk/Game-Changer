@@ -2,12 +2,13 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarDays, Crown, MapPin, Plus, Shield, Trash2, Trophy, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Crown, MapPin, Plus, Trash2, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Fixtures from "@/components/Fixtures";
+import TeamLogo from "@/components/TeamLogo";
 import Standings from "@/components/Standings";
 import { formatLabel } from "@/lib/formats";
 import ShareButtons from "@/components/ShareButtons";
@@ -39,7 +40,7 @@ function TeamRow({ t, team, canEdit }: { t: Tournament; team: Team; canEdit: boo
     <div data-testid={`team-row-${team.id}`} className="rounded-2xl border border-line bg-surface p-4">
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <Shield className="size-5 text-ice" />
+          <TeamLogo t={t} team={team} canEdit={canEdit} />
           <span className="font-heading text-lg font-bold">{team.name}</span>
           {champ && <Crown className="size-4 text-amber-400" />}
         </div>

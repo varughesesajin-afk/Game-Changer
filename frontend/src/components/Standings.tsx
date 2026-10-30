@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import { apiGet } from "@/lib/api";
+import TeamBadge from "@/components/TeamBadge";
+import TopScorers from "@/components/TopScorers";
 import type { StandingsTable, Tournament } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +32,7 @@ export default function Standings({ t }: { t: Tournament }) {
             >
               <span className={cn("font-heading font-bold", qualifies(i) ? "text-energy" : "text-slate-500")}>{i + 1}</span>
               <span className="flex min-w-0 items-center gap-1 truncate font-medium">
+                <TeamBadge team={t.teams.find((x) => x.id === r.team_id)} className="size-5" />
                 <span className="truncate">{r.team_name}</span>
                 {t.champion_id === r.team_id && <Crown className="size-3.5 shrink-0 text-amber-400" />}
               </span>
@@ -46,6 +49,7 @@ export default function Standings({ t }: { t: Tournament }) {
       ))}
       {tables.length === 0 && <p className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-400">The table appears once the tournament starts.</p>}
       {(t.format === "groups_knockout" || t.format === "league_playoffs") && <p className="text-xs text-slate-500">Highlighted teams are in the qualifying places for the knockout stage.</p>}
+      <TopScorers t={t} />
     </div>
   );
 }
