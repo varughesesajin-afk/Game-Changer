@@ -6,7 +6,7 @@ from lib.auth import current_user
 from lib.community_access import to_community
 from lib.dates import today_iso
 from lib.db import db
-from models.schemas import AdminOverview, AdminStats, AdminUser, PaymentRecord, User
+from models.schemas import AdminOverview, AdminStats, AdminUser, PaymentRecord, Tournament, User
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -46,4 +46,5 @@ async def overview(_: User = Depends(require_admin)):
                          communities_owned=owned.get(u["user_id"], 0)) for u in users],
         communities=comms,
         payments=[PaymentRecord(**p) for p in pays[:50]],
+        custom_formats=[Tournament(**t) for t in await db.tournaments.find({"format": "other"}, {"_id": 0}).sort("created_at", -1).to_list(100)],
     )

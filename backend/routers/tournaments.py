@@ -6,8 +6,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community, require_manage
 from lib.db import db
-from models.schemas import (Match, PlayerIn, ResultIn, Team, TeamCreate, Tournament,
-                            TournamentCreate, User)
+from models.schemas import (Match, PlayerIn, ResultIn, StandingRow, StandingsTable, Team, TeamCreate,
+                            Tournament, TournamentCreate, User)
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
@@ -29,17 +29,21 @@ def _can_manage(t: Tournament, user: User) -> bool:
 
 
 def build_bracket(teams: List[Team]) -> List[Match]:
-    n = len(teams)
-    size = 1 << math.ceil(math.log2(n))
+    return build_bracket_ids([t.id for t in teams])
+
+
+def build_bracket_ids(team_ids: List[str]) -> List[Match]:
+    """Single-elimination bracket; seeds in order (1 v last ...), byes auto-advance."""
+    n = len(team_ids)
+    size = 1 << math.ceil(math.log2(max(n, 2)))
     rounds = int(math.log2(size))
-    ids: List[Optional[str]] = [t.id for t in teams] + [None] * (size - n)
+    ids: List[Optional[str]] = list(team_ids) + [None] * (size - n)
     matches: List[Match] = []
     for i in range(size // 2):
         matches.append(Match(round=1, slot=i, team_a_id=ids[i], team_b_id=ids[size - 1 - i]))
     for r in range(2, rounds + 1):
-        for s in range(size >> r):
-            matches.append(Match(round=r, slot=s))
-    # auto-advance byes
+        for s_ in range(size >> r):
+            matches.append(Match(round=r, slot=s_))
     for m in [m for m in matches if m.round == 1]:
         if m.team_a_id and not m.team_b_id:
             m.winner_id = m.team_a_id
@@ -47,9 +51,31 @@ def build_bracket(teams: List[Team]) -> List[Match]:
     return matches
 
 
+def round_robin(team_ids: List[str], legs: int, stage: str, group: Optional[str] = None) -> List[Match]:
+    """Circle method: every team plays every other once per leg (second leg swaps home/away)."""
+    ids: List[Optional[str]] = list(team_ids)
+    if len(ids) % 2:
+        ids.append(None)
+    n = len(ids)
+    out: List[Match] = []
+    for leg in range(legs):
+        rot = ids[:]
+        for r in range(n - 1):
+            slot = 0
+            for i in range(n // 2):
+                a, b = rot[i], rot[n - 1 - i]
+                if a and b:
+                    if leg % 2:
+                        a, b = b, a
+                    out.append(Match(stage=stage, group=group, round=leg * (n - 1) + r + 1, slot=slot, team_a_id=a, team_b_id=b))
+                    slot += 1
+            rot = [rot[0], rot[-1]] + rot[1:-1]
+    return out
+
+
 def _advance(matches: List[Match], m: Match) -> Optional[str]:
-    """Push m.winner_id into the next round. Returns champion id if m was the final."""
-    nxt = next((x for x in matches if x.round == m.round + 1 and x.slot == m.slot // 2), None)
+    """Push m.winner_id into the next knockout round. Returns champion id if m was the final."""
+    nxt = next((x for x in matches if x.stage == "knockout" and x.round == m.round + 1 and x.slot == m.slot // 2), None)
     if not nxt:
         return m.winner_id
     if m.slot % 2 == 0:
@@ -57,6 +83,61 @@ def _advance(matches: List[Match], m: Match) -> Optional[str]:
     else:
         nxt.team_b_id = m.winner_id
     return None
+
+
+def compute_standings(t: Tournament) -> List[StandingsTable]:
+    """Tables for league/group stages (3 pts win, 1 draw). Knockout-only: one win/loss table."""
+    stage = {"league": "league", "league_playoffs": "league", "groups_knockout": "group"}.get(t.format, "knockout")
+    names = {x.id: x.name for x in t.teams}
+    tables: dict = {}
+    for m in t.matches:
+        if m.stage != stage:
+            continue
+        rows = tables.setdefault(m.group, {})
+        for tid in (m.team_a_id, m.team_b_id):
+            if tid and tid not in rows:
+                rows[tid] = StandingRow(team_id=tid, team_name=names.get(tid, "?"))
+        if m.score_a is None or m.score_b is None or not (m.team_a_id and m.team_b_id):
+            continue
+        for tid, gf, ga in ((m.team_a_id, m.score_a, m.score_b), (m.team_b_id, m.score_b, m.score_a)):
+            r = rows[tid]
+            r.played += 1
+            r.goals_for += gf
+            r.goals_against += ga
+            r.goal_diff = r.goals_for - r.goals_against
+            if gf > ga:
+                r.won += 1
+                r.points += 3
+            elif gf == ga:
+                r.drawn += 1
+                r.points += 1
+            else:
+                r.lost += 1
+    if stage == "knockout" and not tables:
+        tables[None] = {x.id: StandingRow(team_id=x.id, team_name=x.name) for x in t.teams}
+    return [StandingsTable(group=g, rows=sorted(rows.values(), key=lambda r: (-r.points, -r.goal_diff, -r.goals_for, r.team_name)))
+            for g, rows in sorted(tables.items(), key=lambda kv: kv[0] or "")]
+
+
+def _maybe_start_knockout(t: Tournament) -> None:
+    """When the league/group stage is fully played, seed the knockout bracket (or crown the league winner)."""
+    stage = "group" if t.format == "groups_knockout" else "league"
+    stage_matches = [m for m in t.matches if m.stage == stage]
+    if not stage_matches or any(m.score_a is None for m in stage_matches):
+        return
+    if any(m.stage == "knockout" for m in t.matches):
+        return
+    tables = compute_standings(t)
+    if t.format == "league":
+        t.champion_id = tables[0].rows[0].team_id if tables and tables[0].rows else None
+        t.status = "completed"
+        return
+    if t.format == "groups_knockout":
+        k = t.advance_per_group
+        qualified = [tbl.rows[pos].team_id for pos in range(k) for tbl in tables if pos < len(tbl.rows)]
+    else:
+        qualified = [r.team_id for r in tables[0].rows[: t.playoff_teams]]
+    t.matches.extend(build_bracket_ids(qualified))
 
 
 @router.get("", response_model=List[Tournament])
@@ -83,6 +164,8 @@ async def list_tournaments(kind: Optional[str] = None, sport: Optional[str] = No
 @router.post("", response_model=Tournament)
 async def create_tournament(body: TournamentCreate, user: User = Depends(current_user)):
     community_name = None
+    if body.format == "other" and len(body.format_notes.strip()) < 10:
+        raise HTTPException(400, "Describe how your format works so the admin can set it up")
     if body.kind == "official":
         if not is_admin(user):
             raise HTTPException(403, "Only platform admins can create official tournaments")
@@ -97,6 +180,11 @@ async def create_tournament(body: TournamentCreate, user: User = Depends(current
                    organiser_id=user.user_id, organiser_name=user.name)
     await db.tournaments.insert_one(t.model_dump())
     return t
+
+
+@router.get("/{tid}/standings", response_model=List[StandingsTable])
+async def standings(tid: str):
+    return compute_standings(await _get(tid))
 
 
 @router.get("/{tid}", response_model=Tournament)
@@ -167,7 +255,22 @@ async def start_tournament(tid: str, user: User = Depends(current_user)):
         raise HTTPException(400, "Tournament already started")
     if len(t.teams) < 2:
         raise HTTPException(400, "At least 2 teams are needed")
-    t.matches = build_bracket(t.teams)
+    ids = [x.id for x in t.teams]
+    if t.format == "knockout":
+        t.matches = build_bracket(t.teams)
+    elif t.format in ("league", "league_playoffs"):
+        if t.format == "league_playoffs" and len(ids) < 3:
+            raise HTTPException(400, "League + playoffs needs at least 3 teams")
+        t.matches = round_robin(ids, t.league_legs, "league")
+    elif t.format == "groups_knockout":
+        g = max(1, min(t.group_count, len(ids) // 2))
+        groups: List[List[str]] = [[] for _ in range(g)]
+        for i, tid in enumerate(ids):  # snake draft keeps groups balanced
+            row, col = divmod(i, g)
+            groups[col if row % 2 == 0 else g - 1 - col].append(tid)
+        t.matches = [m for gi, members in enumerate(groups) for m in round_robin(members, t.league_legs, "group", chr(65 + gi))]
+    else:  # "other": no automatic fixtures; the admin reviews the requested format
+        t.matches = []
     t.status = "ongoing"
     return await _save(t)
 
@@ -182,14 +285,17 @@ async def report_result(tid: str, mid: str, body: ResultIn, user: User = Depends
         raise HTTPException(404, "Match not found")
     if not (m.team_a_id and m.team_b_id):
         raise HTTPException(400, "Both teams are not decided yet")
-    if m.winner_id:
+    if m.score_a is not None or (m.stage == "knockout" and m.winner_id):
         raise HTTPException(400, "Result already recorded")
-    if body.score_a == body.score_b:
+    if m.stage == "knockout" and body.score_a == body.score_b:
         raise HTTPException(400, "Knockout matches need a winner (no draws)")
     m.score_a, m.score_b = body.score_a, body.score_b
-    m.winner_id = m.team_a_id if body.score_a > body.score_b else m.team_b_id
-    champ = _advance(t.matches, m)
-    if champ:
-        t.champion_id = champ
-        t.status = "completed"
+    m.winner_id = None if body.score_a == body.score_b else (m.team_a_id if body.score_a > body.score_b else m.team_b_id)
+    if m.stage == "knockout":
+        champ = _advance(t.matches, m)
+        if champ:
+            t.champion_id = champ
+            t.status = "completed"
+    else:
+        _maybe_start_knockout(t)
     return await _save(t)

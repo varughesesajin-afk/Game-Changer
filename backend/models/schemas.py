@@ -216,13 +216,18 @@ class Team(BaseModel):
 
 class Match(BaseModel):
     id: str = Field(default_factory=_id)
-    round: int
+    stage: Literal["league", "group", "knockout"] = "knockout"
+    group: Optional[str] = None  # "A", "B"... for group stage
+    round: int  # matchday for league/group, bracket round for knockout
     slot: int
     team_a_id: Optional[str] = None
     team_b_id: Optional[str] = None
     score_a: Optional[int] = None
     score_b: Optional[int] = None
     winner_id: Optional[str] = None
+
+
+TournamentFormat = Literal["league", "knockout", "groups_knockout", "league_playoffs", "other"]
 
 
 class TournamentCreate(BaseModel):
@@ -239,6 +244,12 @@ class TournamentCreate(BaseModel):
     team_size: int = Field(5, ge=1, le=30)
     description: str = ""
     image: Optional[str] = None
+    format: TournamentFormat = "knockout"
+    league_legs: int = Field(1, ge=1, le=2)  # 2 = home & away
+    group_count: int = Field(2, ge=1, le=16)
+    advance_per_group: int = Field(2, ge=1, le=8)
+    playoff_teams: int = Field(4, ge=2, le=32)  # league + playoffs: top N go to the bracket
+    format_notes: str = Field("", max_length=1000)  # required for "other"
 
 
 class Tournament(TournamentCreate):
@@ -320,11 +331,30 @@ class AdminUser(BaseModel):
     communities_owned: int
 
 
+class StandingRow(BaseModel):
+    team_id: str
+    team_name: str
+    played: int = 0
+    won: int = 0
+    drawn: int = 0
+    lost: int = 0
+    goals_for: int = 0
+    goals_against: int = 0
+    goal_diff: int = 0
+    points: int = 0
+
+
+class StandingsTable(BaseModel):
+    group: Optional[str] = None
+    rows: List[StandingRow]
+
+
 class AdminOverview(BaseModel):
     stats: AdminStats
     users: List[AdminUser]
     communities: List[Community]
     payments: List[PaymentRecord]
+    custom_formats: List["Tournament"] = Field(default_factory=list)  # "other" format requests to review
 
 
 # ---------- in-app fee reminders ----------
@@ -378,3 +408,6 @@ class GalleryPhoto(GalleryPhotoIn):
 
 class PictureIn(BaseModel):
     picture: Optional[str] = None  # "/api/images/<id>", or None to go back to the Google photo / initial
+
+
+AdminOverview.model_rebuild()

@@ -2,12 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarDays, Crown, MapPin, Plus, Shield, Trash2, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Crown, MapPin, Plus, Shield, Trash2, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import Bracket from "@/components/Bracket";
+import Fixtures from "@/components/Fixtures";
+import Standings from "@/components/Standings";
+import { formatLabel } from "@/lib/formats";
 import ShareButtons from "@/components/ShareButtons";
 import { StatusBadge } from "@/components/TournamentCard";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
@@ -144,6 +146,10 @@ export default function TournamentDetail() {
             <p className="flex items-center gap-1.5 text-slate-400"><CalendarDays className="size-4" />{fmtDate(t.start_date, "EEEE d MMMM yyyy")}</p>
             <p className="flex items-center gap-1.5 text-slate-400"><MapPin className="size-4" />{t.venue}{t.city ? `, ${t.city}` : ""}</p>
             <p className="flex items-center gap-1.5 text-slate-400"><Users className="size-4" />{t.sport} · organised by {t.organiser_name}</p>
+            <p data-testid="tournament-format" className="text-slate-400"><Trophy className="mr-1.5 inline size-4 align-[-3px]" />Format: <span className="font-semibold text-white">{formatLabel(t.format)}</span>
+              {(t.format === "league" || t.format === "groups_knockout" || t.format === "league_playoffs") && t.league_legs === 2 ? " · home & away" : ""}
+              {t.format === "groups_knockout" ? ` · ${t.group_count} groups, top ${t.advance_per_group} advance` : ""}
+              {t.format === "league_playoffs" ? ` · top ${t.playoff_teams} to playoffs` : ""}</p>
             {t.description && <p className="pt-1">{t.description}</p>}
           </div>
 
@@ -169,10 +175,11 @@ export default function TournamentDetail() {
             </div>
           )}
 
-          <Tabs value={tab ?? (t.status === "registration" ? "teams" : "bracket")} onValueChange={(v) => setTab(String(v))}>
+          <Tabs value={tab ?? (t.status === "registration" ? "teams" : "fixtures")} onValueChange={(v) => setTab(String(v))}>
             <TabsList className="w-full">
               <TabsTrigger value="teams" data-testid="tournament-tab-teams" className="flex-1">Teams ({t.teams.length})</TabsTrigger>
-              <TabsTrigger value="bracket" data-testid="tournament-tab-bracket" className="flex-1">Bracket</TabsTrigger>
+              <TabsTrigger value="standings" data-testid="tournament-tab-standings" className="flex-1">Standings</TabsTrigger>
+              <TabsTrigger value="fixtures" data-testid="tournament-tab-fixtures" className="flex-1">Fixtures</TabsTrigger>
             </TabsList>
             <TabsContent value="teams" className="space-y-3 pt-3">
               {t.status === "registration" && !myTeam && t.teams.length < t.max_teams && (
@@ -202,8 +209,11 @@ export default function TournamentDetail() {
               ))}
               {t.teams.length === 0 && <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No teams yet — be the first.</div>}
             </TabsContent>
-            <TabsContent value="bracket" className="pt-3">
-              <Bracket t={t} canManage={canManage} />
+            <TabsContent value="standings" className="pt-3">
+              <Standings t={t} />
+            </TabsContent>
+            <TabsContent value="fixtures" className="pt-3">
+              <Fixtures t={t} canManage={canManage} />
             </TabsContent>
           </Tabs>
           {canManage && (

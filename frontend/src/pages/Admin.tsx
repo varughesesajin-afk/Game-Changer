@@ -57,6 +57,7 @@ export default function Admin() {
           <TabsTrigger value="communities" data-testid="admin-tab-communities" className="flex-1">Communities</TabsTrigger>
           <TabsTrigger value="users" data-testid="admin-tab-users" className="flex-1">Users</TabsTrigger>
           <TabsTrigger value="payments" data-testid="admin-tab-payments" className="flex-1">Payments</TabsTrigger>
+          <TabsTrigger value="formats" data-testid="admin-tab-formats" className="flex-1">Formats{d?.custom_formats.length ? ` (${d.custom_formats.length})` : ""}</TabsTrigger>
         </TabsList>
         <TabsContent value="communities" className="space-y-2 pt-3">
           {d?.communities.map((c) => (
@@ -92,6 +93,16 @@ export default function Admin() {
               </div>
               <span className="shrink-0 font-semibold">{p.currency} {p.amount}</span>
             </div>
+          ))}
+        </TabsContent>
+        <TabsContent value="formats" className="space-y-2 pb-4 pt-3">
+          {d?.custom_formats.length === 0 && <p className="text-sm text-slate-400">No custom format requests.</p>}
+          {d?.custom_formats.map((t) => (
+            <Link key={t.id} to={`/tournaments/${t.id}`} data-testid={`admin-format-${t.id}`} className="block rounded-xl border border-line bg-surface px-3 py-2 text-sm transition-[border-color] hover:border-ice/50">
+              <div className="font-semibold">{t.title}</div>
+              <div className="text-xs text-slate-400">{t.sport} · {t.organiser_name}{t.community_name ? ` · ${t.community_name}` : ""}</div>
+              <p className="mt-1 whitespace-pre-line text-xs text-slate-300">{t.format_notes}</p>
+            </Link>
           ))}
         </TabsContent>
       </Tabs>

@@ -24,7 +24,8 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
   const [a, setA] = useState("");
   const [b, setB] = useState("");
   const name = (id: string | null) => (id ? t.teams.find((x) => x.id === id)?.name ?? "—" : null);
-  const rounds = Math.max(0, ...t.matches.map((m) => m.round));
+  const ko = t.matches.filter((m) => m.stage === "knockout");
+  const rounds = Math.max(0, ...ko.map((m) => m.round));
 
   const report = useMutation({
     mutationFn: () => apiPost<Tournament>(`/tournaments/${t.id}/matches/${sel?.id}/result`, { score_a: Number(a), score_b: Number(b) }),
@@ -36,7 +37,7 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
     onError: (e) => toast.error(errMsg(e)),
   });
 
-  if (!t.matches.length) {
+  if (!ko.length) {
     return (
       <div data-testid="bracket-empty" className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-slate-400">
         The bracket is drawn when the organiser starts the tournament.
@@ -51,7 +52,7 @@ export default function Bracket({ t, canManage }: { t: Tournament; canManage: bo
           <div key={r} className="flex w-52 shrink-0 flex-col">
             <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">{roundName(r, rounds)}</div>
             <div className="flex flex-1 flex-col justify-around gap-3">
-              {t.matches
+              {ko
                 .filter((m) => m.round === r)
                 .sort((x, y) => x.slot - y.slot)
                 .map((m) => {

@@ -63,3 +63,10 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - Gallery (below Members, heading GALLERY): GET/POST /api/communities/{cid}/gallery (host/admin only to add; uses /api/images upload), DELETE /api/gallery/{id}. Full-screen viewer.
 - Profile picture: PUT /api/auth/me/picture {picture} (null resets); users.picture_custom stops Google login overwriting it; propagated to members, join_requests and roster entries (RosterEntry.picture). Leaderboard rows resolve current user pictures.
 - Seed: Tuesday Padel Night is PRIVATE with a pending request from Free Player.
+
+## Tournament formats, Standings, Fixtures
+- Tournament.format: league | knockout | groups_knockout | league_playoffs | other; league_legs (1 or 2 = home & away), group_count, advance_per_group, playoff_teams, format_notes (required >=10 chars for "other").
+- Match.stage league|group|knockout (+ group letter; round = matchday for league/group). Start generates: knockout bracket; round-robin league (circle method); snake-drafted groups round-robin; "other" = no fixtures (listed in admin dashboard Formats tab for review).
+- League/group results allow draws; when the stage is fully played: league → champion = table leader; groups → top N per group seeded into bracket (A1 v B2…); league_playoffs → top playoff_teams into bracket.
+- GET /api/tournaments/{tid}/standings → [{group, rows: P W D L GF GA GD Pts}] (3/1/0; sort pts, GD, GF).
+- Tournament page tabs: Teams | Standings | Fixtures (Fixtures = matchdays + knockout bracket). Seed: "Winter Futsal League" (official, groups + knockout, part-played).

@@ -141,7 +141,21 @@ async def main():
                             description="Friendly doubles knockout for Tuesday regulars.", image=IMG["Padel"],
                             organiser_id=TESTER["user_id"], organiser_name=TESTER["name"],
                             teams=teams(["Smash Bros", "Lob Stars", "Wall Bangers"], 2, TESTER))
-    for t in off + [live, padel_comm]:
+    league = Tournament(title="Winter Futsal League", sport="Football", kind="official", format="groups_knockout",
+                        group_count=2, advance_per_group=2, venue="Al Khuwair Turf", city="Muscat", start_date=d(-5),
+                        entry_fee=20, prize_pool=300, max_teams=8, team_size=5,
+                        description="Two groups of three, top two from each group reach the semi-finals.", image=IMG["Football"],
+                        organiser_id=admin["user_id"], organiser_name=admin["name"],
+                        teams=teams(["Wadi Warriors", "Mutrah Mariners", "Seeb Sharks", "Qurum Kings", "Azaiba Aces", "Ruwi Rockets"], 5, admin))
+    from routers.tournaments import round_robin
+    ids = [x.id for x in league.teams]
+    groups = [[ids[0], ids[3], ids[4]], [ids[1], ids[2], ids[5]]]
+    league.matches = [m for gi, g in enumerate(groups) for m in round_robin(g, 1, "group", "AB"[gi])]
+    for m in league.matches[:4]:
+        m.score_a, m.score_b = rnd.randint(0, 4), rnd.randint(0, 4)
+        m.winner_id = None if m.score_a == m.score_b else (m.team_a_id if m.score_a > m.score_b else m.team_b_id)
+    league.status = "ongoing"
+    for t in off + [live, padel_comm, league]:
         await db.tournaments.insert_one(t.model_dump())
     await db.payment_transactions.insert_one(PaymentRecord(user_id=TESTER["user_id"], user_name=TESTER["name"],
         community_id=communities[1].id, community_name=communities[1].name, plan_id="community_manage",

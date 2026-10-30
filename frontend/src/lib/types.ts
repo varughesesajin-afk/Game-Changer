@@ -162,6 +162,8 @@ export interface Team {
 
 export interface Match {
   id: string;
+  stage: "league" | "group" | "knockout";
+  group: string | null;
   round: number;
   slot: number;
   team_a_id: string | null;
@@ -185,6 +187,32 @@ export interface TournamentCreate {
   team_size: number;
   description: string;
   image?: string | null;
+  format: TournamentFormat;
+  league_legs: number;
+  group_count: number;
+  advance_per_group: number;
+  playoff_teams: number;
+  format_notes: string;
+}
+
+export type TournamentFormat = "league" | "knockout" | "groups_knockout" | "league_playoffs" | "other";
+
+export interface StandingRow {
+  team_id: string;
+  team_name: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goals_for: number;
+  goals_against: number;
+  goal_diff: number;
+  points: number;
+}
+
+export interface StandingsTable {
+  group: string | null;
+  rows: StandingRow[];
 }
 
 export interface Tournament extends TournamentCreate {
@@ -256,6 +284,7 @@ export interface AdminOverview {
   users: AdminUser[];
   communities: Community[];
   payments: PaymentRecord[];
+  custom_formats: Tournament[];
 }
 
 export interface Reminder {
