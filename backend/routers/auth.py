@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from lib.auth import ADMIN_EMAILS, current_user
 from lib.db import db
-from models.schemas import SessionIn, User
+from models.schemas import PictureIn, SessionIn, User
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -27,7 +27,8 @@ async def create_session(body: SessionIn, response: Response):
         user_id = existing["user_id"]
         await db.users.update_one(
             {"user_id": user_id},
-            {"$set": {"name": data.get("name") or existing["name"], "picture": data.get("picture"),
+            {"$set": {"name": data.get("name") or existing["name"],
+                      **({} if existing.get("picture_custom") else {"picture": data.get("picture")}),
                       **({"role": "admin"} if role == "admin" else {})}},
         )
     else:
@@ -52,6 +53,21 @@ async def create_session(body: SessionIn, response: Response):
 @router.get("/me", response_model=User)
 async def me(user: User = Depends(current_user)):
     return user
+
+
+@router.put("/me/picture", response_model=User)
+async def set_picture(body: PictureIn, user: User = Depends(current_user)):
+    """Upload-your-own profile picture; propagated to memberships and upcoming rosters."""
+    pic = body.picture or None
+    await db.users.update_one({"user_id": user.user_id}, {"$set": {"picture": pic, "picture_custom": bool(pic)}})
+    await db.communities.update_many({"members.user_id": user.user_id}, {"$set": {"members.$[m].picture": pic}},
+                                     array_filters=[{"m.user_id": user.user_id}])
+    await db.communities.update_many({"join_requests.user_id": user.user_id}, {"$set": {"join_requests.$[m].picture": pic}},
+                                     array_filters=[{"m.user_id": user.user_id}])
+    await db.games.update_many({"roster.user_id": user.user_id}, {"$set": {"roster.$[r].picture": pic}},
+                               array_filters=[{"r.user_id": user.user_id}])
+    doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
+    return User(**doc)
 
 
 @router.post("/logout")

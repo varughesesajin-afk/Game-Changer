@@ -1,21 +1,8 @@
 import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Camera, RotateCcw } from "lucide-react";
-import { apiPost } from "@/lib/api";
+import { uploadImage } from "@/lib/image";
 import { errMsg, sportImage } from "@/lib/auth";
-import type { ImageUploadOut } from "@/lib/types";
-
-/** Shrinks the photo in the browser (max 1600px wide, JPEG) so uploads stay small and fast. */
-async function toResizedDataUrl(file: File): Promise<string> {
-  const bitmap = await createImageBitmap(file);
-  const scale = Math.min(1, 1600 / bitmap.width);
-  const canvas = document.createElement("canvas");
-  canvas.width = Math.round(bitmap.width * scale);
-  canvas.height = Math.round(bitmap.height * scale);
-  canvas.getContext("2d")?.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-  bitmap.close();
-  return canvas.toDataURL("image/jpeg", 0.82);
-}
 
 interface Props {
   sport: string;
@@ -36,9 +23,7 @@ export default function CoverPhotoPicker({ sport, value, onChange, testid }: Pro
     }
     setBusy(true);
     try {
-      const data_url = await toResizedDataUrl(file);
-      const res = await apiPost<ImageUploadOut>("/images", { data_url });
-      onChange(res.url);
+      onChange(await uploadImage(file, 1600));
       toast.success("Cover photo uploaded");
     } catch (e) {
       toast.error(e instanceof Error && !("status" in e) ? "Couldn't read that photo" : errMsg(e));

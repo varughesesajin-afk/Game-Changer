@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CalendarClock, MapPin, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import Avatar from "@/components/Avatar";
 import { apiDelete, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Game, TeamSide, User } from "@/lib/types";
@@ -17,9 +18,10 @@ interface Props {
   canManage?: boolean;
   showCommunity?: boolean;
   compact?: boolean;
+  membersOnly?: boolean; // private community and viewer isn't an approved member
 }
 
-export default function GameCard({ game, me, canManage = false, showCommunity = false, compact = false }: Props) {
+export default function GameCard({ game, me, canManage = false, showCommunity = false, compact = false, membersOnly = false }: Props) {
   const nav = useNavigate();
   const [guestOpen, setGuestOpen] = useState(false);
   const [guest, setGuest] = useState("");
@@ -76,7 +78,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
             data-testid={`roster-entry-${r.id}`}
             className={cn("group flex items-center justify-between gap-1 truncate text-sm", r.user_id && r.user_id === me?.user_id ? "font-bold text-white" : "text-slate-300")}
           >
-            <span className="truncate">{r.name}{!r.user_id && <span className="ml-1 text-[10px] text-slate-500">guest</span>}{canManage && r.paid && <span data-testid={`roster-paid-${r.id}`} className="ml-1 text-[10px] font-bold text-energy">PAID</span>}</span>
+            <span className="flex min-w-0 items-center gap-1.5 truncate"><Avatar name={r.name} picture={r.picture} className="size-5" /><span className="truncate">{r.name}</span>{!r.user_id && <span className="ml-1 text-[10px] text-slate-500">guest</span>}{canManage && r.paid && <span data-testid={`roster-paid-${r.id}`} className="ml-1 text-[10px] font-bold text-energy">PAID</span>}</span>
             {canRemove(r.added_by, r.user_id) && (
               <button
                 type="button"
@@ -155,13 +157,13 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
           </>
         ) : (
           <>
-            <Button size="sm" data-testid="game-join-a-button" disabled={full || act.isPending} onClick={guard(() => join("A"))}>
+            <Button size="sm" data-testid="game-join-a-button" disabled={full || membersOnly || act.isPending} onClick={guard(() => join("A"))}>
               Join Team A
             </Button>
             <Button
               size="sm"
               data-testid="game-join-b-button"
-              disabled={full || act.isPending}
+              disabled={full || membersOnly || act.isPending}
               onClick={guard(() => join("B"))}
               className="bg-ice text-page hover:bg-ice/90"
             >
@@ -169,10 +171,14 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
             </Button>
           </>
         )}
-        <Button size="sm" variant="ghost" data-testid="game-add-guest-toggle" disabled={full} onClick={guard(() => setGuestOpen((o) => !o))}>
+        <Button size="sm" variant="ghost" data-testid="game-add-guest-toggle" disabled={full || membersOnly} onClick={guard(() => setGuestOpen((o) => !o))}>
           <UserPlus className="size-4" /> Add a name
         </Button>
       </div>
+
+      {membersOnly && !mine && (
+        <p data-testid="game-members-only-note" className="mt-2 text-xs text-amber-300">Private community — only approved members can join this game.</p>
+      )}
 
       {guestOpen && (
         <div className="mt-3 flex gap-2">

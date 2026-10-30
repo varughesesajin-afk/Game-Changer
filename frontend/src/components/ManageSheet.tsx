@@ -14,6 +14,7 @@ import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import GameResultForm from "@/components/GameResultForm";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import GameScheduler from "@/components/GameScheduler";
+import VisibilityToggle from "@/components/VisibilityToggle";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Community, CommunityUpdate, Game, RemindResult, SeasonIn, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -29,7 +30,7 @@ interface Props {
 export default function ManageSheet({ c, games, me, open, onOpenChange }: Props) {
   const nav = useNavigate();
   const [f, setF] = useState<CommunityUpdate>({
-    name: c.name, image: c.image ?? "", venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
+    name: c.name, image: c.image ?? "", visibility: c.visibility, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
   });
   const [tOpen, setTOpen] = useState(false);
   const set = <K extends keyof CommunityUpdate>(k: K, v: CommunityUpdate[K]) => setF((p) => ({ ...p, [k]: v }));
@@ -72,6 +73,10 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
               <div className="space-y-1.5">
                 <Label htmlFor="m-name">Name</Label>
                 <Input id="m-name" data-testid="manage-name-input" value={f.name ?? ""} onChange={(e) => set("name", e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Who can play?</Label>
+                <VisibilityToggle value={f.visibility ?? "open"} onChange={(v) => set("visibility", v)} testid="manage-visibility" />
               </div>
               <div className="space-y-1.5">
                 <Label>Plays on</Label>

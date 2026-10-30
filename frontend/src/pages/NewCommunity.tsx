@@ -9,13 +9,14 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import SportPills from "@/components/SportPills";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
+import VisibilityToggle from "@/components/VisibilityToggle";
 import { apiGet, apiPost } from "@/lib/api";
 import { WEEKDAYS, errMsg, refreshAll, useMe } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const EMPTY: CommunityCreate = {
-  name: "", sport: "Football", city: "Muscat", venue: "", description: "", days: ["Sun", "Tue"], time: "20:00", max_players: 14, fee: 0,
+  name: "", sport: "Football", city: "Muscat", venue: "", description: "", days: ["Sun", "Tue"], time: "20:00", max_players: 14, fee: 0, visibility: "open",
 };
 
 export default function NewCommunity() {
@@ -66,6 +67,12 @@ export default function NewCommunity() {
       <div className="space-y-2">
         <Label>Cover photo</Label>
         <CoverPhotoPicker sport={f.sport} value={f.image} onChange={(url) => set("image", url || null)} testid="community-cover" />
+      </div>
+
+      <div className="space-y-2">
+        <Label>Who can play?</Label>
+        <VisibilityToggle value={f.visibility} onChange={(v) => set("visibility", v)} testid="community-visibility" />
+        <p className="text-xs text-slate-500">Either way, joining the community itself needs your approval.</p>
       </div>
 
       <div className="space-y-2">

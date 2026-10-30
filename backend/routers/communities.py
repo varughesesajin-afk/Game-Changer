@@ -127,11 +127,39 @@ async def delete_community(cid: str, user: User = Depends(current_user)):
 
 @router.post("/communities/{cid}/join", response_model=Community)
 async def join_community(cid: str, user: User = Depends(current_user)):
-    await _get_community(cid)
+    """Ask to join — the host approves or declines."""
+    c = await _get_community(cid)
+    if any(m.user_id == user.user_id for m in c.members):
+        return c
     await db.communities.update_one(
-        {"id": cid, "members.user_id": {"$ne": user.user_id}},
-        {"$push": {"members": Member(user_id=user.user_id, name=user.name, picture=user.picture).model_dump()}},
+        {"id": cid, "join_requests.user_id": {"$ne": user.user_id}},
+        {"$push": {"join_requests": Member(user_id=user.user_id, name=user.name, picture=user.picture).model_dump()}},
     )
+    return await _get_community(cid)
+
+
+def _require_host(c: Community, user: User) -> None:
+    if c.owner_id != user.user_id and not is_admin(user):
+        raise HTTPException(403, "Only the community host can do this")
+
+
+@router.post("/communities/{cid}/requests/{uid}/approve", response_model=Community)
+async def approve_request(cid: str, uid: str, user: User = Depends(current_user)):
+    c = await _get_community(cid)
+    _require_host(c, user)
+    req = next((m for m in c.join_requests if m.user_id == uid), None)
+    if not req:
+        raise HTTPException(404, "No pending request from this player")
+    await db.communities.update_one({"id": cid}, {"$pull": {"join_requests": {"user_id": uid}}})
+    await db.communities.update_one({"id": cid, "members.user_id": {"$ne": uid}}, {"$push": {"members": req.model_dump()}})
+    return await _get_community(cid)
+
+
+@router.post("/communities/{cid}/requests/{uid}/decline", response_model=Community)
+async def decline_request(cid: str, uid: str, user: User = Depends(current_user)):
+    c = await _get_community(cid)
+    _require_host(c, user)
+    await db.communities.update_one({"id": cid}, {"$pull": {"join_requests": {"user_id": uid}}})
     return await _get_community(cid)
 
 
@@ -140,7 +168,8 @@ async def leave_community(cid: str, user: User = Depends(current_user)):
     c = await _get_community(cid)
     if c.owner_id == user.user_id:
         raise HTTPException(400, "Organiser cannot leave their own community")
-    await db.communities.update_one({"id": cid}, {"$pull": {"members": {"user_id": user.user_id}}})
+    await db.communities.update_one({"id": cid}, {"$pull": {"members": {"user_id": user.user_id},
+                                                            "join_requests": {"user_id": user.user_id}}})
     return await _get_community(cid)
 
 
@@ -212,7 +241,8 @@ async def leaderboard(cid: str, scope: Literal["season", "all"] = "season"):
         g = Game(**doc)
         for r in g.roster:
             key = _key(r)
-            row = rows.get(key) or LeaderboardRow(key=key, name=r.name, user_id=r.user_id, games=0, wins=0, goals=0)
+            row = rows.get(key) or LeaderboardRow(key=key, name=r.name, user_id=r.user_id, picture=r.picture,
+                                                  games=0, wins=0, goals=0)
             row.games += 1
             row.goals += r.goals
             if _outcome(g, r.team) == "won":
@@ -220,6 +250,11 @@ async def leaderboard(cid: str, scope: Literal["season", "all"] = "season"):
             if g.result and g.result.motm_entry_id == r.id:
                 row.motm += 1
             rows[key] = row
+    uids = [r.user_id for r in rows.values() if r.user_id]
+    pics = {u["user_id"]: u.get("picture") for u in await db.users.find({"user_id": {"$in": uids}}, {"_id": 0, "user_id": 1, "picture": 1}).to_list(len(uids) or 1)}
+    for r in rows.values():
+        if r.user_id:
+            r.picture = pics.get(r.user_id) or r.picture
     return Leaderboard(scope=scope, season_label=label if scope == "season" else "All time",
                        season_start=start if scope == "season" else None,
                        rows=sorted(rows.values(), key=lambda x: (-x.games, -x.wins, -x.goals, x.name)))
@@ -341,6 +376,13 @@ async def get_game(gid: str):
     return await _get_game(gid)
 
 
+async def _require_can_play(g: Game, user: User) -> None:
+    c = await _get_community(g.community_id)
+    if c.visibility == "private" and not is_admin(user) and c.owner_id != user.user_id \
+            and not any(m.user_id == user.user_id for m in c.members):
+        raise HTTPException(403, "This is a private community — only approved members can join its games")
+
+
 @router.post("/games/{gid}/join", response_model=Game)
 async def join_game(gid: str, body: JoinGameIn, user: User = Depends(current_user)):
     g = await _get_game(gid)
@@ -348,14 +390,11 @@ async def join_game(gid: str, body: JoinGameIn, user: User = Depends(current_use
     if mine:
         await db.games.update_one({"id": gid, "roster.id": mine.id}, {"$set": {"roster.$.team": body.team}})
     else:
+        await _require_can_play(g, user)
         if len(g.roster) >= g.max_players:
             raise HTTPException(409, "This game is full")
-        entry = RosterEntry(user_id=user.user_id, name=user.name, team=body.team, added_by=user.user_id)
+        entry = RosterEntry(user_id=user.user_id, name=user.name, team=body.team, added_by=user.user_id, picture=user.picture)
         await db.games.update_one({"id": gid}, {"$push": {"roster": entry.model_dump()}})
-        await db.communities.update_one(
-            {"id": g.community_id, "members.user_id": {"$ne": user.user_id}},
-            {"$push": {"members": Member(user_id=user.user_id, name=user.name, picture=user.picture).model_dump()}},
-        )
     return await _get_game(gid)
 
 
@@ -369,6 +408,7 @@ async def leave_game(gid: str, user: User = Depends(current_user)):
 @router.post("/games/{gid}/guests", response_model=Game)
 async def add_guest(gid: str, body: GuestIn, user: User = Depends(current_user)):
     g = await _get_game(gid)
+    await _require_can_play(g, user)
     if len(g.roster) >= g.max_players:
         raise HTTPException(409, "This game is full")
     entry = RosterEntry(user_id=None, name=body.name.strip(), team=body.team, added_by=user.user_id)

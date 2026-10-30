@@ -8,6 +8,8 @@ import GameCard from "@/components/GameCard";
 import TournamentCard from "@/components/TournamentCard";
 import ManageSheet from "@/components/ManageSheet";
 import Leaderboard from "@/components/Leaderboard";
+import Gallery from "@/components/Gallery";
+import Avatar from "@/components/Avatar";
 import ShareButtons from "@/components/ShareButtons";
 import ManageSubscribeDialog from "@/components/ManageSubscribeDialog";
 import { apiGet, apiPost } from "@/lib/api";
@@ -29,6 +31,9 @@ export default function CommunityDetail() {
   const isOwner = !!me && !!c && c.owner_id === me.user_id;
   const canManage = !!c && (isAdmin || (isOwner && c.manage_active));
   const isMember = !!me && !!c && c.members.some((m) => m.user_id === me.user_id);
+  const requested = !!me && !!c && c.join_requests.some((m) => m.user_id === me.user_id);
+  const isHostView = isOwner || isAdmin;
+  const canPlay = !!c && (c.visibility === "open" || isMember || isHostView);
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
@@ -73,7 +78,14 @@ export default function CommunityDetail() {
           </button>
         )}
         <div className="absolute bottom-4 left-5 right-5">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-ice">{c?.sport ?? "Community"}</div>
+          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-ice">
+            {c?.sport ?? "Community"}
+            {c && (
+              <span data-testid="community-visibility-badge" className={c.visibility === "private" ? "rounded-full bg-amber-400/20 px-2 py-0.5 text-amber-300" : "rounded-full bg-energy/20 px-2 py-0.5 text-energy"}>
+                {c.visibility === "private" ? "Private" : "Open"}
+              </span>
+            )}
+          </div>
           <h1 data-testid="community-title" className="font-heading text-3xl font-bold leading-tight tracking-tight">{c?.name ?? "Loading…"}</h1>
         </div>
       </header>
@@ -116,9 +128,13 @@ export default function CommunityDetail() {
               text={`Join ${c.name} (${c.sport}, ${c.days.join(" & ") || "weekly"} ${c.time}) on Green Ocean Sporting Events — add your name to the next game!`}
               testid="community-share"
             />
-            {!isMember ? (
-              <Button data-testid="community-join-button" onClick={() => (me ? act.mutate(() => apiPost(`/communities/${id}/join`), { onSuccess: () => toast.success("Welcome to the community!") }) : needLogin())}>
-                Join community
+            {!isMember && requested ? (
+              <Button variant="outline" data-testid="community-request-pending" onClick={() => act.mutate(() => apiPost(`/communities/${id}/leave`), { onSuccess: () => toast("Request withdrawn") })}>
+                Request pending · cancel
+              </Button>
+            ) : !isMember ? (
+              <Button data-testid="community-join-button" onClick={() => (me ? act.mutate(() => apiPost(`/communities/${id}/join`), { onSuccess: () => toast.success("Request sent — the host will approve you") }) : needLogin())}>
+                Request to join
               </Button>
             ) : !isOwner ? (
               <Button variant="outline" data-testid="community-leave-button" onClick={() => act.mutate(() => apiPost(`/communities/${id}/leave`))}>
@@ -127,10 +143,29 @@ export default function CommunityDetail() {
             ) : null}
           </div>
 
+          {isHostView && c.join_requests.length > 0 && (
+            <section data-testid="join-requests" className="space-y-2 rounded-2xl border border-amber-400/40 bg-amber-400/5 p-4">
+              <h2 className="font-heading text-lg font-bold">Join requests ({c.join_requests.length})</h2>
+              {c.join_requests.map((m) => (
+                <div key={m.user_id} data-testid={`join-request-${m.user_id}`} className="flex items-center justify-between gap-2 rounded-xl bg-surface px-3 py-2">
+                  <span className="flex min-w-0 items-center gap-2 text-sm"><Avatar name={m.name} picture={m.picture} /> <span className="truncate">{m.name}</span></span>
+                  <span className="flex shrink-0 gap-1.5">
+                    <Button size="sm" data-testid={`join-request-approve-${m.user_id}`} onClick={() => act.mutate(() => apiPost(`/communities/${id}/requests/${m.user_id}/approve`), { onSuccess: () => toast.success(`${m.name} approved`) })}>
+                      Approve
+                    </Button>
+                    <Button size="sm" variant="ghost" data-testid={`join-request-decline-${m.user_id}`} onClick={() => act.mutate(() => apiPost(`/communities/${id}/requests/${m.user_id}/decline`), { onSuccess: () => toast(`${m.name} declined`) })}>
+                      Decline
+                    </Button>
+                  </span>
+                </div>
+              ))}
+            </section>
+          )}
+
           <section className="space-y-3">
             <h2 className="font-heading text-xl font-bold">Upcoming games</h2>
             {games.length ? (
-              games.map((g) => <GameCard key={g.id} game={g} me={me} canManage={canManage} />)
+              games.map((g) => <GameCard key={g.id} game={g} me={me} canManage={canManage} membersOnly={!canPlay} />)
             ) : (
               <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No upcoming games scheduled.</div>
             )}
@@ -152,12 +187,14 @@ export default function CommunityDetail() {
             <div className="flex flex-wrap gap-2" data-testid="community-members">
               {c.members.map((m) => (
                 <span key={m.user_id} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface px-3 py-1 text-sm">
-                  <span className="grid size-5 place-items-center rounded-full bg-energy/20 text-[10px] font-bold text-energy">{m.name[0]}</span>
+                  <Avatar name={m.name} picture={m.picture} className="size-5" />
                   {m.name}
                 </span>
               ))}
             </div>
           </section>
+
+          <Gallery communityId={c.id} isHost={isHostView} />
           {me && canManage && <ManageSheet key={c.id + c.name + c.fee} c={c} games={games} me={me} open={manageOpen} onOpenChange={setManageOpen} />}
         </div>
       )}

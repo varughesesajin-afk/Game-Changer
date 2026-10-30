@@ -32,13 +32,17 @@ export interface CommunityCreate {
   max_players: number;
   fee: number;
   image?: string | null;
+  visibility: Visibility;
 }
+
+export type Visibility = "open" | "private";
 
 export interface Community extends CommunityCreate {
   id: string;
   owner_id: string;
   owner_name: string;
   members: Member[];
+  join_requests: Member[];
   image: string | null;
   manage_until: string | null;
   manage_active: boolean;
@@ -62,6 +66,7 @@ export interface RosterEntry {
   name: string;
   team: TeamSide;
   added_by: string;
+  picture: string | null;
   paid: boolean;
   goals: number;
 }
@@ -101,6 +106,7 @@ export interface LeaderboardRow {
   key: string;
   name: string;
   user_id: string | null;
+  picture: string | null;
   games: number;
   wins: number;
   goals: number;
@@ -291,4 +297,21 @@ export interface GameUpdate {
   date?: string | null;
   time?: string | null;
   venue?: string | null;
+}
+
+export interface GalleryPhotoIn {
+  url: string;
+  caption: string;
+}
+
+export interface GalleryPhoto extends GalleryPhotoIn {
+  id: string;
+  community_id: string;
+  uploaded_by: string;
+  uploaded_by_name: string;
+  created_at: string;
+}
+
+export interface PictureIn {
+  picture: string | null;
 }

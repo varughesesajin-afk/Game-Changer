@@ -48,6 +48,7 @@ class CommunityCreate(BaseModel):
     max_players: int = Field(14, ge=2, le=200)
     fee: float = Field(0.0, ge=0)
     image: Optional[str] = None
+    visibility: Literal["open", "private"] = "open"  # private: only approved members can join matches
 
 
 class CommunityCreateIn(CommunityCreate):
@@ -65,6 +66,7 @@ class CommunityUpdate(BaseModel):
     max_players: Optional[int] = Field(None, ge=2, le=200)
     fee: Optional[float] = Field(None, ge=0)
     image: Optional[str] = None  # "/api/images/<id>" from POST /api/images, or "" to reset to the sport default
+    visibility: Optional[Literal["open", "private"]] = None
 
 
 class Community(CommunityCreate):
@@ -72,6 +74,7 @@ class Community(CommunityCreate):
     owner_id: str
     owner_name: str
     members: List[Member] = Field(default_factory=list)
+    join_requests: List[Member] = Field(default_factory=list)  # pending host approval
     manage_until: Optional[str] = None  # YYYY-MM-DD; Manage subscription paid through this date
     manage_active: bool = False  # computed on read, never trusted from storage
     season_length: Literal["manual", "month", "quarter"] = "manual"
@@ -86,6 +89,7 @@ class RosterEntry(BaseModel):
     name: str
     team: Literal["A", "B"] = "A"
     added_by: str
+    picture: Optional[str] = None
     paid: bool = False
     goals: int = 0
 
@@ -137,6 +141,7 @@ class LeaderboardRow(BaseModel):
     key: str
     name: str
     user_id: Optional[str] = None
+    picture: Optional[str] = None
     games: int
     wins: int
     goals: int
@@ -355,3 +360,21 @@ class ImageUploadIn(BaseModel):
 class ImageUploadOut(BaseModel):
     id: str
     url: str
+
+
+# ---------- gallery & profile picture ----------
+class GalleryPhotoIn(BaseModel):
+    url: str  # from POST /api/images
+    caption: str = Field("", max_length=140)
+
+
+class GalleryPhoto(GalleryPhotoIn):
+    id: str = Field(default_factory=_id)
+    community_id: str
+    uploaded_by: str
+    uploaded_by_name: str
+    created_at: datetime = Field(default_factory=_now)
+
+
+class PictureIn(BaseModel):
+    picture: Optional[str] = None  # "/api/images/<id>", or None to go back to the Google photo / initial

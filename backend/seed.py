@@ -32,7 +32,7 @@ def d(offset: int) -> str:
 
 async def main():
     now = datetime.now(timezone.utc)
-    for c in ["communities", "games", "tournaments", "payment_transactions", "reminders"]:
+    for c in ["communities", "games", "tournaments", "payment_transactions", "reminders", "gallery"]:
         await db[c].drop()
     await ensure_indexes()
 
@@ -74,6 +74,10 @@ async def main():
             for k in range(min(mx - 3, 6 + i + j)):
                 g.roster.append(RosterEntry(name=NAMES[k % len(NAMES)], team="A" if k % 2 == 0 else "B", added_by=owner["user_id"]))
             await db.games.insert_one(g.model_dump())
+
+    # Tuesday Padel Night is private, with a pending join request from Free Player
+    await db.communities.update_one({"id": communities[1].id}, {"$set": {
+        "visibility": "private", "join_requests": [Member(user_id=FREE["user_id"], name=FREE["name"]).model_dump()]}})
 
     # past games with results for leaderboards
     import random

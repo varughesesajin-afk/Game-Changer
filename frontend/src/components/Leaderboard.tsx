@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronRight, Crown, Goal, Medal, Star, Trophy } from "lucide-react";
 import { apiGet } from "@/lib/api";
+import Avatar from "@/components/Avatar";
 import { fmtDate } from "@/lib/auth";
 import type { Leaderboard as LeaderboardData } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -82,6 +83,7 @@ export default function Leaderboard({ communityId }: { communityId: string }) {
               {i === 0 ? <Crown className="mx-auto size-4" /> : i + 1}
             </span>
             <span className="flex flex-1 items-center gap-1.5 truncate font-medium text-white">
+              <Avatar name={r.name} picture={r.picture} className="size-7" />
               <span className="truncate">{r.name}</span>
               {!r.user_id && <span className="text-[10px] text-slate-500">guest</span>}
               {r.motm > 0 && (

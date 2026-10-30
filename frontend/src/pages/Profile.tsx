@@ -8,6 +8,7 @@ import TournamentCard from "@/components/TournamentCard";
 import { apiGet } from "@/lib/api";
 import { useMe } from "@/lib/auth";
 import { endSession } from "@/lib/session";
+import ProfilePicture from "@/components/ProfilePicture";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function Profile() {
@@ -31,11 +32,7 @@ export default function Profile() {
   return (
     <div className="space-y-7 px-5 pt-6">
       <div className="flex items-center gap-4">
-        {me.picture ? (
-          <img src={me.picture} alt="" className="size-16 rounded-2xl object-cover" />
-        ) : (
-          <div className="grid size-16 place-items-center rounded-2xl bg-brand font-heading text-2xl font-bold text-white">{me.name[0]}</div>
-        )}
+        <ProfilePicture me={me} />
         <div className="min-w-0 flex-1">
           <h1 data-testid="profile-name" className="truncate font-heading text-2xl font-bold uppercase tracking-wide">{me.name}</h1>
           <div className="truncate text-sm text-slate-400">{me.email}</div>

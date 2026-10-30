@@ -56,3 +56,10 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - "Schedule a game": POST /api/communities/{cid}/games {date, time?, venue?} (manage-gated; 409 if a game already exists on that date).
 - Move a game: PATCH /api/games/{gid} {date?, time?, venue?} (roster kept, reminders updated; 409 on date clash). Cancel: DELETE /api/games/{gid} (also clears its reminders).
 - Toasts render top-center so they never cover bottom-sheet actions.
+
+## Membership approval, open/private, gallery, profile pictures
+- Joining a community = request (community.join_requests); host (owner) or admin approves/declines: POST /api/communities/{cid}/requests/{uid}/approve|decline. Leave also withdraws a pending request. Joining a game no longer auto-adds membership.
+- community.visibility open|private (set on create / Manage → Details). Private: only approved members (or host/admin) can join games or add guest names (403 otherwise); UI disables join with a note.
+- Gallery (below Members, heading GALLERY): GET/POST /api/communities/{cid}/gallery (host/admin only to add; uses /api/images upload), DELETE /api/gallery/{id}. Full-screen viewer.
+- Profile picture: PUT /api/auth/me/picture {picture} (null resets); users.picture_custom stops Google login overwriting it; propagated to members, join_requests and roster entries (RosterEntry.picture). Leaderboard rows resolve current user pictures.
+- Seed: Tuesday Padel Night is PRIVATE with a pending request from Free Player.
