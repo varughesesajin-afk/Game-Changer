@@ -51,3 +51,8 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 ## Community cover photos
 - POST /api/images {data_url} (auth; jpeg/png/webp, <=2MB; client resizes to max 1600px JPEG) → {id, url:"/api/images/<id>"}; GET /api/images/{id} serves bytes (stored in Mongo `images`).
 - community.image holds that URL; set on /communities/new (CoverPhotoPicker) or Manage → Details (PATCH image; "" resets to sport default).
+
+## Flexible game scheduling (Manage → Games)
+- "Schedule a game": POST /api/communities/{cid}/games {date, time?, venue?} (manage-gated; 409 if a game already exists on that date).
+- Move a game: PATCH /api/games/{gid} {date?, time?, venue?} (roster kept, reminders updated; 409 on date clash). Cancel: DELETE /api/games/{gid} (also clears its reminders).
+- Toasts render top-center so they never cover bottom-sheet actions.

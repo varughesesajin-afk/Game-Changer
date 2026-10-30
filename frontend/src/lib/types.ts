@@ -280,3 +280,15 @@ export interface ImageUploadOut {
   id: string;
   url: string;
 }
+
+export interface GameCreate {
+  date: string;
+  time?: string | null;
+  venue?: string | null;
+}
+
+export interface GameUpdate {
+  date?: string | null;
+  time?: string | null;
+  venue?: string | null;
+}

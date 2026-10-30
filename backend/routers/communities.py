@@ -8,7 +8,7 @@ from lib.community_access import get_community as _get_community, require_manage
 from lib.dates import today_iso
 from routers.billing import activate_manage
 from lib.db import db
-from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice,
+from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
                             GameResult, GameResultIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
                             PaidIn, PlayerCommunityStats, PlayerGameLine, PlayerProfile, RosterEntry, SeasonIn,
                             Tournament, User)
@@ -288,7 +288,11 @@ async def create_game(cid: str, body: GameCreate, user: User = Depends(current_u
     require_manage(c, user)
     if body.date < today_iso():
         raise HTTPException(400, "Date must be today or later")
+    if await db.games.find_one({"community_id": cid, "date": body.date}, {"_id": 1}):
+        raise HTTPException(409, "A game is already scheduled on that date — reschedule it instead")
     g = _game_from(c, body.date, body.time)
+    if body.venue:
+        g.venue = body.venue
     await db.games.insert_one(g.model_dump())
     return g
 
@@ -413,3 +417,32 @@ async def record_result(gid: str, body: GameResultIn, user: User = Depends(curre
     await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(),
                                                      "roster": [r.model_dump() for r in g.roster]}})
     return await _get_game(gid)
+
+
+@router.patch("/games/{gid}", response_model=Game)
+async def reschedule_game(gid: str, body: GameUpdate, user: User = Depends(current_user)):
+    """Move a game (e.g. ground unavailable on the usual day). Roster is kept."""
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    changes = body.model_dump(exclude_none=True)
+    if "date" in changes:
+        if changes["date"] < today_iso():
+            raise HTTPException(400, "Date must be today or later")
+        clash = await db.games.find_one({"community_id": g.community_id, "date": changes["date"], "id": {"$ne": gid}}, {"_id": 1})
+        if clash:
+            raise HTTPException(409, "Another game is already scheduled on that date")
+    if changes:
+        await db.games.update_one({"id": gid}, {"$set": changes})
+        if "date" in changes or "time" in changes:
+            await db.reminders.update_many({"game_id": gid}, {"$set": {k2: changes[k] for k, k2 in
+                                            (("date", "game_date"), ("time", "game_time")) if k in changes}})
+    return await _get_game(gid)
+
+
+@router.delete("/games/{gid}")
+async def cancel_game(gid: str, user: User = Depends(current_user)):
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    await db.games.delete_one({"id": gid})
+    await db.reminders.delete_many({"game_id": gid})
+    return {"ok": True}

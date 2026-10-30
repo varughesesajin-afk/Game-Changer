@@ -13,6 +13,7 @@ import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import GameResultForm from "@/components/GameResultForm";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
+import GameScheduler from "@/components/GameScheduler";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Community, CommunityUpdate, Game, RemindResult, SeasonIn, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,6 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
   const [f, setF] = useState<CommunityUpdate>({
     name: c.name, image: c.image ?? "", venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
   });
-  const [gameDate, setGameDate] = useState("");
   const [tOpen, setTOpen] = useState(false);
   const set = <K extends keyof CommunityUpdate>(k: K, v: CommunityUpdate[K]) => setF((p) => ({ ...p, [k]: v }));
   const isOwner = c.owner_id === me.user_id;
@@ -165,31 +165,10 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
               >
                 <CalendarPlus className="size-4" /> Schedule next week ({c.days.join(" & ") || "no days set"})
               </Button>
-              <div className="flex items-end gap-2">
-                <div className="flex-1 space-y-1.5">
-                  <Label htmlFor="m-date">Add a one-off game</Label>
-                  <Input id="m-date" type="date" data-testid="manage-game-date-input" value={gameDate} onChange={(e) => setGameDate(e.target.value)} />
-                </div>
-                <Button
-                  variant="outline"
-                  data-testid="manage-add-game"
-                  disabled={!gameDate || act.isPending}
-                  onClick={() => act.mutate(() => apiPost(`/communities/${c.id}/games`, { date: gameDate }), { onSuccess: () => { toast.success("Game added"); setGameDate(""); } })}
-                >
-                  Add
-                </Button>
-              </div>
               <Button variant="outline" data-testid="manage-host-tournament" className="w-full" onClick={() => setTOpen(true)}>
                 <Trophy className="size-4" /> Host a tournament
               </Button>
-              <div className="space-y-2">
-                {games.map((g) => (
-                  <div key={g.id} className="flex items-center justify-between rounded-xl border border-line bg-surface px-3 py-2 text-sm">
-                    <span>{fmtDate(g.date, "EEE d MMM")} · {g.time}</span>
-                    <span className="text-slate-400">{g.roster.length}/{g.max_players}</span>
-                  </div>
-                ))}
-              </div>
+              <GameScheduler c={c} games={games} />
             </TabsContent>
 
             <TabsContent value="results" className="space-y-3 pt-4">

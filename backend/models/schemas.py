@@ -93,6 +93,13 @@ class RosterEntry(BaseModel):
 class GameCreate(BaseModel):
     date: str  # YYYY-MM-DD
     time: Optional[str] = None
+    venue: Optional[str] = None
+
+
+class GameUpdate(BaseModel):
+    date: Optional[str] = None
+    time: Optional[str] = None
+    venue: Optional[str] = None
 
 
 class GameResult(BaseModel):

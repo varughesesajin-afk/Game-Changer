@@ -66,7 +66,7 @@ export default function AppShell() {
           </NavLink>
         ))}
       </nav>
-      <Toaster position="bottom-right" theme="dark" richColors />
+      <Toaster position="top-center" theme="dark" richColors />
     </div>
   );
 }
