@@ -113,10 +113,32 @@
       radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.14), transparent 40%),
       radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.16), transparent 40%),
       repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 22px);
-    background-attachment: fixed;
+  }
+  @media (hover: hover) {
+    body { background-attachment: fixed; }
   }
   html {
     @apply font-sans;
+  }
+  /* Stop sideways "wobble" on phones: nothing may push the page wider than the screen */
+  html, body {
+    overflow-x: clip;
+    max-width: 100%;
+    overscroll-behavior-x: none;
+  }
+  /* iOS Safari gives date/time inputs their own width & height — make them behave like text inputs */
+  input[type="date"], input[type="time"] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    width: 100%;
+    display: block;
+    text-align: left;
+  }
+  input[type="date"]::-webkit-date-and-time-value,
+  input[type="time"]::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-heading);

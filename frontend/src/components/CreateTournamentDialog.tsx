@@ -55,7 +55,7 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="create-tournament-dialog" className="max-h-[90vh] max-w-md overflow-y-auto">
+      <DialogContent data-testid="create-tournament-dialog" className="max-h-[90dvh] max-w-md overflow-x-hidden overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">{kind === "official" ? "New official tournament" : "Host a community tournament"}</DialogTitle>
           <DialogDescription>Knockout format — teams register, then you draw the bracket and report scores.</DialogDescription>
@@ -143,8 +143,8 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
             <Label>Sport</Label>
             <SportPills value={f.sport} onChange={(s) => set("sport", s)} includeAll={false} wrap testPrefix="tournament-sport" />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
+          <div className="grid grid-cols-1 gap-3">
+            <div className="min-w-0 space-y-1.5">
               <Label htmlFor="ct-date">Start date</Label>
               <Input id="ct-date" type="date" data-testid="tournament-date-input" value={f.start_date} onChange={(e) => set("start_date", e.target.value)} />
             </div>

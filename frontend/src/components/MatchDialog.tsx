@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 export default function MatchDialog({ t, match, onClose, canManage }: { t: Tournament; match: Match | null; onClose: () => void; canManage: boolean }) {
   return (
     <Dialog open={!!match} onOpenChange={(o: boolean) => !o && onClose()}>
-      <DialogContent data-testid="match-dialog" className="max-h-[88vh] max-w-sm overflow-y-auto">
+      <DialogContent data-testid="match-dialog" className="max-h-[88dvh] max-w-sm overflow-x-hidden overflow-y-auto overscroll-contain">
         {match && <Body key={match.id} t={t} m={match} canManage={canManage} onClose={onClose} />}
       </DialogContent>
     </Dialog>
@@ -72,7 +72,7 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
       {canManage && (
         <div className="space-y-2">
           <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Schedule</div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2">
             <Input type="date" aria-label="Match date" data-testid="match-date-input" value={sched.date ?? ""} onChange={(e) => setSched({ ...sched, date: e.target.value })} />
             <Input type="time" aria-label="Kick-off time" data-testid="match-time-input" value={sched.time ?? ""} onChange={(e) => setSched({ ...sched, time: e.target.value })} />
           </div>
