@@ -38,9 +38,9 @@ export default function Tournaments() {
       return;
     }
     if (createKind === "community" && !isAdmin) {
-      const managed = owned.find((c) => c.manage_active);
+      const managed = owned.find((c) => c.premium_active);
       if (!managed) {
-        toast("Hosting tournaments needs Manage (one-time OMR 1) on your community");
+        toast("Hosting tournaments needs a paid month (OMR 1 / 30 days) on your community — not included in the free trial");
         nav(owned[0] ? `/communities/${owned[0].id}` : "/monetize");
         return;
       }
@@ -73,7 +73,7 @@ export default function Tournaments() {
         )}
         {list.isLoading && <div className="h-48 animate-pulse rounded-2xl bg-surface" />}
       </div>
-      {me && <CreateTournamentDialog key={createKind + owned.length} open={open} onOpenChange={setOpen} kind={createKind} communities={isAdmin ? owned : owned.filter((c) => c.manage_active)} />}
+      {me && <CreateTournamentDialog key={createKind + owned.length} open={open} onOpenChange={setOpen} kind={createKind} communities={isAdmin ? owned : owned.filter((c) => c.premium_active)} />}
     </div>
   );
 }

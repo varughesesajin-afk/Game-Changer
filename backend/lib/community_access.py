@@ -1,16 +1,29 @@
-"""Community access helpers shared by routers. 'Manage' = owner with an one-time OMR 1 payment, or site admin."""
+"""Community access helpers. Manage = owner in the 15-day free trial OR with a paid 30-day period (OMR 1), or site admin.
+Premium (host tournaments, gallery uploads) = paid period only, never during the trial."""
+from datetime import date, timedelta
+
 from fastapi import HTTPException
 
 from lib.dates import today_iso
 from lib.db import db
 from models.schemas import Community, User
 
-LIFETIME = "9999-12-31"  # manage_until value for a one-time (never-expiring) unlock
+TRIAL_DAYS = 15
+PERIOD_DAYS = 30  # each OMR 1 payment buys this many days
+
+
+def plus_days(n: int, start: str | None = None) -> str:
+    return (date.fromisoformat(start or today_iso()) + timedelta(days=n)).isoformat()
 
 
 def to_community(doc: dict) -> Community:
     c = Community(**doc)
-    c.manage_active = bool(c.manage_until and c.manage_until >= today_iso())
+    today = today_iso()
+    paid = bool(c.manage_until and c.manage_until >= today)
+    trial = bool(c.trial_until and c.trial_until >= today)
+    c.premium_active = paid
+    c.in_trial = trial and not paid
+    c.manage_active = paid or trial
     return c
 
 
@@ -33,4 +46,14 @@ def require_manage(c: Community, user: User) -> None:
     if c.owner_id != user.user_id:
         raise HTTPException(403, "Only this community's organiser can manage it")
     if not c.manage_active:
-        raise HTTPException(402, "Unlock Manage (one-time OMR 1) for this community to use this")
+        raise HTTPException(402, "Manage is locked — pay OMR 1 for 30 days to keep managing this community")
+
+
+def require_premium(c: Community, user: User) -> None:
+    """Tournaments and photo uploads: paid period only (not part of the free trial)."""
+    if user.role == "admin":
+        return
+    if c.owner_id != user.user_id:
+        raise HTTPException(403, "Only this community's host can do this")
+    if not c.premium_active:
+        raise HTTPException(402, "Hosting tournaments and uploading photos need a paid month — pay OMR 1 for 30 days to unlock")

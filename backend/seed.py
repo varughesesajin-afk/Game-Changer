@@ -65,7 +65,7 @@ async def main():
         c = Community(name=name, sport=sport, days=days, time=time, max_players=mx, fee=fee, city=city, venue=venue,
                       image=img, description=f"Regular {sport.lower()} group. Turn up, add your name, play hard.",
                       owner_id=owner["user_id"], owner_name=owner["name"], members=members,
-                      manage_until="9999-12-31" if owner is TESTER else None,
+                      manage_until=d(30) if owner is TESTER else None,
                       created_at=now - timedelta(minutes=i))
         await db.communities.insert_one(c.model_dump())
         communities.append(c)

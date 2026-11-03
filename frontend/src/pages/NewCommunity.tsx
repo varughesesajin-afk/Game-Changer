@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, CreditCard } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,6 @@ import SportPills from "@/components/SportPills";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import VisibilityToggle from "@/components/VisibilityToggle";
 import { apiGet, apiPost } from "@/lib/api";
-import { startManageCheckout } from "@/lib/payments";
 import { WEEKDAYS, errMsg, refreshAll, useMe } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,20 +30,10 @@ export default function NewCommunity() {
 
   const create = useMutation({
     mutationFn: () => apiPost<Community>("/communities", f),
-    onSuccess: async (c) => {
+    onSuccess: (c) => {
       refreshAll();
-      if (isAdmin) {
-        toast.success("Community created — first games scheduled");
-        nav(`/communities/${c.id}`, { replace: true });
-        return;
-      }
-      toast.success("Community saved — opening secure checkout for the one-time OMR 1");
-      try {
-        await startManageCheckout(c.id);
-      } catch (e) {
-        toast.error(errMsg(e));
-        nav(`/communities/${c.id}`, { replace: true });
-      }
+      toast.success(isAdmin ? "Community created — first games scheduled" : "Community created — your 15-day free trial has started");
+      nav(`/communities/${c.id}`, { replace: true });
     },
     onError: (e) => toast.error(errMsg(e)),
   });
@@ -67,9 +56,12 @@ export default function NewCommunity() {
       {!isAdmin && (
         <div data-testid="extra-community-notice" className="rounded-2xl border border-energy/40 bg-gradient-to-r from-ice/10 to-energy/10 p-4 text-sm">
           {unpaid ? (
-            <><span className="font-semibold text-energy">Finish paying for {unpaid.name} first.</span> Open it and tap Unlock Manage — then you can start another.</>
+            <><span className="font-semibold text-energy">Pay for {unpaid.name} first.</span> Open it and pay OMR 1 — then you can start another community.</>
           ) : (
-            <>Starting a community is a <span className="font-semibold text-white">one-time OMR 1</span> — pay once and manage it for good. You'll pay by card on Thawani Pay's secure page.</>
+            <>
+              <span className="font-semibold text-white">Running a community costs OMR 1 every 30 days.</span> You start with a{" "}
+              <span className="font-semibold text-energy">15-day free trial</span> to manage games, members and fees. Hosting tournaments and uploading photos unlock once you pay OMR 1 — pay before or after the trial ends.
+            </>
           )}
         </div>
       )}
@@ -150,8 +142,7 @@ export default function NewCommunity() {
         onClick={() => create.mutate()}
         className="h-12 w-full bg-brand text-base text-white"
       >
-        {!isAdmin && <CreditCard className="size-4" />}
-        {create.isPending ? "Creating…" : isAdmin ? "Create community" : "Create & pay OMR 1"}
+        {create.isPending ? "Creating…" : isAdmin ? "Create community" : "Start 15-day free trial"}
       </Button>
     </div>
   );

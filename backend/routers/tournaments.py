@@ -4,7 +4,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from lib.auth import current_user, is_admin, optional_user
-from lib.community_access import get_community, require_manage
+from lib.community_access import get_community, require_manage, require_premium
 from lib.db import db
 from models.schemas import (Match, MatchScheduleIn, MatchStatsIn, PlayerIn, ResultIn, ScorerRow, StandingRow,
                             StandingsTable, Team, TeamCreate, TeamLogoIn,
@@ -175,7 +175,7 @@ async def create_tournament(body: TournamentCreate, user: User = Depends(current
         if not body.community_id:
             raise HTTPException(400, "Pick the community that hosts this tournament")
         c = await get_community(body.community_id)
-        require_manage(c, user)
+        require_premium(c, user)
         community_name = c.name
     t = Tournament(**body.model_dump(), community_name=community_name,
                    organiser_id=user.user_id, organiser_name=user.name)

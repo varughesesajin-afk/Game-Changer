@@ -45,7 +45,10 @@ export interface Community extends CommunityCreate {
   join_requests: Member[];
   image: string | null;
   manage_until: string | null;
+  trial_until: string | null;
   manage_active: boolean;
+  premium_active: boolean;
+  in_trial: boolean;
   season_length: SeasonLength;
   season_start: string | null;
   created_at: string;

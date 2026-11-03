@@ -155,14 +155,6 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <Label htmlFor="ct-fee">Entry fee / team</Label>
-              <Input id="ct-fee" type="number" data-testid="tournament-fee-input" value={f.entry_fee} onChange={(e) => set("entry_fee", Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ct-prize">Prize pool</Label>
-              <Input id="ct-prize" type="number" data-testid="tournament-prize-input" value={f.prize_pool} onChange={(e) => set("prize_pool", Number(e.target.value))} />
-            </div>
-            <div className="space-y-1.5">
               <Label htmlFor="ct-max">Max teams</Label>
               <Input id="ct-max" type="number" data-testid="tournament-max-teams-input" value={f.max_teams} onChange={(e) => set("max_teams", Number(e.target.value))} />
             </div>

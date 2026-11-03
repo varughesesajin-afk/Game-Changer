@@ -52,7 +52,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
         <SheetHeader>
           <SheetTitle className="font-heading text-2xl">Manage {c.name}</SheetTitle>
           <SheetDescription>
-            {me.role === "admin" && !isOwner ? "Site admin access" : c.manage_active ? "Manage unlocked — paid once" : "Site admin access"}
+            {me.role === "admin" && !isOwner ? "Site admin access" : c.premium_active ? `Paid until ${fmtDate(c.manage_until ?? "", "d MMM yyyy")}` : c.in_trial ? `Free trial until ${fmtDate(c.trial_until ?? "", "d MMM yyyy")} — tournaments & photos need a paid month` : "Site admin access"}
           </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6">
@@ -157,7 +157,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
               >
                 <CalendarPlus className="size-4" /> Schedule next week ({c.days.join(" & ") || "no days set"})
               </Button>
-              <Button variant="outline" data-testid="manage-host-tournament" className="w-full" onClick={() => setTOpen(true)}>
+              <Button variant="outline" data-testid="manage-host-tournament" className="w-full" disabled={me.role !== "admin" && !c.premium_active} onClick={() => setTOpen(true)}>
                 <Trophy className="size-4" /> Host a tournament
               </Button>
               <GameScheduler c={c} games={games} />

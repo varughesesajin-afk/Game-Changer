@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 import type { Tournament } from "@/lib/types";
-import { fmtDate, money, sportImage } from "@/lib/auth";
+import { fmtDate, sportImage } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 export function StatusBadge({ status }: { status: Tournament["status"] }) {
@@ -35,10 +35,6 @@ export default function TournamentCard({ t, wide = false, badge }: { t: Tourname
             {t.kind === "official" && (
               <span className="rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">Official</span>
             )}
-          </div>
-          <div className="absolute bottom-2 right-3 text-right">
-            <div className="text-[10px] uppercase tracking-[0.15em] text-slate-300">Prize</div>
-            <div className="font-heading text-lg font-bold text-white">{money(t.prize_pool, t.currency)}</div>
           </div>
         </div>
         <div className="space-y-2 p-4 pt-2">

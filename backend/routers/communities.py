@@ -4,7 +4,7 @@ from typing import List, Literal, Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from lib.auth import current_user, is_admin, optional_user
-from lib.community_access import get_community as _get_community, require_manage, to_community
+from lib.community_access import TRIAL_DAYS, get_community as _get_community, plus_days, require_manage, to_community
 from lib.dates import today_iso
 from lib.db import db
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
@@ -72,17 +72,19 @@ async def list_communities(sport: Optional[str] = None, mine: bool = False, q: O
 @router.post("/communities", response_model=Community)
 async def create_community(body: CommunityCreateIn, user: User = Depends(current_user)):
     if not is_admin(user):
-        unpaid = await db.communities.find_one({"owner_id": user.user_id, "$or": [{"manage_until": None}, {"manage_until": {"$exists": False}}]}, {"_id": 0, "name": 1})
+        # each extra community needs its host to be paid up on the ones they already run
+        unpaid = await db.communities.find_one({"owner_id": user.user_id, "$or": [{"manage_until": None}, {"manage_until": {"$lt": today_iso()}}]}, {"_id": 0, "name": 1})
         if unpaid:
-            raise HTTPException(402, f"Pay the one-time OMR 1 for {unpaid['name']} before starting another community.")
+            raise HTTPException(402, f"Pay OMR 1 for {unpaid['name']} before starting another community.")
     c = Community(**body.model_dump(), owner_id=user.user_id, owner_name=user.name,
-                  members=[Member(user_id=user.user_id, name=user.name, picture=user.picture)])
+                  members=[Member(user_id=user.user_id, name=user.name, picture=user.picture)], trial_until=plus_days(TRIAL_DAYS))
     doc = c.model_dump()
-    doc.pop("manage_active", None)
+    for k in ("manage_active", "premium_active", "in_trial"):
+        doc.pop(k, None)
     await db.communities.insert_one(doc)
     for d in next_dates(c.days):
         await db.games.insert_one(_game_from(c, d).model_dump())
-    return c
+    return to_community(doc)
 
 
 @router.get("/communities/{cid}", response_model=Community)

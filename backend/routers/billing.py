@@ -1,4 +1,4 @@
-"""Community Manage — ONE-TIME OMR 1 per community, paid through Thawani Pay checkout.
+"""Community Manage — OMR 1 per 30 days per community (after/before a 15-day free trial), paid through Thawani Pay checkout.
 Keys come from backend/.env (THAWANI_*). With the Thawani UAT (test) keys no real money moves."""
 import os
 from typing import List
@@ -7,14 +7,15 @@ import httpx
 from fastapi import APIRouter, Depends, HTTPException, Request
 
 from lib.auth import current_user
-from lib.community_access import LIFETIME, get_community
+from lib.community_access import PERIOD_DAYS, get_community, plus_days
+from lib.dates import today_iso
 from lib.db import db
 from models.schemas import CheckoutStart, CheckoutStatus, Community, PaymentRecord, Plan, User, _id, _now
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 
 MANAGE_PLAN = Plan(
-    id="community_manage", name="Community Manage", price=1.0, currency="OMR", interval="one_time",
+    id="community_manage", name="Community Manage", price=1.0, currency="OMR", interval="month",
     perks=["Edit community details", "Schedule weekly games", "Host community tournaments",
            "Remove members & roster names", "Track who has paid match fees"],
 )
@@ -51,8 +52,6 @@ async def start_checkout(cid: str, request: Request, user: User = Depends(curren
     c = await get_community(cid)
     if c.owner_id != user.user_id:
         raise HTTPException(403, "Only this community's host can pay for it")
-    if c.manage_active:
-        raise HTTPException(409, "Manage is already unlocked for this community")
     origin = request.headers.get("origin") or os.environ.get("APP_URL", "")
     ref = _id()
     data = await _thawani("POST", "/checkout/session", json={
@@ -86,7 +85,10 @@ async def checkout_status(ref: str, user: User = Depends(current_user)):
             # atomic flip so a payment unlocks Manage exactly once
             won = await db.checkout_sessions.find_one_and_update({"ref": ref, "fulfilled": False}, {"$set": {"fulfilled": True}})
             if won:
-                await db.communities.update_one({"id": s["community_id"]}, {"$set": {"manage_until": LIFETIME}})
+                doc = await db.communities.find_one({"id": s["community_id"]}, {"_id": 0, "manage_until": 1}) or {}
+                cur = doc.get("manage_until")
+                start = cur if cur and cur >= today_iso() else today_iso()  # paying early extends the current period
+                await db.communities.update_one({"id": s["community_id"]}, {"$set": {"manage_until": plus_days(PERIOD_DAYS, start)}})
                 rec = PaymentRecord(user_id=s["user_id"], user_name=s.get("user_name", ""), community_id=s["community_id"],
                                     community_name=s["community_name"], plan_id=MANAGE_PLAN.id, amount=MANAGE_PLAN.price,
                                     currency=MANAGE_PLAN.currency, mocked=_is_test())

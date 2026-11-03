@@ -13,7 +13,7 @@ import Avatar from "@/components/Avatar";
 import ShareButtons from "@/components/ShareButtons";
 import ManageSubscribeDialog from "@/components/ManageSubscribeDialog";
 import { apiGet, apiPost } from "@/lib/api";
-import { errMsg, money, refreshAll, sportImage, useMe } from "@/lib/auth";
+import { errMsg, fmtDate, money, refreshAll, sportImage, useMe } from "@/lib/auth";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function CommunityDetail() {
@@ -92,15 +92,20 @@ export default function CommunityDetail() {
 
       {c && (
         <div className="space-y-6 px-5">
-          {isOwner && !c.manage_active && !isAdmin && (
+          {isOwner && !isAdmin && (
             <button
               type="button"
               data-testid="community-manage-upsell"
               onClick={() => setSubFor(c)}
               className="w-full rounded-2xl border border-energy/40 bg-gradient-to-r from-ice/10 to-energy/10 p-4 text-left text-sm transition-[border-color] duration-200 hover:border-energy"
             >
-              <span className="font-semibold text-energy">Unlock Manage — one-time OMR 1.</span>{" "}
-              Edit details, schedule games, host tournaments, remove names and track match fees.
+              {c.premium_active ? (
+                <><span className="font-semibold text-energy">Paid until {fmtDate(c.manage_until ?? "", "d MMM")}.</span> Tap to pay OMR 1 for another 30 days.</>
+              ) : c.in_trial ? (
+                <><span className="font-semibold text-energy">Free trial until {fmtDate(c.trial_until ?? "", "d MMM")}.</span> Tournaments and photo uploads unlock when you pay OMR 1 for 30 days — pay any time.</>
+              ) : (
+                <><span className="font-semibold text-energy">Manage is locked.</span> Pay OMR 1 for 30 days to manage games, host tournaments and upload photos.</>
+              )}
             </button>
           )}
           <div className="grid grid-cols-3 gap-2 text-center">
@@ -194,7 +199,7 @@ export default function CommunityDetail() {
             </div>
           </section>
 
-          <Gallery communityId={c.id} isHost={isHostView} />
+          <Gallery communityId={c.id} isHost={isAdmin || (isOwner && c.premium_active)} />
           {me && canManage && <ManageSheet key={c.id + c.name + c.fee} c={c} games={games} me={me} open={manageOpen} onOpenChange={setManageOpen} />}
         </div>
       )}

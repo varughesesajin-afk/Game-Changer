@@ -20,7 +20,7 @@ interface Props {
   onOpenChange: (o: boolean) => void;
 }
 
-// One-time OMR 1 — sends the host to Thawani Pay's secure checkout, Manage unlocks when they return paid.
+// OMR 1 per 30 days — sends the host to Thawani Pay's secure checkout, Manage unlocks when they return paid.
 export default function ManageSubscribeDialog({ community, onOpenChange }: Props) {
   const pay = useMutation({ mutationFn: () => startManageCheckout(community!.id), onError: (e) => toast.error(errMsg(e)) });
   return (
@@ -29,7 +29,7 @@ export default function ManageSubscribeDialog({ community, onOpenChange }: Props
         <DialogHeader>
           <DialogTitle className="font-heading">Unlock Manage</DialogTitle>
           <DialogDescription>
-            One-time OMR 1 for {community?.name} — pay once, manage it for good. Paid securely by card through Thawani Pay.
+            OMR 1 for 30 days of full Manage for {community?.name}, including hosting tournaments and uploading photos. Pay again every 30 days — paying early adds to your current period. Paid securely by card through Thawani Pay.
           </DialogDescription>
         </DialogHeader>
         <ul className="space-y-1.5 text-sm text-slate-300">
@@ -39,7 +39,7 @@ export default function ManageSubscribeDialog({ community, onOpenChange }: Props
         </ul>
         <DialogFooter>
           <Button data-testid="manage-subscribe-confirm" className="w-full bg-brand text-white" disabled={pay.isPending} onClick={() => pay.mutate()}>
-            <Lock className="size-4" /> {pay.isPending ? "Opening secure checkout…" : "Pay OMR 1 once"}
+            <Lock className="size-4" /> {pay.isPending ? "Opening secure checkout…" : "Pay OMR 1 · 30 days"}
           </Button>
         </DialogFooter>
       </DialogContent>

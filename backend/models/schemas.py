@@ -75,8 +75,11 @@ class Community(CommunityCreate):
     owner_name: str
     members: List[Member] = Field(default_factory=list)
     join_requests: List[Member] = Field(default_factory=list)  # pending host approval
-    manage_until: Optional[str] = None  # YYYY-MM-DD; Manage subscription paid through this date
-    manage_active: bool = False  # computed on read, never trusted from storage
+    manage_until: Optional[str] = None  # YYYY-MM-DD; paid through this date (each OMR 1 adds 30 days)
+    trial_until: Optional[str] = None  # YYYY-MM-DD; 15-day free Manage trial from creation (no premium)
+    manage_active: bool = False  # computed on read: paid or in trial
+    premium_active: bool = False  # computed on read: paid only (tournaments + gallery uploads)
+    in_trial: bool = False  # computed on read
     season_length: Literal["manual", "month", "quarter"] = "manual"
     season_start: Optional[str] = None  # set by "start new season now"
     created_at: datetime = Field(default_factory=_now)

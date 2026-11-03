@@ -14,7 +14,7 @@ import { formatLabel } from "@/lib/formats";
 import ShareButtons from "@/components/ShareButtons";
 import { StatusBadge } from "@/components/TournamentCard";
 import { apiDelete, apiGet, apiPost } from "@/lib/api";
-import { errMsg, fmtDate, money, refreshAll, sportImage, useMe } from "@/lib/auth";
+import { errMsg, fmtDate, refreshAll, sportImage, useMe } from "@/lib/auth";
 import type { Team, Tournament } from "@/lib/types";
 
 function TeamRow({ t, team, canEdit }: { t: Tournament; team: Team; canEdit: boolean }) {
@@ -132,14 +132,12 @@ export default function TournamentDetail() {
         <div className="space-y-6 px-5">
           <div className="grid grid-cols-2 gap-2">
             {[
-              { label: "Prize pool", value: money(t.prize_pool, t.currency), accent: true },
-              { label: "Entry / team", value: money(t.entry_fee, t.currency) },
               { label: "Teams", value: `${t.teams.length}/${t.max_teams}` },
               { label: "Squad size", value: `${t.team_size} players` },
             ].map((s) => (
               <div key={s.label} className="rounded-xl border border-line bg-surface p-3">
                 <div className="text-[10px] uppercase tracking-[0.15em] text-slate-500">{s.label}</div>
-                <div className={`font-heading text-xl font-bold ${s.accent ? "text-energy" : ""}`}>{s.value}</div>
+                <div className="font-heading text-xl font-bold">{s.value}</div>
               </div>
             ))}
           </div>
@@ -197,7 +195,7 @@ export default function TournamentDetail() {
                         <Input id="team-players" data-testid="register-team-players-input" placeholder="Ali, Ben, Chris" value={players} onChange={(e) => setPlayers(e.target.value)} />
                       </div>
                       <Button data-testid="register-team-submit" className="w-full" disabled={!teamName.trim() || register.isPending} onClick={() => register.mutate()}>
-                        Register team {t.entry_fee ? `· ${money(t.entry_fee, t.currency)} at venue` : ""}
+                        Register team
                       </Button>
                     </>
                   ) : (

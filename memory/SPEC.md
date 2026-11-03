@@ -19,13 +19,13 @@ Mobile-first web app (max-w-md frame, bottom nav) for community sports games + t
 - checkout_sessions {ref, session_id (Thawani), user_id, community_id, status, fulfilled}
 
 ## Business rules
-- One host (owner) per community. Every community costs a ONE-TIME OMR 1 (admins exempt): after creating, the host is sent to Thawani checkout. A host can't create another community while one of theirs is still unpaid (402). Start-a-community is a full page at /communities/new (vertical scroll only).
-- "Manage" button on community page (owner/admin). Owner must have an paid one-time OMR 1 for that community (communities.manage_until = 9999-12-31 when paid; manage_active computed on read) — else 402. Admin manages everything free.
+- One host (owner) per community. Pricing (admins exempt): creating a community starts a 15-day FREE TRIAL (communities.trial_until) with basic Manage (details, games, members, fees, results) but NO premium. Premium = hosting community tournaments + gallery photo uploads, only with a paid period. Each OMR 1 Thawani payment adds 30 days to communities.manage_until (from today, or from the current paid end if paying early). Computed on read: manage_active = paid or trial, premium_active = paid, in_trial. A host can't create another community while any of theirs is unpaid/lapsed (402). Start-a-community is a full page at /communities/new (vertical scroll only).
+- "Manage" button on community page (owner/admin). Owner must have an manage_active (trial or paid); tournaments/gallery uploads use require_premium (paid only) — else 402. Admin manages everything free.
 - Manage unlocks: PATCH community details, schedule games (schedule-week / one-off), host community tournaments, remove members (DELETE /communities/{id}/members/{uid}) and other people's roster names, match-fee tracking (POST /games/{gid}/roster/{eid}/paid).
 - Official tournaments: admin only. Admin dashboard /admin (GET /api/admin/overview: stats, users, communities, payments).
 - Organiser (or admin) starts tournament (>=2 teams) => bracket; reports scores (no draws) => winner advances; final => completed.
 - Team captain (or organiser) adds players.
-- Billing — Thawani Pay (THAWANI_SECRET_KEY / THAWANI_PUBLISHABLE_KEY / THAWANI_BASE_URL in backend/.env; currently UAT test keys, no real money). POST /api/billing/communities/{cid}/checkout (owner only; 409 if already paid) → {ref, redirect_url}; Thawani returns to /payment/return?ref=..[&cancelled=1]; GET /api/billing/checkout/{ref} verifies with Thawani server-side and unlocks Manage exactly once when payment_status == paid. Old Organiser Pro plans removed (user.is_pro unused).
+- Billing — Thawani Pay (THAWANI_SECRET_KEY / THAWANI_PUBLISHABLE_KEY / THAWANI_BASE_URL in backend/.env; currently UAT test keys, no real money). POST /api/billing/communities/{cid}/checkout (owner only; can renew any time) → {ref, redirect_url}; Thawani returns to /payment/return?ref=..[&cancelled=1]; GET /api/billing/checkout/{ref} verifies with Thawani server-side and adds 30 days exactly once when payment_status == paid. Old Organiser Pro plans removed (user.is_pro unused).
 
 ## Endpoints (all /api)
 auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games, schedule-week); games/mine, games/{id}/join|leave|guests, games/{id}/roster/{entry}; tournaments (list/create/get/delete, teams, players, start, matches/{mid}/result); billing/plans|communities/{cid}/checkout|checkout/{ref}|history.
@@ -77,3 +77,5 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - Team.logo: PUT /api/tournaments/{tid}/teams/{team_id}/logo (captain/organiser; /api/images upload). Badges in Teams, Standings, Fixtures, Match centre.
 - MatchDialog (match centre) opens from Fixtures and Bracket for everyone (read-only for non-organisers).
 - Profile: MyStats tiles (Matches, Wins, Goals, MOTM) from GET /api/players/{user_id} (community games; tournament players are names, not accounts).
+
+- Tournaments: entry fee and prize pool removed from the UI (fields remain in the model, default 0).

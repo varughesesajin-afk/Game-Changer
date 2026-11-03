@@ -39,7 +39,7 @@ export default function PaymentReturn() {
           <BadgeCheck className="size-14 text-energy" />
           <div>
             <h1 data-testid="payment-status-title" className="font-heading text-3xl font-bold tracking-tight">Payment confirmed</h1>
-            <p className="mt-2 text-slate-300">OMR 1 paid once — Manage is unlocked for <span className="font-semibold text-white">{s.community_name}</span> for good.</p>
+            <p className="mt-2 text-slate-300">OMR 1 paid — <span className="font-semibold text-white">{s.community_name}</span> has 30 more days of full Manage, including tournaments and photo uploads.</p>
           </div>
           <Link to={`/communities/${s.community_id}`} data-testid="payment-open-community" className={buttonVariants({ className: "w-full bg-brand text-white" })}>Open my community</Link>
         </>
@@ -53,7 +53,7 @@ export default function PaymentReturn() {
           <CircleX className="size-14 text-red-400" />
           <div>
             <h1 data-testid="payment-status-title" className="font-heading text-3xl font-bold tracking-tight">Payment not completed</h1>
-            <p className="mt-2 text-slate-300">No money was taken. <span className="font-semibold text-white">{s.community_name}</span> is saved — pay the one-time OMR 1 whenever you're ready to manage it.</p>
+            <p className="mt-2 text-slate-300">No money was taken. <span className="font-semibold text-white">{s.community_name}</span> is saved — pay OMR 1 whenever you're ready.</p>
           </div>
           <Button data-testid="payment-retry" className="w-full bg-brand text-white" disabled={retry.isPending} onClick={() => retry.mutate()}>
             {retry.isPending ? "Opening checkout…" : "Try again — pay OMR 1"}

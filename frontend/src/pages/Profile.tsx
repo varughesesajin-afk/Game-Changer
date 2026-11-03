@@ -56,7 +56,7 @@ export default function Profile() {
         </Link>
       ) : (
         <Link to="/monetize" data-testid="profile-manage-link" className="block rounded-2xl border border-energy/40 bg-energy/10 p-4 text-sm">
-          <span className="font-semibold text-energy">Run a community?</span> Unlock Manage for a one-time OMR 1.
+          <span className="font-semibold text-energy">Run a community?</span> 15 days free, then OMR 1 / 30 days.
         </Link>
       )}
 
