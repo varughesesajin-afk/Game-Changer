@@ -10,6 +10,7 @@ import Avatar from "@/components/Avatar";
 import { apiDelete, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Game, TeamSide, User } from "@/lib/types";
+import { JerseyChip } from "@/components/Jersey";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -69,6 +70,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
     <div className="min-w-0 flex-1 rounded-xl bg-elevated/60 p-2.5">
       <div className={cn("mb-1.5 text-[10px] font-bold uppercase tracking-[0.15em]", side === "A" ? "text-energy" : "text-ice")}>
         Team {side} · {list.length}
+        <JerseyChip jersey={side === "A" ? game.jersey_a : game.jersey_b} testId={`game-jersey-${side.toLowerCase()}-${game.id}`} className="ml-1.5" />
       </div>
       <motion.ul initial="h" animate="s" variants={{ s: { transition: { staggerChildren: 0.05 } } }} className="space-y-1">
         {list.map((r) => (

@@ -197,6 +197,7 @@ async def schedule_match(tid: str, mid: str, body: MatchScheduleIn, user: User =
         raise HTTPException(403, "Only the organiser can schedule fixtures")
     m = _find_match(t, mid)
     m.date, m.time, m.pitch = body.date or None, body.time or None, (body.pitch or "").strip() or None
+    m.jersey_a, m.jersey_b = body.jersey_a, body.jersey_b
     return await _save(t)
 
 

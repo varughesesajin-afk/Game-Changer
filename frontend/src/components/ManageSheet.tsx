@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import CreateTournamentDialog from "@/components/CreateTournamentDialog";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/api";
 import GameResultForm from "@/components/GameResultForm";
+import UnpaidList from "@/components/UnpaidList";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import GameScheduler from "@/components/GameScheduler";
 import VisibilityToggle from "@/components/VisibilityToggle";
@@ -223,6 +224,8 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
             </TabsContent>
 
             <TabsContent value="fees" className="space-y-4 pt-4">
+              <UnpaidList communityId={c.id} open={open} />
+              <div className="pt-1 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Upcoming games</div>
               {games.length === 0 && <p className="text-sm text-slate-400">No upcoming games.</p>}
               {games.map((g) => {
                 const paid = g.roster.filter((r) => r.paid).length;

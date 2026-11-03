@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import TeamBadge from "@/components/TeamBadge";
+import { JerseyChip, JerseyPicker } from "@/components/Jersey";
 import MatchSheet, { eventsFromTotals, pk, splitKey, type SheetSide, type SheetValue } from "@/components/MatchSheet";
 import { apiPatch, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, refreshAll } from "@/lib/auth";
@@ -43,7 +44,7 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
   const teamA = t.teams.find((x) => x.id === m.team_a_id);
   const teamB = t.teams.find((x) => x.id === m.team_b_id);
   const played = m.score_a !== null && m.score_b !== null;
-  const [sched, setSched] = useState<MatchScheduleIn>({ date: m.date, time: m.time, pitch: m.pitch });
+  const [sched, setSched] = useState<MatchScheduleIn>({ date: m.date, time: m.time, pitch: m.pitch, jersey_a: m.jersey_a, jersey_b: m.jersey_b });
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
@@ -64,6 +65,12 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
       <div data-testid="match-schedule-info" className="space-y-1 rounded-xl bg-elevated/60 p-3 text-sm text-slate-300">
         <div className="flex items-center gap-1.5"><CalendarClock className="size-4 text-ice" />{m.date ? `${fmtDate(m.date, "EEE d MMM")}${m.time ? ` · ${m.time}` : ""}` : "Kick-off not set yet"}</div>
         <div className="flex items-center gap-1.5"><MapPin className="size-4 text-ice" />{m.pitch || t.venue || "Pitch TBA"}</div>
+        {(m.jersey_a || m.jersey_b) && (
+          <div data-testid="match-jerseys" className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            {m.jersey_a && <span className="flex items-center gap-1 text-xs">{teamA?.name}: <JerseyChip jersey={m.jersey_a} /></span>}
+            {m.jersey_b && <span className="flex items-center gap-1 text-xs">{teamB?.name}: <JerseyChip jersey={m.jersey_b} /></span>}
+          </div>
+        )}
       </div>
 
       {canManage && (
@@ -74,6 +81,8 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
             <Input type="time" aria-label="Kick-off time" data-testid="match-time-input" value={sched.time ?? ""} onChange={(e) => setSched({ ...sched, time: e.target.value })} />
           </div>
           <Input aria-label="Pitch" placeholder="Pitch / court" data-testid="match-pitch-input" value={sched.pitch ?? ""} onChange={(e) => setSched({ ...sched, pitch: e.target.value })} />
+          <JerseyPicker labelA={teamA?.name ?? "Home"} labelB={teamB?.name ?? "Away"} a={sched.jersey_a} b={sched.jersey_b} testPrefix="match-jersey"
+            onChange={(a, b) => setSched({ ...sched, jersey_a: a, jersey_b: b })} />
           <Button size="sm" variant="outline" className="w-full" data-testid="match-schedule-save" disabled={act.isPending}
             onClick={() => act.mutate(() => apiPatch(`/tournaments/${t.id}/matches/${m.id}/schedule`, sched), { onSuccess: () => toast.success("Fixture scheduled") })}>
             Save schedule

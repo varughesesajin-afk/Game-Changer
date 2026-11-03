@@ -6,12 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { apiDelete, apiPatch, apiPost } from "@/lib/api";
+import { JerseyChip, JerseyPicker } from "@/components/Jersey";
 import { errMsg, fmtDate, refreshAll } from "@/lib/auth";
 import type { Community, Game, GameCreate, GameUpdate } from "@/lib/types";
 
 /** Manage → Games: schedule a game on any date, and move or cancel upcoming ones. */
 export default function GameScheduler({ c, games }: { c: Community; games: Game[] }) {
-  const blank: GameCreate = { date: "", time: c.time, venue: c.venue };
+  const blank: GameCreate = { date: "", time: c.time, venue: c.venue, jersey_a: null, jersey_b: null };
   const [f, setF] = useState<GameCreate>(blank);
   const [editing, setEditing] = useState<string | null>(null);
   const [edit, setEdit] = useState<GameUpdate>({});
@@ -47,6 +48,8 @@ export default function GameScheduler({ c, games }: { c: Community; games: Game[
           <Label htmlFor="sg-venue">Venue</Label>
           <Input id="sg-venue" data-testid="schedule-game-venue" value={f.venue ?? ""} onChange={(e) => setF({ ...f, venue: e.target.value })} />
         </div>
+        <JerseyPicker labelA="Team A" labelB="Team B" a={f.jersey_a ?? null} b={f.jersey_b ?? null} testPrefix="schedule-jersey"
+          onChange={(a, b) => setF({ ...f, jersey_a: a, jersey_b: b })} />
         <Button data-testid="schedule-game-submit" className="w-full bg-brand text-white" disabled={!f.date || act.isPending} onClick={schedule}>
           Schedule game
         </Button>
@@ -61,6 +64,9 @@ export default function GameScheduler({ c, games }: { c: Community; games: Game[
               <div className="min-w-0">
                 <div className="font-semibold">{fmtDate(g.date, "EEE d MMM")} · {g.time}</div>
                 <div className="truncate text-xs text-slate-400">{g.venue || "Venue TBA"} · {g.roster.length}/{g.max_players} joined</div>
+                {(g.jersey_a || g.jersey_b) && (
+                  <div className="mt-0.5 flex gap-3"><span className="text-[10px] text-slate-500">A</span><JerseyChip jersey={g.jersey_a} /><span className="text-[10px] text-slate-500">B</span><JerseyChip jersey={g.jersey_b} /></div>
+                )}
               </div>
               <div className="flex shrink-0 gap-1">
                 <Button
@@ -70,7 +76,7 @@ export default function GameScheduler({ c, games }: { c: Community; games: Game[
                   data-testid={`game-move-${g.id}`}
                   onClick={() => {
                     setEditing(editing === g.id ? null : g.id);
-                    setEdit({ date: g.date, time: g.time, venue: g.venue });
+                    setEdit({ date: g.date, time: g.time, venue: g.venue, jersey_a: g.jersey_a, jersey_b: g.jersey_b });
                   }}
                 >
                   <Pencil className="size-4" />
@@ -96,6 +102,8 @@ export default function GameScheduler({ c, games }: { c: Community; games: Game[
                 <Input type="date" aria-label="New date" data-testid={`game-move-date-${g.id}`} value={edit.date ?? ""} onChange={(e) => setEdit({ ...edit, date: e.target.value })} />
                 <Input type="time" aria-label="New time" data-testid={`game-move-time-${g.id}`} value={edit.time ?? ""} onChange={(e) => setEdit({ ...edit, time: e.target.value })} />
                 <Input aria-label="Venue" placeholder="Venue" data-testid={`game-move-venue-${g.id}`} value={edit.venue ?? ""} onChange={(e) => setEdit({ ...edit, venue: e.target.value })} />
+                <JerseyPicker labelA="Team A" labelB="Team B" a={edit.jersey_a ?? null} b={edit.jersey_b ?? null} testPrefix={`game-move-jersey-${g.id}`}
+                  onChange={(a, b) => setEdit({ ...edit, jersey_a: a, jersey_b: b })} />
                 <Button
                   size="sm"
                   className="w-full"
@@ -104,13 +112,13 @@ export default function GameScheduler({ c, games }: { c: Community; games: Game[
                   onClick={() =>
                     act.mutate(() => apiPatch<Game>(`/games/${g.id}`, edit), {
                       onSuccess: () => {
-                        toast.success("Game moved — players keep their spots");
+                        toast.success("Game updated — players keep their spots");
                         setEditing(null);
                       },
                     })
                   }
                 >
-                  Save new date & time
+                  Save changes
                 </Button>
               </div>
             )}

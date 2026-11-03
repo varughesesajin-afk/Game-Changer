@@ -98,16 +98,24 @@ class RosterEntry(BaseModel):
     late: bool = False  # ticked on the match sheet
 
 
+JERSEY_COLOURS = ["White", "Black", "Red", "Blue", "Navy", "Sky", "Green", "Yellow", "Orange", "Purple", "Maroon", "Grey"]
+Jersey = Optional[Literal["White", "Black", "Red", "Blue", "Navy", "Sky", "Green", "Yellow", "Orange", "Purple", "Maroon", "Grey"]]
+
+
 class GameCreate(BaseModel):
     date: str  # YYYY-MM-DD
     time: Optional[str] = None
     venue: Optional[str] = None
+    jersey_a: Jersey = None  # host-chosen kit colour per side
+    jersey_b: Jersey = None
 
 
 class GameUpdate(BaseModel):
     date: Optional[str] = None
     time: Optional[str] = None
     venue: Optional[str] = None
+    jersey_a: Jersey = None
+    jersey_b: Jersey = None
 
 
 class GameGoal(BaseModel):
@@ -147,6 +155,8 @@ class Game(BaseModel):
     fee: float = 0.0
     roster: List[RosterEntry] = Field(default_factory=list)
     result: Optional[GameResult] = None
+    jersey_a: Jersey = None
+    jersey_b: Jersey = None
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -259,6 +269,8 @@ class Match(BaseModel):
     date: Optional[str] = None  # scheduled kick-off
     time: Optional[str] = None
     pitch: Optional[str] = None
+    jersey_a: Jersey = None
+    jersey_b: Jersey = None
     goals: List[MatchGoal] = Field(default_factory=list)
     motm_team_id: Optional[str] = None
     motm_player: Optional[str] = None
@@ -279,6 +291,8 @@ class MatchScheduleIn(BaseModel):
     date: Optional[str] = None
     time: Optional[str] = None
     pitch: Optional[str] = Field(None, max_length=60)
+    jersey_a: Jersey = None
+    jersey_b: Jersey = None
 
 
 class MatchStatsIn(BaseModel):
@@ -465,6 +479,21 @@ class Reminder(BaseModel):
 class RemindResult(BaseModel):
     reminded: int
     skipped_guests: int
+
+
+class UnpaidPlayer(BaseModel):
+    entry_id: str
+    name: str
+    user_id: Optional[str] = None  # None = guest name, can't be reminded in-app
+    reminded: bool = False  # an active (not dismissed) reminder exists
+
+
+class UnpaidGame(BaseModel):
+    game_id: str
+    date: str
+    time: str
+    fee: float
+    players: List[UnpaidPlayer]
 
 
 # ---------- uploaded images ----------

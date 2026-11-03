@@ -112,6 +112,8 @@ export interface Game {
   fee: number;
   roster: RosterEntry[];
   result: GameResult | null;
+  jersey_a: Jersey;
+  jersey_b: Jersey;
   created_at: string;
 }
 
@@ -193,6 +195,8 @@ export interface Match {
   date: string | null;
   time: string | null;
   pitch: string | null;
+  jersey_a: Jersey;
+  jersey_b: Jersey;
   goals: MatchGoal[];
   motm_team_id: string | null;
   motm_player: string | null;
@@ -225,6 +229,8 @@ export interface MatchScheduleIn {
   date: string | null;
   time: string | null;
   pitch: string | null;
+  jersey_a: Jersey;
+  jersey_b: Jersey;
 }
 
 export interface MatchStatsIn {
@@ -401,16 +407,37 @@ export interface ImageUploadOut {
   url: string;
 }
 
+export type Jersey = "White" | "Black" | "Red" | "Blue" | "Navy" | "Sky" | "Green" | "Yellow" | "Orange" | "Purple" | "Maroon" | "Grey" | null;
+
 export interface GameCreate {
   date: string;
   time?: string | null;
   venue?: string | null;
+  jersey_a?: Jersey;
+  jersey_b?: Jersey;
 }
 
 export interface GameUpdate {
   date?: string | null;
   time?: string | null;
   venue?: string | null;
+  jersey_a?: Jersey;
+  jersey_b?: Jersey;
+}
+
+export interface UnpaidPlayer {
+  entry_id: string;
+  name: string;
+  user_id: string | null;
+  reminded: boolean;
+}
+
+export interface UnpaidGame {
+  game_id: string;
+  date: string;
+  time: string;
+  fee: number;
+  players: UnpaidPlayer[];
 }
 
 export interface GalleryPhotoIn {

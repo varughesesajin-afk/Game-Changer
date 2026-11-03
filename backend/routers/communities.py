@@ -322,6 +322,7 @@ async def create_game(cid: str, body: GameCreate, user: User = Depends(current_u
     g = _game_from(c, body.date, body.time)
     if body.venue:
         g.venue = body.venue
+    g.jersey_a, g.jersey_b = body.jersey_a, body.jersey_b
     await db.games.insert_one(g.model_dump())
     return g
 
@@ -493,6 +494,7 @@ async def reschedule_game(gid: str, body: GameUpdate, user: User = Depends(curre
     g = await _get_game(gid)
     require_manage(await _get_community(g.community_id), user)
     changes = body.model_dump(exclude_none=True)
+    changes["jersey_a"], changes["jersey_b"] = body.jersey_a, body.jersey_b  # None clears the colour
     if "date" in changes:
         if changes["date"] < today_iso():
             raise HTTPException(400, "Date must be today or later")

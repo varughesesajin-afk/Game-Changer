@@ -86,3 +86,8 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - Community game: POST /api/games/{gid}/sheet GameSheetIn {events:[{team A|B, scorer_id|null, assist_id|null}], late_ids, paid_ids, motm_entry_id}. Played games only. Sets result (winner from goal counts, events), roster goals/late/paid; clears reminders for newly paid.
 - scorer null = "Unassigned goal" (own goals). Old results load as events without assists.
 - UI: components/MatchSheet.tsx (shared), MatchDialog (fixtures), GameResultForm/GameSheetDialog (host Results tab), RecentResults on community page.
+
+## Unpaid players list + jersey colours
+- GET /api/communities/{cid}/unpaid (manage only) → UnpaidGame[] {game_id,date,time,fee,players:[{entry_id,name,user_id|null,reminded}]} for all games with fee>0 and unpaid roster entries (played + upcoming).
+- POST /api/games/{gid}/roster/{entry_id}/remind (single; 400 for guests/paid), POST /api/communities/{cid}/remind-all-unpaid → RemindResult. UI: UnpaidList at top of Manage → Fees.
+- Jerseys: Game.jersey_a/jersey_b and tournament Match.jersey_a/jersey_b (palette: White, Black, Red, Blue, Navy, Sky, Green, Yellow, Orange, Purple, Maroon, Grey; null = none). Set via GameCreate/GameUpdate (PATCH /games/{gid} always writes both) and MatchScheduleIn. Shown on GameCard team headers, scheduler list, and match dialog.
