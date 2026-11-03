@@ -1,18 +1,34 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { CalendarClock, MapPin, Minus, Plus, Star } from "lucide-react";
+import { CalendarClock, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import TeamBadge from "@/components/TeamBadge";
+import MatchSheet, { eventsFromTotals, pk, splitKey, type SheetSide, type SheetValue } from "@/components/MatchSheet";
 import { apiPatch, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, refreshAll } from "@/lib/auth";
-import type { Match, MatchScheduleIn, MatchStatsIn, Tournament } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { Match, MatchScheduleIn, MatchSheetIn, Team, Tournament } from "@/lib/types";
 
-/** Match centre: kick-off schedule, score, goal scorers and man of the match. Read-only for non-organisers. */
+const side = (team: Team): SheetSide => ({ key: team.id, name: team.name, badge: <TeamBadge team={team} className="size-6" />, players: team.players.map((p) => ({ id: p, name: p })) });
+
+const group = (keys: string[]) =>
+  keys.reduce<Record<string, string[]>>((acc, k) => {
+    const [tid, p] = splitKey(k);
+    (acc[tid] ??= []).push(p);
+    return acc;
+  }, {});
+
+export function tournamentSheetValue(m: Match): SheetValue {
+  const flat = (rec: Record<string, string[]>) => Object.entries(rec).flatMap(([tid, names]) => names.map((n) => pk(tid, n)));
+  const events = m.events.length
+    ? m.events.map((e) => ({ team: e.team_id, scorer: e.scorer, assist: e.assist }))
+    : [m.team_a_id, m.team_b_id].flatMap((tid, i) => (tid ? eventsFromTotals(tid, m.goals.filter((g) => g.team_id === tid).map((g) => ({ id: g.player, goals: g.goals })), i === 0 ? m.score_a : m.score_b) : []));
+  return { events, late: flat(m.late), paid: flat(m.paid), motm: m.motm_team_id && m.motm_player ? pk(m.motm_team_id, m.motm_player) : null };
+}
+
+/** Match centre: kick-off schedule plus the match sheet (goals + assists, late, paid, man of the match). Read-only for non-organisers. */
 export default function MatchDialog({ t, match, onClose, canManage }: { t: Tournament; match: Match | null; onClose: () => void; canManage: boolean }) {
   return (
     <Dialog open={!!match} onOpenChange={(o: boolean) => !o && onClose()}>
@@ -28,11 +44,6 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
   const teamB = t.teams.find((x) => x.id === m.team_b_id);
   const played = m.score_a !== null && m.score_b !== null;
   const [sched, setSched] = useState<MatchScheduleIn>({ date: m.date, time: m.time, pitch: m.pitch });
-  const [a, setA] = useState("");
-  const [b, setB] = useState("");
-  const key = (tid: string, p: string) => `${tid}::${p}`;
-  const [goals, setGoals] = useState<Record<string, number>>(() => Object.fromEntries(m.goals.map((g) => [key(g.team_id, g.player), g.goals])));
-  const [motm, setMotm] = useState<string | null>(m.motm_team_id && m.motm_player ? key(m.motm_team_id, m.motm_player) : null);
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<unknown>) => fn(),
@@ -40,24 +51,10 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
     onError: (e) => toast.error(errMsg(e)),
   });
 
-  const saveStats = () => {
-    const body: MatchStatsIn = {
-      goals: Object.entries(goals).filter(([, n]) => n > 0).map(([k, n]) => {
-        const [team_id, player] = k.split("::");
-        return { team_id, player, goals: n };
-      }),
-      motm_team_id: motm ? motm.split("::")[0] : null,
-      motm_player: motm ? motm.split("::")[1] : null,
-    };
-    act.mutate(() => apiPost(`/tournaments/${t.id}/matches/${m.id}/stats`, body), { onSuccess: () => toast.success("Scorers saved") });
-  };
-
-  const sides = [teamA, teamB].filter((x): x is NonNullable<typeof x> => !!x);
-
   return (
     <>
       <DialogHeader>
-        <DialogTitle className="font-heading">Match centre</DialogTitle>
+        <DialogTitle className="font-heading">Match sheet</DialogTitle>
       </DialogHeader>
       <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 text-center">
         <div className="flex flex-col items-center gap-1"><TeamBadge team={teamA} className="size-10" /><span className="text-sm font-semibold">{teamA?.name ?? "TBD"}</span></div>
@@ -84,59 +81,27 @@ function Body({ t, m, canManage, onClose }: { t: Tournament; m: Match; canManage
         </div>
       )}
 
-      {canManage && !played && teamA && teamB && (
+      {teamA && teamB && (
         <div className="space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Final score</div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="space-y-1"><Label className="text-xs">{teamA.name}</Label><Input type="number" min={0} data-testid="match-score-a-input" value={a} onChange={(e) => setA(e.target.value)} /></div>
-            <div className="space-y-1"><Label className="text-xs">{teamB.name}</Label><Input type="number" min={0} data-testid="match-score-b-input" value={b} onChange={(e) => setB(e.target.value)} /></div>
-          </div>
-          {m.stage === "knockout" && <p className="text-xs text-slate-500">Knockout matches need a winner — no draws.</p>}
-          <Button size="sm" className="w-full" data-testid="match-score-save" disabled={a === "" || b === "" || act.isPending}
-            onClick={() => act.mutate(() => apiPost<Tournament>(`/tournaments/${t.id}/matches/${m.id}/result`, { score_a: Number(a), score_b: Number(b) }), { onSuccess: () => { toast.success("Score saved"); onClose(); } })}>
-            Save score
-          </Button>
-        </div>
-      )}
-
-      {sides.length === 2 && (canManage || m.goals.length > 0 || m.motm_player) && (
-        <div className="space-y-2">
-          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Scorers{canManage ? " · tap the star for man of the match" : ""}</div>
-          {sides.map((team) => (
-            <div key={team.id} className="space-y-1">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-ice"><TeamBadge team={team} className="size-4" />{team.name}</div>
-              {team.players
-                .filter((p) => canManage || (goals[key(team.id, p)] ?? 0) > 0 || motm === key(team.id, p))
-                .map((p) => {
-                  const k = key(team.id, p);
-                  return (
-                    <div key={k} className="flex items-center justify-between rounded-lg bg-elevated/60 px-3 py-1 text-sm">
-                      <span className="truncate">{p}</span>
-                      <span className="flex items-center gap-1.5">
-                        {(canManage || motm === k) && (
-                          <button type="button" disabled={!canManage} aria-label={`Man of the match ${p}`} data-testid={`match-motm-${team.id}-${p}`}
-                            onClick={() => setMotm(motm === k ? null : k)} className={cn("p-1", motm === k ? "text-amber-400" : "text-slate-600 hover:text-amber-300")}>
-                            <Star className="size-4" fill={motm === k ? "currentColor" : "none"} />
-                          </button>
-                        )}
-                        {canManage && (
-                          <button type="button" aria-label={`Less for ${p}`} onClick={() => setGoals({ ...goals, [k]: Math.max(0, (goals[k] ?? 0) - 1) })} className="rounded p-1 text-slate-400 hover:bg-line"><Minus className="size-3.5" /></button>
-                        )}
-                        <span data-testid={`match-goals-${team.id}-${p}`} className="w-5 text-center font-heading font-bold">{goals[k] ?? 0}</span>
-                        {canManage && (
-                          <button type="button" aria-label={`More for ${p}`} data-testid={`match-goal-plus-${team.id}-${p}`} onClick={() => setGoals({ ...goals, [k]: (goals[k] ?? 0) + 1 })} className="rounded p-1 text-slate-400 hover:bg-line"><Plus className="size-3.5" /></button>
-                        )}
-                      </span>
-                    </div>
-                  );
-                })}
-            </div>
-          ))}
-          {canManage && (
-            <Button size="sm" className="w-full bg-brand text-white" data-testid="match-stats-save" disabled={act.isPending} onClick={saveStats}>
-              Save scorers
-            </Button>
-          )}
+          <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Match sheet</div>
+          <MatchSheet
+            key={m.id + (m.score_a ?? "")}
+            sides={[side(teamA), side(teamB)]}
+            initial={tournamentSheetValue(m)}
+            canManage={canManage}
+            saving={act.isPending}
+            note={played ? `Score is recorded as ${m.score_a} – ${m.score_b} — goals must add up to it.` : m.stage === "knockout" ? "Knockout matches need a winner — no draws." : undefined}
+            onSave={(v) => {
+              const body: MatchSheetIn = {
+                events: v.events.map((e) => ({ team_id: e.team, scorer: e.scorer, assist: e.assist })),
+                late: group(v.late),
+                paid: group(v.paid),
+                motm_team_id: v.motm ? splitKey(v.motm)[0] : null,
+                motm_player: v.motm ? splitKey(v.motm)[1] : null,
+              };
+              act.mutate(() => apiPost<Tournament>(`/tournaments/${t.id}/matches/${m.id}/sheet`, body), { onSuccess: () => { toast.success("Match sheet saved"); onClose(); } });
+            }}
+          />
         </div>
       )}
     </>

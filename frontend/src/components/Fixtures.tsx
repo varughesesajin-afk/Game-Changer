@@ -61,10 +61,13 @@ export default function Fixtures({ t, canManage }: { t: Tournament; canManage: b
                         {played ? `${m.score_a} – ${m.score_b}` : can ? "Score" : "vs"}
                       </span>
                       <span className={cn("flex min-w-0 items-center justify-end gap-1.5 text-right", played && (m.score_b ?? 0) > (m.score_a ?? 0) && "font-bold text-white")}><span className="truncate">{name(m.team_b_id)}</span><TeamBadge team={tb} className="size-5" /></span>
-                      {(m.date || m.pitch || m.goals.length > 0) && (
+                      {(m.date || m.pitch || m.goals.length > 0 || Object.values(m.late).some((v) => v.length)) && (
                         <span className="col-span-3 text-center text-[10px] text-slate-400">
                           {m.date ? `${fmtDate(m.date, "EEE d MMM")}${m.time ? ` · ${m.time}` : ""}` : ""}{m.pitch ? ` · ${m.pitch}` : ""}
                           {m.goals.length > 0 ? ` · ⚽ ${m.goals.map((g) => `${g.player}${g.goals > 1 ? ` ×${g.goals}` : ""}`).join(", ")}` : ""}
+                          {Object.values(m.late).some((v) => v.length) && (
+                            <span data-testid={`fixture-late-${m.id}`} className="block text-amber-300">⏰ Late: {Object.values(m.late).flat().join(", ")}</span>
+                          )}
                         </span>
                       )}
                     </button>

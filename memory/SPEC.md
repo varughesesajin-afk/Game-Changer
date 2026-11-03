@@ -79,3 +79,10 @@ auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games,
 - Profile: MyStats tiles (Matches, Wins, Goals, MOTM) from GET /api/players/{user_id} (community games; tournament players are names, not accounts).
 
 - Tournaments: entry fee and prize pool removed from the UI (fields remain in the model, default 0).
+
+## Match sheet (tournament fixtures + community games)
+- Host/organiser/admin only edits; everyone else sees a read-only summary (scorers with assists, MOTM, late per team).
+- Tournament: POST /api/tournaments/{tid}/matches/{mid}/sheet MatchSheetIn {events:[{team_id, scorer|null, assist|null}], late:{team_id:[names]}, paid:{team_id:[names]}, motm_team_id, motm_player}. Players must be in that team's squad; assist != scorer. Goal count per team sets the score (applies result + bracket advance if not yet recorded; if already recorded the goals must add up to it, else 400). Match.goals (totals) is derived for the top-scorer table.
+- Community game: POST /api/games/{gid}/sheet GameSheetIn {events:[{team A|B, scorer_id|null, assist_id|null}], late_ids, paid_ids, motm_entry_id}. Played games only. Sets result (winner from goal counts, events), roster goals/late/paid; clears reminders for newly paid.
+- scorer null = "Unassigned goal" (own goals). Old results load as events without assists.
+- UI: components/MatchSheet.tsx (shared), MatchDialog (fixtures), GameResultForm/GameSheetDialog (host Results tab), RecentResults on community page.

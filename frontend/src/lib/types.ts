@@ -72,12 +72,27 @@ export interface RosterEntry {
   picture: string | null;
   paid: boolean;
   goals: number;
+  late: boolean;
 }
 
 export interface GameResult {
   winner: TeamSide | "draw";
   score_a: number | null;
   score_b: number | null;
+  motm_entry_id: string | null;
+  events: GameGoal[];
+}
+
+export interface GameGoal {
+  team: TeamSide;
+  scorer_id: string | null;
+  assist_id: string | null;
+}
+
+export interface GameSheetIn {
+  events: GameGoal[];
+  late_ids: string[];
+  paid_ids: string[];
   motm_entry_id: string | null;
 }
 
@@ -179,6 +194,23 @@ export interface Match {
   time: string | null;
   pitch: string | null;
   goals: MatchGoal[];
+  motm_team_id: string | null;
+  motm_player: string | null;
+  events: SheetGoal[];
+  late: Record<string, string[]>;
+  paid: Record<string, string[]>;
+}
+
+export interface SheetGoal {
+  team_id: string;
+  scorer: string | null;
+  assist: string | null;
+}
+
+export interface MatchSheetIn {
+  events: SheetGoal[];
+  late: Record<string, string[]>;
+  paid: Record<string, string[]>;
   motm_team_id: string | null;
   motm_player: string | null;
 }

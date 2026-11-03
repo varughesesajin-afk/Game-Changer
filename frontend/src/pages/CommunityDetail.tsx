@@ -8,6 +8,7 @@ import GameCard from "@/components/GameCard";
 import TournamentCard from "@/components/TournamentCard";
 import ManageSheet from "@/components/ManageSheet";
 import Leaderboard from "@/components/Leaderboard";
+import RecentResults from "@/components/RecentResults";
 import Gallery from "@/components/Gallery";
 import Avatar from "@/components/Avatar";
 import ShareButtons from "@/components/ShareButtons";
@@ -176,6 +177,7 @@ export default function CommunityDetail() {
             )}
           </section>
 
+          <RecentResults communityId={c.id} canManage={isAdmin || (isOwner && c.manage_active)} />
           <Leaderboard communityId={c.id} />
 
           <section className="space-y-3">

@@ -8,7 +8,7 @@ from lib.community_access import TRIAL_DAYS, get_community as _get_community, pl
 from lib.dates import today_iso
 from lib.db import db
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
-                            GameResult, GameResultIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
+                            GameResult, GameResultIn, GameSheetIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
                             PaidIn, PlayerCommunityStats, PlayerGameLine, PlayerProfile, RosterEntry, SeasonIn,
                             Tournament, User)
 
@@ -450,6 +450,40 @@ async def record_result(gid: str, body: GameResultIn, user: User = Depends(curre
     result = GameResult(winner=body.winner, score_a=body.score_a, score_b=body.score_b, motm_entry_id=body.motm_entry_id)
     await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(),
                                                      "roster": [r.model_dump() for r in g.roster]}})
+    return await _get_game(gid)
+
+
+@router.post("/games/{gid}/sheet", response_model=Game)
+async def game_sheet(gid: str, body: GameSheetIn, user: User = Depends(current_user)):
+    """Match sheet: goals (+assist) per team set the score; late ticks; paid/unpaid; man of the match."""
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    if g.date > today_iso():
+        raise HTTPException(400, "You can only fill in the match sheet for games that have been played")
+    side = {r.id: r.team for r in g.roster}
+    for e in body.events:
+        for pid in (e.scorer_id, e.assist_id):
+            if pid and side.get(pid) != e.team:
+                raise HTTPException(400, "Scorer and assist must be players on that team")
+        if e.assist_id and e.assist_id == e.scorer_id:
+            raise HTTPException(400, "A player can't assist their own goal")
+    if body.motm_entry_id and body.motm_entry_id not in side:
+        raise HTTPException(400, "Man of the match must be on this game's roster")
+    a = sum(1 for e in body.events if e.team == "A")
+    b = sum(1 for e in body.events if e.team == "B")
+    newly_paid = []
+    for r in g.roster:
+        r.goals = sum(1 for e in body.events if e.scorer_id == r.id)
+        r.late = r.id in body.late_ids
+        paid = r.id in body.paid_ids
+        if paid and not r.paid and r.user_id:
+            newly_paid.append(r.user_id)
+        r.paid = paid
+    result = GameResult(winner="draw" if a == b else ("A" if a > b else "B"), score_a=a, score_b=b,
+                        motm_entry_id=body.motm_entry_id, events=body.events)
+    await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(), "roster": [r.model_dump() for r in g.roster]}})
+    if newly_paid:
+        await db.reminders.delete_many({"game_id": gid, "user_id": {"$in": newly_paid}})
     return await _get_game(gid)
 
 

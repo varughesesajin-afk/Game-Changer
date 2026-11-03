@@ -1,96 +1,86 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Minus, Plus, Star } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import MatchSheet, { eventsFromTotals, pk, splitKey, type SheetSide, type SheetValue } from "@/components/MatchSheet";
 import { apiPost } from "@/lib/api";
 import { errMsg, fmtDate, refreshAll } from "@/lib/auth";
-import type { Game, GameResult, GameResultIn } from "@/lib/types";
-import { cn } from "@/lib/utils";
+import type { Game, GameSheetIn, TeamSide } from "@/lib/types";
 
-export default function GameResultForm({ game }: { game: Game }) {
-  const [winner, setWinner] = useState<GameResult["winner"]>(game.result?.winner ?? "A");
-  const [sa, setSa] = useState(game.result?.score_a?.toString() ?? "");
-  const [sb, setSb] = useState(game.result?.score_b?.toString() ?? "");
-  const [motm, setMotm] = useState<string | null>(game.result?.motm_entry_id ?? null);
-  const [goals, setGoals] = useState<Record<string, number>>(() => Object.fromEntries(game.roster.map((r) => [r.id, r.goals])));
+export function gameSides(game: Game): [SheetSide, SheetSide] {
+  const side = (t: TeamSide): SheetSide => ({ key: t, name: `Team ${t}`, players: game.roster.filter((r) => r.team === t).map((r) => ({ id: r.id, name: r.name })) });
+  return [side("A"), side("B")];
+}
 
+export function gameSheetValue(game: Game): SheetValue {
+  const r = game.result;
+  const team = (id: string) => game.roster.find((x) => x.id === id)?.team ?? "A";
+  const events = r?.events.length
+    ? r.events.map((e) => ({ team: e.team, scorer: e.scorer_id, assist: e.assist_id }))
+    : (["A", "B"] as const).flatMap((t) => eventsFromTotals(t, game.roster.filter((x) => x.team === t), t === "A" ? r?.score_a ?? 0 : r?.score_b ?? 0));
+  return {
+    events,
+    late: game.roster.filter((x) => x.late).map((x) => pk(x.team, x.id)),
+    paid: game.roster.filter((x) => x.paid).map((x) => pk(x.team, x.id)),
+    motm: r?.motm_entry_id ? pk(team(r.motm_entry_id), r.motm_entry_id) : null,
+  };
+}
+
+/** Community game match sheet dialog — editable for the host, read-only for everyone else. */
+export function GameSheetDialog({ game, canManage, onClose }: { game: Game | null; canManage: boolean; onClose: () => void }) {
   const save = useMutation({
-    mutationFn: () => {
-      const body: GameResultIn = { winner, score_a: sa === "" ? null : Number(sa), score_b: sb === "" ? null : Number(sb), motm_entry_id: motm, goals };
-      return apiPost<Game>(`/games/${game.id}/result`, body);
+    mutationFn: ({ g, v }: { g: Game; v: SheetValue }) => {
+      const body: GameSheetIn = {
+        events: v.events.map((e) => ({ team: e.team as TeamSide, scorer_id: e.scorer, assist_id: e.assist })),
+        late_ids: v.late.map((k) => splitKey(k)[1]),
+        paid_ids: v.paid.map((k) => splitKey(k)[1]),
+        motm_entry_id: v.motm ? splitKey(v.motm)[1] : null,
+      };
+      return apiPost<Game>(`/games/${g.id}/sheet`, body);
     },
     onSuccess: () => {
-      toast.success("Result saved — leaderboard updated");
+      toast.success("Match sheet saved — leaderboard updated");
       refreshAll();
+      onClose();
     },
     onError: (e) => toast.error(errMsg(e)),
   });
-
-  const bump = (id: string, d: number) => setGoals((g) => ({ ...g, [id]: Math.max(0, (g[id] ?? 0) + d) }));
-
   return (
-    <div data-testid={`result-form-${game.id}`} className="space-y-3 rounded-2xl border border-line bg-surface p-3">
-      <div className="flex items-center justify-between">
-        <span className="font-heading font-bold">{fmtDate(game.date, "EEE d MMM")}</span>
-        {game.result && <span className="text-[10px] font-bold uppercase tracking-[0.15em] text-energy">Recorded</span>}
-      </div>
-      <div className="flex gap-1.5">
-        {(["A", "draw", "B"] as const).map((w) => (
-          <button
-            key={w}
-            type="button"
-            data-testid={`result-winner-${w}-${game.id}`}
-            onClick={() => setWinner(w)}
-            className={cn(
-              "flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold transition-[background-color,color] duration-150",
-              winner === w ? "border-transparent bg-brand text-white" : "border-line text-slate-300",
+    <Dialog open={!!game} onOpenChange={(o: boolean) => !o && onClose()}>
+      <DialogContent data-testid="game-sheet-dialog" className="max-h-[90dvh] max-w-md overflow-x-hidden overflow-y-auto overscroll-contain">
+        <DialogHeader>
+          <DialogTitle className="font-heading">Match sheet</DialogTitle>
+          {game && <p className="text-sm text-slate-400">{fmtDate(game.date, "EEE d MMM")} · {game.time}{game.venue ? ` · ${game.venue}` : ""}</p>}
+        </DialogHeader>
+        {game && (
+          <>
+            {!canManage && game.result && (
+              <div className="text-center font-heading text-2xl font-bold">Team A {game.result.score_a ?? 0} – {game.result.score_b ?? 0} Team B</div>
             )}
-          >
-            {w === "draw" ? "Draw" : `Team ${w} won`}
-          </button>
-        ))}
+            <MatchSheet key={game.id} sides={gameSides(game)} initial={gameSheetValue(game)} canManage={canManage} saving={save.isPending} onSave={(v) => save.mutate({ g: game, v })} />
+          </>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Row in the host's Results tab: opens the match sheet. */
+export default function GameResultForm({ game }: { game: Game }) {
+  const [open, setOpen] = useState(false);
+  const r = game.result;
+  return (
+    <div data-testid={`result-form-${game.id}`} className="flex items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-3">
+      <div className="min-w-0">
+        <div className="font-heading font-bold">{fmtDate(game.date, "EEE d MMM")}</div>
+        <div className="text-xs text-slate-400">{r ? `Team A ${r.score_a ?? 0} – ${r.score_b ?? 0} Team B` : `${game.roster.length} players · no result yet`}</div>
       </div>
-      <div className="flex items-center gap-2 text-sm">
-        <span className="text-slate-400">Score</span>
-        <Input data-testid={`result-score-a-${game.id}`} type="number" min={0} placeholder="A" value={sa} onChange={(e) => setSa(e.target.value)} className="h-8 w-16" />
-        <span className="text-slate-500">–</span>
-        <Input data-testid={`result-score-b-${game.id}`} type="number" min={0} placeholder="B" value={sb} onChange={(e) => setSb(e.target.value)} className="h-8 w-16" />
-      </div>
-      <div className="space-y-1">
-        <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-slate-400">Goals / points · tap the star for man of the match</div>
-        {game.roster.map((r) => (
-          <div key={r.id} className="flex items-center justify-between rounded-lg bg-elevated/60 px-3 py-1 text-sm">
-            <span className="truncate">
-              <span className={cn("mr-1.5 text-[10px] font-bold", r.team === "A" ? "text-energy" : "text-ice")}>{r.team}</span>
-              {r.name}
-            </span>
-            <span className="flex items-center gap-2">
-              <button
-                type="button"
-                aria-label={`Man of the match: ${r.name}`}
-                data-testid={`motm-toggle-${r.id}`}
-                onClick={() => setMotm((m) => (m === r.id ? null : r.id))}
-                className={cn("rounded-md p-1 transition-colors", motm === r.id ? "text-amber-400" : "text-slate-600 hover:text-amber-300")}
-              >
-                <Star className="size-4" fill={motm === r.id ? "currentColor" : "none"} />
-              </button>
-              <button type="button" aria-label={`Less for ${r.name}`} data-testid={`goals-minus-${r.id}`} onClick={() => bump(r.id, -1)} className="rounded-md p-1 text-slate-400 hover:bg-line">
-                <Minus className="size-3.5" />
-              </button>
-              <span data-testid={`goals-value-${r.id}`} className="w-5 text-center font-heading font-bold">{goals[r.id] ?? 0}</span>
-              <button type="button" aria-label={`More for ${r.name}`} data-testid={`goals-plus-${r.id}`} onClick={() => bump(r.id, 1)} className="rounded-md p-1 text-slate-400 hover:bg-line">
-                <Plus className="size-3.5" />
-              </button>
-            </span>
-          </div>
-        ))}
-        {game.roster.length === 0 && <p className="text-xs text-slate-500">No players were on this game.</p>}
-      </div>
-      <Button size="sm" className="w-full" data-testid={`result-save-${game.id}`} disabled={save.isPending} onClick={() => save.mutate()}>
-        {game.result ? "Update result" : "Save result"}
+      <Button size="sm" data-testid={`result-open-sheet-${game.id}`} className={r ? "" : "bg-brand text-white"} variant={r ? "outline" : "default"} onClick={() => setOpen(true)}>
+        <ClipboardList className="size-4" /> Match sheet
       </Button>
+      <GameSheetDialog game={open ? game : null} canManage onClose={() => setOpen(false)} />
     </div>
   );
 }

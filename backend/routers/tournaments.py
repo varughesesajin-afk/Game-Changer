@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community, require_manage, require_premium
 from lib.db import db
-from models.schemas import (Match, MatchScheduleIn, MatchStatsIn, PlayerIn, ResultIn, ScorerRow, StandingRow,
+from models.schemas import (Match, MatchGoal, MatchScheduleIn, MatchSheetIn, MatchStatsIn, PlayerIn, ResultIn, ScorerRow, StandingRow,
                             StandingsTable, Team, TeamCreate, TeamLogoIn,
                             Tournament, TournamentCreate, User)
 
@@ -348,10 +348,15 @@ async def report_result(tid: str, mid: str, body: ResultIn, user: User = Depends
         raise HTTPException(400, "Both teams are not decided yet")
     if m.score_a is not None or (m.stage == "knockout" and m.winner_id):
         raise HTTPException(400, "Result already recorded")
-    if m.stage == "knockout" and body.score_a == body.score_b:
+    _apply_result(t, m, body.score_a, body.score_b)
+    return await _save(t)
+
+
+def _apply_result(t: Tournament, m: Match, a: int, b: int) -> None:
+    if m.stage == "knockout" and a == b:
         raise HTTPException(400, "Knockout matches need a winner (no draws)")
-    m.score_a, m.score_b = body.score_a, body.score_b
-    m.winner_id = None if body.score_a == body.score_b else (m.team_a_id if body.score_a > body.score_b else m.team_b_id)
+    m.score_a, m.score_b = a, b
+    m.winner_id = None if a == b else (m.team_a_id if a > b else m.team_b_id)
     if m.stage == "knockout":
         champ = _advance(t.matches, m)
         if champ:
@@ -359,4 +364,42 @@ async def report_result(tid: str, mid: str, body: ResultIn, user: User = Depends
             t.status = "completed"
     else:
         _maybe_start_knockout(t)
+
+
+@router.post("/{tid}/matches/{mid}/sheet", response_model=Tournament)
+async def match_sheet(tid: str, mid: str, body: MatchSheetIn, user: User = Depends(current_user)):
+    """Goals (+assist) per team set the score; late ticks; paid/unpaid per player; man of the match."""
+    t = await _get(tid)
+    if not _can_manage(t, user):
+        raise HTTPException(403, "Only the organiser can fill in the match sheet")
+    m = _find_match(t, mid)
+    if not (m.team_a_id and m.team_b_id):
+        raise HTTPException(400, "Both teams are not decided yet")
+    squads = {x.id: set(x.players) for x in t.teams if x.id in (m.team_a_id, m.team_b_id)}
+    for e in body.events:
+        sq = squads.get(e.team_id)
+        if sq is None:
+            raise HTTPException(400, "Goals must belong to one of the two teams")
+        if (e.scorer and e.scorer not in sq) or (e.assist and e.assist not in sq):
+            raise HTTPException(400, "Scorer and assist must be in that team's squad")
+        if e.assist and e.assist == e.scorer:
+            raise HTTPException(400, "A player can't assist their own goal")
+    if body.motm_player and body.motm_player not in squads.get(body.motm_team_id or "", set()):
+        raise HTTPException(400, "Man of the match must be in one of the squads")
+    a = sum(1 for e in body.events if e.team_id == m.team_a_id)
+    b = sum(1 for e in body.events if e.team_id == m.team_b_id)
+    if m.score_a is not None:
+        if (a, b) != (m.score_a, m.score_b):
+            raise HTTPException(400, f"Score is already recorded as {m.score_a} – {m.score_b}; the goals must add up to it")
+    else:
+        _apply_result(t, m, a, b)
+    m.events = body.events
+    counts: dict = {}
+    for e in body.events:
+        if e.scorer:
+            counts[(e.team_id, e.scorer)] = counts.get((e.team_id, e.scorer), 0) + 1
+    m.goals = [MatchGoal(team_id=k[0], player=k[1], goals=n) for k, n in counts.items()]
+    m.late = {tid_: sorted(set(v) & squads[tid_]) for tid_, v in body.late.items() if tid_ in squads}
+    m.paid = {tid_: sorted(set(v) & squads[tid_]) for tid_, v in body.paid.items() if tid_ in squads}
+    m.motm_team_id, m.motm_player = (body.motm_team_id, body.motm_player) if body.motm_player else (None, None)
     return await _save(t)

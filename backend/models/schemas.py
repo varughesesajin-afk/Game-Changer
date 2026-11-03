@@ -95,6 +95,7 @@ class RosterEntry(BaseModel):
     picture: Optional[str] = None
     paid: bool = False
     goals: int = 0
+    late: bool = False  # ticked on the match sheet
 
 
 class GameCreate(BaseModel):
@@ -109,11 +110,25 @@ class GameUpdate(BaseModel):
     venue: Optional[str] = None
 
 
+class GameGoal(BaseModel):
+    team: Literal["A", "B"]
+    scorer_id: Optional[str] = None  # roster entry id; None = unassigned goal
+    assist_id: Optional[str] = None
+
+
 class GameResult(BaseModel):
     winner: Literal["A", "B", "draw"]
     score_a: Optional[int] = Field(None, ge=0)
     score_b: Optional[int] = Field(None, ge=0)
     motm_entry_id: Optional[str] = None  # man of the match (roster entry id)
+    events: List[GameGoal] = Field(default_factory=list)  # match-sheet goals in order
+
+
+class GameSheetIn(BaseModel):
+    events: List[GameGoal] = Field(default_factory=list)
+    late_ids: List[str] = Field(default_factory=list)
+    paid_ids: List[str] = Field(default_factory=list)
+    motm_entry_id: Optional[str] = None
 
 
 class GameResultIn(GameResult):
@@ -224,6 +239,12 @@ class MatchGoal(BaseModel):
     goals: int = Field(ge=0)
 
 
+class SheetGoal(BaseModel):
+    team_id: str
+    scorer: Optional[str] = None  # squad name; None = unassigned goal
+    assist: Optional[str] = None
+
+
 class Match(BaseModel):
     id: str = Field(default_factory=_id)
     stage: Literal["league", "group", "knockout"] = "knockout"
@@ -239,6 +260,17 @@ class Match(BaseModel):
     time: Optional[str] = None
     pitch: Optional[str] = None
     goals: List[MatchGoal] = Field(default_factory=list)
+    motm_team_id: Optional[str] = None
+    motm_player: Optional[str] = None
+    events: List[SheetGoal] = Field(default_factory=list)  # match-sheet goals with assists
+    late: Dict[str, List[str]] = Field(default_factory=dict)  # team_id -> late squad names
+    paid: Dict[str, List[str]] = Field(default_factory=dict)  # team_id -> paid squad names
+
+
+class MatchSheetIn(BaseModel):
+    events: List[SheetGoal] = Field(default_factory=list)
+    late: Dict[str, List[str]] = Field(default_factory=dict)
+    paid: Dict[str, List[str]] = Field(default_factory=dict)
     motm_team_id: Optional[str] = None
     motm_player: Optional[str] = None
 

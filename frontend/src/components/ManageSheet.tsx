@@ -195,7 +195,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
                   Start new season now
                 </Button>
               </div>
-              <p className="text-xs text-slate-400">Enter who won and each player's goals or points. This feeds the community leaderboard.</p>
+              <p className="text-xs text-slate-400">Open a game's match sheet to record goals, assists, late arrivals and who paid. Goals set the score and feed the leaderboard.</p>
               {pastGames.length === 0 && <p className="text-sm text-slate-400">No played games yet.</p>}
               {pastGames.map((g) => <GameResultForm key={g.id + (g.result ? "r" : "")} game={g} />)}
             </TabsContent>
