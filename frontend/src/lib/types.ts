@@ -279,8 +279,21 @@ export interface Plan {
   name: string;
   price: number;
   currency: string;
-  interval: "month" | "year";
+  interval: "month" | "year" | "one_time";
   perks: string[];
+}
+
+export interface CheckoutStart {
+  ref: string;
+  redirect_url: string;
+}
+
+export interface CheckoutStatus {
+  ref: string;
+  community_id: string;
+  community_name: string;
+  payment_status: string;
+  paid: boolean;
 }
 
 export interface PaymentRecord {

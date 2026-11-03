@@ -99,7 +99,7 @@ export default function CommunityDetail() {
               onClick={() => setSubFor(c)}
               className="w-full rounded-2xl border border-energy/40 bg-gradient-to-r from-ice/10 to-energy/10 p-4 text-left text-sm transition-[border-color] duration-200 hover:border-energy"
             >
-              <span className="font-semibold text-energy">Unlock Manage — OMR 1/month.</span>{" "}
+              <span className="font-semibold text-energy">Unlock Manage — one-time OMR 1.</span>{" "}
               Edit details, schedule games, host tournaments, remove names and track match fees.
             </button>
           )}
@@ -198,7 +198,7 @@ export default function CommunityDetail() {
           {me && canManage && <ManageSheet key={c.id + c.name + c.fee} c={c} games={games} me={me} open={manageOpen} onOpenChange={setManageOpen} />}
         </div>
       )}
-      <ManageSubscribeDialog community={subFor} onOpenChange={(o) => !o && setSubFor(null)} onActivated={() => setManageOpen(true)} />
+      <ManageSubscribeDialog community={subFor} onOpenChange={(o) => !o && setSubFor(null)} />
       {cq.isError && <div className="p-5 text-sm text-slate-400">Couldn't load this community.</div>}
     </div>
   );

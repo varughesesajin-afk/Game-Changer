@@ -43,7 +43,7 @@ export default function HostPro() {
           <Sparkles className="size-3.5" /> Host & Earn
         </div>
         <h1 className="mt-1 font-heading text-3xl font-bold leading-tight tracking-tight">Turn your weekly game into a real club.</h1>
-        <p className="mt-2 text-sm text-slate-400">Each community has one host. Unlock Manage for OMR 1/month per community — hosting another community costs OMR 1/month again.</p>
+        <p className="mt-2 text-sm text-slate-400">Each community has one host. Pay a one-time OMR 1 per community to start and manage it — hosting another community is another one-time OMR 1.</p>
       </div>
 
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-5">
@@ -61,7 +61,7 @@ export default function HostPro() {
         <div className="font-heading text-lg font-bold">Community Manage</div>
         <div className="mt-1">
           <span className="font-heading text-3xl font-bold">OMR 1</span>
-          <span className="text-sm text-slate-400"> / month per community</span>
+          <span className="text-sm text-slate-400"> once per community</span>
         </div>
         <ul className="mt-3 space-y-1.5 text-sm text-slate-300">
           {MANAGE_PERKS.map((p) => (
@@ -78,12 +78,12 @@ export default function HostPro() {
               <div key={c.id} data-testid={`plan-community-${c.id}`} className="flex items-center justify-between gap-2 rounded-xl border border-line bg-page/60 px-3 py-2">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-semibold">{c.name}</div>
-                  <div className="text-xs text-slate-400">{c.manage_active && c.manage_until ? `Active until ${fmtDate(c.manage_until, "d MMM yyyy")}` : "Not active"}</div>
+                  <div className="text-xs text-slate-400">{c.manage_active ? "Paid · Manage unlocked" : "Not paid yet"}</div>
                 </div>
                 {c.manage_active ? (
                   <Link to={`/communities/${c.id}`} className={buttonVariants({ size: "sm", variant: "outline" })}>Open</Link>
                 ) : (
-                  <Button size="sm" data-testid={`plan-activate-${c.id}`} className="bg-brand text-white" onClick={() => setSubFor(c)}>Activate</Button>
+                  <Button size="sm" data-testid={`plan-activate-${c.id}`} className="bg-brand text-white" onClick={() => setSubFor(c)}>Pay OMR 1</Button>
                 )}
               </div>
             ))
@@ -102,7 +102,7 @@ export default function HostPro() {
           ))}
         </div>
       )}
-      <ManageSubscribeDialog community={subFor} onOpenChange={(o) => !o && setSubFor(null)} onActivated={(c) => nav(`/communities/${c.id}`)} />
+      <ManageSubscribeDialog community={subFor} onOpenChange={(o) => !o && setSubFor(null)} />
     </div>
   );
 }

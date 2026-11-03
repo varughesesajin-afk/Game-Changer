@@ -1,9 +1,11 @@
-"""Community access helpers shared by routers. 'Manage' = owner with an active 1 OMR/month subscription, or site admin."""
+"""Community access helpers shared by routers. 'Manage' = owner with an one-time OMR 1 payment, or site admin."""
 from fastapi import HTTPException
 
 from lib.dates import today_iso
 from lib.db import db
 from models.schemas import Community, User
+
+LIFETIME = "9999-12-31"  # manage_until value for a one-time (never-expiring) unlock
 
 
 def to_community(doc: dict) -> Community:
@@ -31,4 +33,4 @@ def require_manage(c: Community, user: User) -> None:
     if c.owner_id != user.user_id:
         raise HTTPException(403, "Only this community's organiser can manage it")
     if not c.manage_active:
-        raise HTTPException(402, "Activate Manage (OMR 1/month) for this community to use this")
+        raise HTTPException(402, "Unlock Manage (one-time OMR 1) for this community to use this")

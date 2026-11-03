@@ -6,7 +6,6 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community as _get_community, require_manage, to_community
 from lib.dates import today_iso
-from routers.billing import activate_manage
 from lib.db import db
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
                             GameResult, GameResultIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
@@ -16,7 +15,6 @@ from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed,
 router = APIRouter(tags=["communities"])
 
 WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
-FREE_COMMUNITIES = 1  # first community is free to create; each extra one requires paying OMR 1 (admins exempt)
 
 
 def next_dates(days: List[str]) -> List[str]:
@@ -73,23 +71,17 @@ async def list_communities(sport: Optional[str] = None, mine: bool = False, q: O
 
 @router.post("/communities", response_model=Community)
 async def create_community(body: CommunityCreateIn, user: User = Depends(current_user)):
-    needs_payment = False
     if not is_admin(user):
-        owned = await db.communities.count_documents({"owner_id": user.user_id})
-        if owned >= FREE_COMMUNITIES:
-            if not body.pay_manage:
-                raise HTTPException(402, "You already host a community. Each additional community costs OMR 1/month (includes Manage).")
-            needs_payment = True
-    c = Community(**body.model_dump(exclude={"pay_manage"}), owner_id=user.user_id, owner_name=user.name,
+        unpaid = await db.communities.find_one({"owner_id": user.user_id, "$or": [{"manage_until": None}, {"manage_until": {"$exists": False}}]}, {"_id": 0, "name": 1})
+        if unpaid:
+            raise HTTPException(402, f"Pay the one-time OMR 1 for {unpaid['name']} before starting another community.")
+    c = Community(**body.model_dump(), owner_id=user.user_id, owner_name=user.name,
                   members=[Member(user_id=user.user_id, name=user.name, picture=user.picture)])
     doc = c.model_dump()
     doc.pop("manage_active", None)
     await db.communities.insert_one(doc)
     for d in next_dates(c.days):
         await db.games.insert_one(_game_from(c, d).model_dump())
-    if needs_payment:
-        await activate_manage(c, user)
-        return await _get_community(c.id)
     return c
 
 

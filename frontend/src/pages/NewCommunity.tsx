@@ -11,6 +11,7 @@ import SportPills from "@/components/SportPills";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import VisibilityToggle from "@/components/VisibilityToggle";
 import { apiGet, apiPost } from "@/lib/api";
+import { startManageCheckout } from "@/lib/payments";
 import { WEEKDAYS, errMsg, refreshAll, useMe } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -25,14 +26,25 @@ export default function NewCommunity() {
   const [f, setF] = useState<CommunityCreate>(EMPTY);
   const set = <K extends keyof CommunityCreate>(k: K, v: CommunityCreate[K]) => setF((p) => ({ ...p, [k]: v }));
   const mine = useQuery({ queryKey: ["communities", "mine"], queryFn: () => apiGet<Community[]>("/communities?mine=true"), enabled: !!me });
-  const hostsAlready = !!me && me.role !== "admin" && (mine.data ?? []).some((c) => c.owner_id === me.user_id);
+  const isAdmin = me?.role === "admin";
+  const unpaid = !!me && !isAdmin ? (mine.data ?? []).find((c) => c.owner_id === me.user_id && !c.manage_active) : undefined;
 
   const create = useMutation({
-    mutationFn: () => apiPost<Community>("/communities", { ...f, pay_manage: hostsAlready }),
-    onSuccess: (c) => {
-      toast.success(hostsAlready ? "Paid OMR 1 — community created with Manage active" : "Community created — first games scheduled");
+    mutationFn: () => apiPost<Community>("/communities", f),
+    onSuccess: async (c) => {
       refreshAll();
-      nav(`/communities/${c.id}`, { replace: true });
+      if (isAdmin) {
+        toast.success("Community created — first games scheduled");
+        nav(`/communities/${c.id}`, { replace: true });
+        return;
+      }
+      toast.success("Community saved — opening secure checkout for the one-time OMR 1");
+      try {
+        await startManageCheckout(c.id);
+      } catch (e) {
+        toast.error(errMsg(e));
+        nav(`/communities/${c.id}`, { replace: true });
+      }
     },
     onError: (e) => toast.error(errMsg(e)),
   });
@@ -52,10 +64,13 @@ export default function NewCommunity() {
       </div>
       <p className="text-sm text-slate-400">Your regular group — we'll set up the weekly games so players can add their names. You'll be its host.</p>
 
-      {hostsAlready && (
+      {!isAdmin && (
         <div data-testid="extra-community-notice" className="rounded-2xl border border-energy/40 bg-gradient-to-r from-ice/10 to-energy/10 p-4 text-sm">
-          <span className="font-semibold text-energy">You already host a community.</span> Each additional community costs{" "}
-          <span className="font-semibold text-white">OMR 1/month</span> and comes with Manage switched on. Test mode — no card is charged.
+          {unpaid ? (
+            <><span className="font-semibold text-energy">Finish paying for {unpaid.name} first.</span> Open it and tap Unlock Manage — then you can start another.</>
+          ) : (
+            <>Starting a community is a <span className="font-semibold text-white">one-time OMR 1</span> — pay once and manage it for good. You'll pay by card on Thawani Pay's secure page.</>
+          )}
         </div>
       )}
 
@@ -131,12 +146,12 @@ export default function NewCommunity() {
       <Button
         size="lg"
         data-testid="community-create-submit"
-        disabled={f.name.trim().length < 2 || create.isPending || (!!me && mine.isLoading)}
+        disabled={f.name.trim().length < 2 || create.isPending || (!!me && mine.isLoading) || !!unpaid}
         onClick={() => create.mutate()}
         className="h-12 w-full bg-brand text-base text-white"
       >
-        {hostsAlready && <CreditCard className="size-4" />}
-        {create.isPending ? "Creating…" : hostsAlready ? "Pay OMR 1 & create community" : "Create community"}
+        {!isAdmin && <CreditCard className="size-4" />}
+        {create.isPending ? "Creating…" : isAdmin ? "Create community" : "Create & pay OMR 1"}
       </Button>
     </div>
   );

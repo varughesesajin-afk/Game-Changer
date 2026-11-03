@@ -52,7 +52,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
         <SheetHeader>
           <SheetTitle className="font-heading text-2xl">Manage {c.name}</SheetTitle>
           <SheetDescription>
-            {me.role === "admin" && !isOwner ? "Site admin access" : c.manage_until ? `Manage active until ${fmtDate(c.manage_until, "d MMM yyyy")}` : "Site admin access"}
+            {me.role === "admin" && !isOwner ? "Site admin access" : c.manage_active ? "Manage unlocked — paid once" : "Site admin access"}
           </SheetDescription>
         </SheetHeader>
         <div className="px-4 pb-6">
@@ -134,19 +134,6 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
                 Save changes
               </Button>
               <div className="flex gap-2 pt-2">
-                {isOwner && c.manage_active && (
-                  <Button
-                    variant="ghost"
-                    data-testid="manage-cancel-subscription"
-                    className="flex-1 text-slate-400"
-                    onClick={() => {
-                      if (window.confirm("Cancel the Manage subscription? Manage tools lock immediately."))
-                        act.mutate(() => apiPost(`/billing/communities/${c.id}/cancel`), { onSuccess: () => { toast("Manage cancelled"); onOpenChange(false); } });
-                    }}
-                  >
-                    Cancel subscription
-                  </Button>
-                )}
                 <Button
                   variant="ghost"
                   data-testid="manage-delete-community"

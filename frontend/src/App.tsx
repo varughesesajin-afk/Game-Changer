@@ -12,6 +12,7 @@ import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Admin from "@/pages/Admin";
 import PlayerProfilePage from "@/pages/PlayerProfile";
+import PaymentReturn from "@/pages/PaymentReturn";
 
 export default function App() {
   const location = useLocation();
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/players/:key" element={<PlayerProfilePage />} />
+        <Route path="/payment/return" element={<PaymentReturn />} />
         <Route path="*" element={<Explore />} />
       </Route>
     </Routes>

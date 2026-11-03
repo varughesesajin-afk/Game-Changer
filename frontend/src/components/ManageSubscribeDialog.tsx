@@ -1,10 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BadgeCheck, CreditCard } from "lucide-react";
+import { BadgeCheck, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { apiPost } from "@/lib/api";
-import { errMsg, refreshAll } from "@/lib/auth";
+import { errMsg } from "@/lib/auth";
+import { startManageCheckout } from "@/lib/payments";
 import type { Community } from "@/lib/types";
 
 export const MANAGE_PERKS = [
@@ -18,28 +18,18 @@ export const MANAGE_PERKS = [
 interface Props {
   community: Community | null;
   onOpenChange: (o: boolean) => void;
-  onActivated?: (c: Community) => void;
 }
 
-// PAYMENTS ARE MOCKED — confirming flips the subscription on without charging a card.
-export default function ManageSubscribeDialog({ community, onOpenChange, onActivated }: Props) {
-  const sub = useMutation({
-    mutationFn: () => apiPost<Community>(`/billing/communities/${community?.id}/subscribe`),
-    onSuccess: (c) => {
-      toast.success("Manage activated for " + c.name);
-      refreshAll();
-      onOpenChange(false);
-      onActivated?.(c);
-    },
-    onError: (e) => toast.error(errMsg(e)),
-  });
+// One-time OMR 1 — sends the host to Thawani Pay's secure checkout, Manage unlocks when they return paid.
+export default function ManageSubscribeDialog({ community, onOpenChange }: Props) {
+  const pay = useMutation({ mutationFn: () => startManageCheckout(community!.id), onError: (e) => toast.error(errMsg(e)) });
   return (
     <Dialog open={!!community} onOpenChange={onOpenChange}>
       <DialogContent data-testid="manage-subscribe-dialog" className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="font-heading">Unlock Manage</DialogTitle>
           <DialogDescription>
-            OMR 1 / month for {community?.name}. Test mode — payments are simulated, no card is charged.
+            One-time OMR 1 for {community?.name} — pay once, manage it for good. Paid securely by card through Thawani Pay.
           </DialogDescription>
         </DialogHeader>
         <ul className="space-y-1.5 text-sm text-slate-300">
@@ -48,8 +38,8 @@ export default function ManageSubscribeDialog({ community, onOpenChange, onActiv
           ))}
         </ul>
         <DialogFooter>
-          <Button data-testid="manage-subscribe-confirm" className="w-full bg-brand text-white" disabled={sub.isPending} onClick={() => sub.mutate()}>
-            <CreditCard className="size-4" /> {sub.isPending ? "Processing…" : "Pay OMR 1 & activate"}
+          <Button data-testid="manage-subscribe-confirm" className="w-full bg-brand text-white" disabled={pay.isPending} onClick={() => pay.mutate()}>
+            <Lock className="size-4" /> {pay.isPending ? "Opening secure checkout…" : "Pay OMR 1 once"}
           </Button>
         </DialogFooter>
       </DialogContent>

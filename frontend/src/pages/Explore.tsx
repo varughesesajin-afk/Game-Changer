@@ -115,7 +115,7 @@ export default function Explore() {
         >
           <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-energy">Organisers</div>
           <div className="mt-1 font-heading text-xl font-bold">Run your community like a club.</div>
-          <p className="mt-1 text-sm text-slate-300">Manage for OMR 1/month: edit details, schedule games, host tournaments, track match fees.</p>
+          <p className="mt-1 text-sm text-slate-300">Manage for a one-time OMR 1: edit details, schedule games, host tournaments, track match fees.</p>
         </Link>
       </div>
     </div>

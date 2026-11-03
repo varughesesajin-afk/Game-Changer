@@ -52,7 +52,7 @@ class CommunityCreate(BaseModel):
 
 
 class CommunityCreateIn(CommunityCreate):
-    pay_manage: bool = False  # required (OMR 1, includes Manage) when the organiser already hosts a community
+    pass
 
 
 class CommunityUpdate(BaseModel):
@@ -324,13 +324,26 @@ class Feed(BaseModel):
     communities: List[Community]
 
 
-# ---------- billing (MOCKED payments) ----------
+# ---------- billing (Thawani Pay checkout, one-time OMR 1 per community) ----------
+class CheckoutStart(BaseModel):
+    ref: str
+    redirect_url: str
+
+
+class CheckoutStatus(BaseModel):
+    ref: str
+    community_id: str
+    community_name: str
+    payment_status: str  # Thawani: "paid" | "unpaid" | other
+    paid: bool
+
+
 class Plan(BaseModel):
     id: str
     name: str
     price: float
     currency: str
-    interval: Literal["month", "year"]
+    interval: Literal["month", "year", "one_time"]
     perks: List[str]
 
 

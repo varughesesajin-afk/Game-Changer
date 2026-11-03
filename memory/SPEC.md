@@ -15,19 +15,20 @@ Mobile-first web app (max-w-md frame, bottom nav) for community sports games + t
 - games {id, community_id, date YYYY-MM-DD, time, max_players, fee, roster[{id,user_id|null,name,team A|B,added_by}]}
   - creating a community auto-creates next occurrence for each weekday; "schedule-week" adds following week.
 - tournaments {id, title, sport, kind official|community, community_id, status registration|ongoing|completed, teams[], matches[] (single-elim bracket, byes auto-advance), champion_id}
-- payment_transactions (MOCKED billing records)
+- payment_transactions (billing records; mocked=true when paid through Thawani UAT test mode)
+- checkout_sessions {ref, session_id (Thawani), user_id, community_id, status, fulfilled}
 
 ## Business rules
-- One host (owner) per community. First community is free to create; each additional community requires paying OMR 1 at creation (POST /communities with pay_manage=true → MOCKED payment, Manage active 30 days), else 402. Start-a-community is a full page at /communities/new (vertical scroll only).
-- "Manage" button on community page (owner/admin). Owner must have an active per-community Manage subscription (OMR 1/month, communities.manage_until; manage_active computed on read) — else 402. Admin manages everything free.
+- One host (owner) per community. Every community costs a ONE-TIME OMR 1 (admins exempt): after creating, the host is sent to Thawani checkout. A host can't create another community while one of theirs is still unpaid (402). Start-a-community is a full page at /communities/new (vertical scroll only).
+- "Manage" button on community page (owner/admin). Owner must have an paid one-time OMR 1 for that community (communities.manage_until = 9999-12-31 when paid; manage_active computed on read) — else 402. Admin manages everything free.
 - Manage unlocks: PATCH community details, schedule games (schedule-week / one-off), host community tournaments, remove members (DELETE /communities/{id}/members/{uid}) and other people's roster names, match-fee tracking (POST /games/{gid}/roster/{eid}/paid).
 - Official tournaments: admin only. Admin dashboard /admin (GET /api/admin/overview: stats, users, communities, payments).
 - Organiser (or admin) starts tournament (>=2 teams) => bracket; reports scores (no draws) => winner advances; final => completed.
 - Team captain (or organiser) adds players.
-- Billing — PAYMENTS ARE MOCKED: POST /api/billing/communities/{cid}/subscribe extends manage_until +30 days; /cancel clears it. Old Organiser Pro plans removed (user.is_pro unused).
+- Billing — Thawani Pay (THAWANI_SECRET_KEY / THAWANI_PUBLISHABLE_KEY / THAWANI_BASE_URL in backend/.env; currently UAT test keys, no real money). POST /api/billing/communities/{cid}/checkout (owner only; 409 if already paid) → {ref, redirect_url}; Thawani returns to /payment/return?ref=..[&cancelled=1]; GET /api/billing/checkout/{ref} verifies with Thawani server-side and unlocks Manage exactly once when payment_status == paid. Old Organiser Pro plans removed (user.is_pro unused).
 
 ## Endpoints (all /api)
-auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games, schedule-week); games/mine, games/{id}/join|leave|guests, games/{id}/roster/{entry}; tournaments (list/create/get/delete, teams, players, start, matches/{mid}/result); billing/plans|subscribe|cancel|history.
+auth/session, auth/me, auth/logout; feed; communities (CRUD, join, leave, games, schedule-week); games/mine, games/{id}/join|leave|guests, games/{id}/roster/{entry}; tournaments (list/create/get/delete, teams, players, start, matches/{mid}/result); billing/plans|communities/{cid}/checkout|checkout/{ref}|history.
 
 ## Seed (cd backend && python seed.py)
 5 communities (Sunday Champions 7v7 Sun/Tue owned by admin, Tuesday Padel Night (Manage ACTIVE) owned by Test Player; Friday Hoops Run owned by admin, Beach Volley Crew, Weekend Tape-Ball Cricket), 4 official tournaments, 2 community tournaments (Sunday Champions Mini League ongoing with bracket; Padel Night Americano in registration organised by Test Player).

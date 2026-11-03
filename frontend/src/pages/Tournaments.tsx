@@ -40,7 +40,7 @@ export default function Tournaments() {
     if (createKind === "community" && !isAdmin) {
       const managed = owned.find((c) => c.manage_active);
       if (!managed) {
-        toast("Hosting tournaments needs Manage (OMR 1/month) on your community");
+        toast("Hosting tournaments needs Manage (one-time OMR 1) on your community");
         nav(owned[0] ? `/communities/${owned[0].id}` : "/monetize");
         return;
       }
