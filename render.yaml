@@ -1,0 +1,23 @@
+# Render Blueprint: one Docker web service. MongoDB is hosted separately (e.g. MongoDB Atlas free tier) — paste its
+# connection string into MONGO_URL in the Render dashboard.
+services:
+  - type: web
+    name: green-ocean-sports
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/
+    envVars:
+      - key: MONGO_URL
+        sync: false
+      - key: DB_NAME
+        value: green_ocean
+      - key: ADMIN_EMAILS
+        value: varughesesajin@gmail.com
+      - key: APP_TZ
+        value: Asia/Muscat
+      - key: APP_BASE_URL          # the site's public address, e.g. https://green-ocean-sports.onrender.com (no trailing slash)
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
