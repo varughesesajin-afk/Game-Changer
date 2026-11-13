@@ -104,7 +104,7 @@ export default function AppShell() {
             className={({ isActive }) =>
               cn(
                 "relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 rounded-3xl text-[10px] font-semibold tracking-wide transition-colors duration-200",
-                isActive ? "text-energy" : "text-slate-400 hover:text-slate-200",
+                isActive ? "text-[#ffffff]" : "text-slate-400 hover:text-slate-200",
               )
             }
           >

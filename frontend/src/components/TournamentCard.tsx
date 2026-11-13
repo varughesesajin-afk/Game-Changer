@@ -25,7 +25,7 @@ export default function TournamentCard({ t, wide = false, badge }: { t: Tourname
       <Link
         to={`/tournaments/${t.id}`}
         data-testid={`tournament-card-${t.id}`}
-        className="group block overflow-hidden rounded-3xl border-2 border-line bg-surface transition-[border-color] duration-200 hover:border-energy/50"
+        className="group block overflow-hidden rounded-3xl border-2 border-transparent gradient-card transition-transform duration-200"
       >
         <div className="relative h-32 overflow-hidden lg:h-40">
           <img src={sportImage(t.sport, t.image)} alt={t.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />

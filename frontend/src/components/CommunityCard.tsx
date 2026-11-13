@@ -11,7 +11,7 @@ export default function CommunityCard({ c, badge }: { c: Community; badge?: stri
       <Link
         to={`/communities/${c.id}`}
         data-testid={`community-card-${c.id}`}
-        className="group block overflow-hidden rounded-[1.75rem] border-2 border-line bg-surface transition-[border-color] duration-200 hover:border-ice/60"
+        className="group block overflow-hidden rounded-[1.75rem] border-2 border-transparent gradient-card transition-transform duration-200"
       >
         <div className="on-dark relative h-40 overflow-hidden lg:h-44">
           <img src={sportImage(c.sport, c.image)} alt={c.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />

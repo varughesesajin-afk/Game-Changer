@@ -100,7 +100,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
   );
 
   return (
-    <div data-testid={`game-card-${game.id}`} className="animate-rise rounded-3xl border-2 border-line bg-surface p-4">
+    <div data-testid={`game-card-${game.id}`} className="animate-rise gradient-card rounded-3xl border-2 border-transparent p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           {showCommunity && (
