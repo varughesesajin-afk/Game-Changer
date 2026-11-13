@@ -18,11 +18,11 @@ export default function Profile() {
   const comms = useQuery({ queryKey: ["communities", "mine"], queryFn: () => apiGet<Community[]>("/communities?mine=true"), enabled: !!me });
   const tours = useQuery({ queryKey: ["tournaments", "mine"], queryFn: () => apiGet<Tournament[]>("/tournaments?mine=true"), enabled: !!me });
 
-  if (isLoading) return <div className="p-5"><div className="h-24 animate-pulse rounded-2xl bg-surface" /></div>;
+  if (isLoading) return <div className="p-5 lg:px-6"><div className="h-24 animate-pulse rounded-2xl bg-surface" /></div>;
 
   if (!me) {
     return (
-      <div className="space-y-4 px-5 pt-16 text-center">
+      <div className="mx-auto max-w-xl space-y-4 px-5 pt-16 text-center lg:pt-28">
         <h1 className="font-heading text-3xl font-bold">Your games live here</h1>
         <p className="text-sm text-slate-400">Sign in to see the games you've joined, your groups and your teams.</p>
         <Link to="/login" data-testid="profile-signin-button" className={buttonVariants({ size: "lg" })}>Sign in</Link>
@@ -31,8 +31,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="space-y-7 px-5 pt-6">
-      <div className="flex items-center gap-4">
+    <div className="space-y-7 px-5 pt-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-x-8 lg:gap-y-8 lg:space-y-0 lg:px-6 lg:pt-10">
+      <div className="flex items-center gap-4 lg:col-span-2">
         <ProfilePicture me={me} />
         <div className="min-w-0 flex-1">
           <h1 data-testid="profile-name" className="truncate font-heading text-2xl font-bold uppercase tracking-wide">{me.name}</h1>
@@ -51,18 +51,18 @@ export default function Profile() {
       </div>
 
       {me.role === "admin" ? (
-        <Link to="/admin" data-testid="profile-admin-dashboard-link" className="block rounded-2xl border border-ice/40 bg-gradient-to-r from-ice/15 to-energy/15 p-4 text-sm">
+        <Link to="/admin" data-testid="profile-admin-dashboard-link" className="block rounded-2xl border border-ice/40 bg-gradient-to-r from-ice/15 to-energy/15 p-4 text-sm lg:col-span-2">
           <span className="font-semibold text-ice">Site admin dashboard</span> — approve communities, Manage periods and tournaments.
         </Link>
       ) : (
-        <Link to="/monetize" data-testid="profile-manage-link" className="block rounded-2xl border border-energy/40 bg-energy/10 p-4 text-sm">
+        <Link to="/monetize" data-testid="profile-manage-link" className="block rounded-2xl border border-energy/40 bg-energy/10 p-4 text-sm lg:col-span-2">
           <span className="font-semibold text-energy">Run a community?</span> Start one — the admin approves it and your 30-day Manage periods.
         </Link>
       )}
 
-      <MyStats userId={me.user_id} />
+      <div className="lg:col-span-2"><MyStats userId={me.user_id} /></div>
 
-      <section className="space-y-3">
+      <section className="space-y-3 lg:col-span-2">
         <h2 className="font-heading text-xl font-bold">My upcoming games</h2>
         {games.data?.length ? (
           games.data.map((g) => <GameCard key={g.id} game={g} me={me} showCommunity compact />)
@@ -80,7 +80,7 @@ export default function Profile() {
         )}
       </section>
 
-      <section className="space-y-3 pb-4">
+      <section className="space-y-3 pb-4 lg:col-span-2">
         <h2 className="font-heading text-xl font-bold">My tournaments</h2>
         {tours.data?.length ? tours.data.map((t) => <TournamentCard key={t.id} t={t} badge={t.organiser_id === me.user_id ? "Organiser" : undefined} />) : (
           <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No tournaments yet.</div>

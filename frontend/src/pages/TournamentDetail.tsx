@@ -113,14 +113,14 @@ export default function TournamentDetail() {
 
   return (
     <div>
-      <header className="relative h-60 overflow-hidden">
+      <header className="relative h-60 overflow-hidden lg:mx-6 lg:mt-6 lg:h-80 lg:rounded-3xl">
         <img src={sportImage(t?.sport ?? "", t?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.3) 0%, rgba(5,20,30,0.92) 80%, #05141E 100%)" }} />
-        <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="absolute left-4 top-4 rounded-full bg-black/40 p-2 backdrop-blur transition-colors hover:bg-black/60">
+        <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="absolute left-4 top-4 lg:left-6 lg:top-6 rounded-full bg-black/40 p-2 backdrop-blur transition-colors hover:bg-black/60">
           <ArrowLeft className="size-5" />
         </button>
         {t && (
-          <div className="absolute bottom-4 left-5 right-5 space-y-1.5">
+          <div className="absolute bottom-4 left-5 right-5 space-y-1.5 lg:bottom-8 lg:left-10 lg:right-10">
             <div className="flex gap-1.5">
               <StatusBadge status={t.status} />
               {t.kind === "official" ? (
@@ -131,13 +131,13 @@ export default function TournamentDetail() {
                 </Link>
               ) : null}
             </div>
-            <h1 data-testid="tournament-title" className="font-heading text-3xl font-bold leading-tight tracking-tight">{t.title}</h1>
+            <h1 data-testid="tournament-title" className="font-heading text-3xl font-bold leading-tight tracking-tight lg:text-5xl">{t.title}</h1>
           </div>
         )}
       </header>
 
       {t && (
-        <div className="space-y-6 px-5">
+        <div className="space-y-6 px-5 lg:mx-auto lg:max-w-4xl lg:px-6 lg:pt-8">
           {t.approval_status !== "approved" && (
             <div data-testid="tournament-approval-banner" className={t.approval_status === "pending" ? "space-y-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-sm" : "space-y-3 rounded-2xl border border-red-400/40 bg-red-400/10 p-4 text-sm"}>
               <div className="flex gap-3">
@@ -161,7 +161,7 @@ export default function TournamentDetail() {
               )}
             </div>
           )}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
             {[
               { label: "Teams", value: `${t.teams.length}/${t.max_teams}` },
               { label: "Squad size", value: `${t.team_size} players` },

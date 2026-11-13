@@ -12,7 +12,7 @@ interface Props {
 export default function SportPills({ value, onChange, includeAll = true, testPrefix = "sport-filter", wrap = false }: Props) {
   const list = includeAll ? ["All", ...SPORTS] : SPORTS;
   return (
-    <div className={cn(wrap ? "grid grid-cols-3 gap-2" : "no-scrollbar -mx-5 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain px-5 py-1")}>
+    <div className={cn(wrap ? "grid grid-cols-3 gap-2" : "no-scrollbar -mx-5 flex touch-pan-x gap-2 overflow-x-auto overscroll-x-contain px-5 py-1 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0")}>
       {list.map((s) => (
         <button
           key={s}

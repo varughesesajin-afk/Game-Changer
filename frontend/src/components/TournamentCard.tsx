@@ -21,13 +21,13 @@ export function StatusBadge({ status }: { status: Tournament["status"] }) {
 
 export default function TournamentCard({ t, wide = false, badge }: { t: Tournament; wide?: boolean; badge?: string }) {
   return (
-    <motion.div whileTap={{ scale: 0.98 }} className={cn(wide ? "w-72 shrink-0" : "w-full")}>
+    <motion.div whileTap={{ scale: 0.98 }} className={cn(wide ? "w-72 shrink-0 lg:w-full" : "w-full")}>
       <Link
         to={`/tournaments/${t.id}`}
         data-testid={`tournament-card-${t.id}`}
         className="group block overflow-hidden rounded-2xl border border-line bg-surface transition-[border-color] duration-200 hover:border-energy/50"
       >
-        <div className="relative h-32 overflow-hidden">
+        <div className="relative h-32 overflow-hidden lg:h-40">
           <img src={sportImage(t.sport, t.image)} alt={t.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-b from-page/20 via-page/50 to-surface" />
           <div className="absolute left-3 top-3 flex gap-1.5">

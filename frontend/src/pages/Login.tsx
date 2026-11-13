@@ -1,4 +1,4 @@
-import { Navigate, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { motion } from "motion/react";
 import { CalendarCheck, Trophy, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,12 +17,12 @@ export default function Login() {
   const errorText = LOGIN_ERRORS[params.get("error") ?? ""] ?? null;
   if (me) return <Navigate to="/profile" replace />;
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden" data-testid="auth-modal">
+    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden lg:mx-6 lg:mt-6 lg:min-h-[calc(100vh-8rem)] lg:rounded-3xl" data-testid="auth-modal">
       <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
       <div className="absolute inset-0 bg-gradient-to-b from-page/40 via-page/90 to-page" />
-      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-end space-y-6 p-6 pb-10">
+      <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-end space-y-6 p-6 pb-10 lg:min-h-[calc(100vh-8rem)] lg:max-w-lg lg:justify-center lg:p-14">
         <img src="/logo-512.jpg" alt="Green Ocean Sporting Events" data-testid="login-logo" className="w-40 rounded-3xl shadow-2xl shadow-black/50 ring-1 ring-white/10" />
-        <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight">Game on.<br /><span className="text-brand">Get on the team sheet.</span></h1>
+        <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight lg:text-5xl">Game on.<br /><span className="text-brand">Get on the team sheet.</span></h1>
         <ul className="space-y-2 text-sm text-slate-300">
           <li className="flex items-center gap-2"><CalendarCheck className="size-4 text-ice" />Add your name to weekly games in one tap</li>
           <li className="flex items-center gap-2"><Users className="size-4 text-ice" />Join groups & build tournament squads</li>
@@ -39,7 +39,7 @@ export default function Login() {
             Continue with Google
           </Button>
         </motion.div>
-        <p className="text-center text-xs text-slate-500">WhatsApp sign-in coming soon.</p>
+        <p className="text-center text-xs text-slate-500">WhatsApp sign-in coming soon. · <Link to="/privacy" className="underline">Privacy policy</Link></p>
       </div>
     </div>
   );

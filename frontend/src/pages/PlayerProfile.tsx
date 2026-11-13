@@ -25,7 +25,7 @@ export default function PlayerProfilePage() {
   const p = q.isError ? undefined : q.data;
 
   return (
-    <div className="space-y-6 px-5 pt-5" data-testid="player-profile">
+    <div className="space-y-6 px-5 pt-5 lg:mx-auto lg:max-w-3xl lg:px-6 lg:pt-10" data-testid="player-profile">
       <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="rounded-full bg-surface p-2 transition-colors hover:bg-elevated">
         <ArrowLeft className="size-5" />
       </button>

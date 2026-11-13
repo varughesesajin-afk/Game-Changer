@@ -43,13 +43,13 @@ export default function HostPro() {
   const monthly = players * fee * games * 4;
 
   return (
-    <div data-testid="host-pro-paywall" className="space-y-6 px-5 pt-6">
-      <div>
+    <div data-testid="host-pro-paywall" className="space-y-6 px-5 pt-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8 lg:space-y-0 lg:px-6 lg:pt-10">
+      <div className="lg:col-span-2 lg:max-w-3xl">
         <div className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-[0.15em] text-energy">
           <Sparkles className="size-3.5" /> Host & Earn
         </div>
-        <h1 className="mt-1 font-heading text-3xl font-bold leading-tight tracking-tight">Turn your weekly game into a real club.</h1>
-        <p className="mt-2 text-sm text-slate-400">Each community has one host. The admin approves new communities, approves your Manage in 30-day periods, and approves every community tournament you host.</p>
+        <h1 className="mt-1 font-heading text-3xl font-bold leading-tight tracking-tight lg:text-5xl">Turn your weekly game into a real club.</h1>
+        <p className="mt-2 text-sm text-slate-400 lg:text-base">Each community has one host. The admin approves new communities, approves your Manage in 30-day periods, and approves every community tournament you host.</p>
       </div>
 
       <div className="space-y-4 rounded-2xl border border-line bg-surface p-5">

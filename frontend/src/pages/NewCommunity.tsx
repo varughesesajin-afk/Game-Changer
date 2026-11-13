@@ -39,7 +39,7 @@ export default function NewCommunity() {
   if (!isLoading && !me) return <Navigate to="/login" replace />;
 
   return (
-    <div className="space-y-6 px-5 pb-8 pt-5" data-testid="new-community-page">
+    <div className="space-y-6 px-5 pb-8 pt-5 lg:mx-auto lg:max-w-2xl lg:px-6 lg:pt-10" data-testid="new-community-page">
       <div className="flex items-center gap-3">
         <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="rounded-full bg-surface p-2 transition-colors hover:bg-elevated">
           <ArrowLeft className="size-5" />

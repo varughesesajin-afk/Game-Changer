@@ -68,13 +68,13 @@ export default function Admin() {
   const act = (path: string, done: string) => decide.mutate({ path, done });
 
   return (
-    <div className="space-y-6 px-5 pt-6" data-testid="admin-dashboard">
+    <div className="space-y-6 px-5 pt-6 lg:px-6 lg:pt-10" data-testid="admin-dashboard">
       <div>
         <div className="text-[10px] font-bold uppercase tracking-[0.15em] text-energy">Site admin</div>
-        <h1 className="font-heading text-3xl font-bold tracking-tight">Dashboard</h1>
+        <h1 className="font-heading text-3xl font-bold tracking-tight lg:text-4xl">Dashboard</h1>
         <p className="text-sm text-slate-400">New communities, 30-day Manage periods and community tournaments all wait here for your approval.</p>
       </div>
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-2 gap-2 lg:grid-cols-4 lg:gap-4">
         {stats.map(({ icon: Icon, label, value }) => (
           <div key={label} data-testid={`admin-stat-${label.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`} className="rounded-xl border border-line bg-surface p-3">
             <Icon className="size-4 text-ice" />
@@ -86,14 +86,14 @@ export default function Admin() {
       </div>
 
       <Tabs defaultValue="approvals">
-        <TabsList className="w-full">
+        <TabsList className="w-full lg:w-[36rem]">
           <TabsTrigger value="approvals" data-testid="admin-tab-approvals" className="flex-1">Approvals{d?.stats.pending_approvals ? ` (${d.stats.pending_approvals})` : ""}</TabsTrigger>
           <TabsTrigger value="communities" data-testid="admin-tab-communities" className="flex-1">Communities</TabsTrigger>
           <TabsTrigger value="users" data-testid="admin-tab-users" className="flex-1">Users</TabsTrigger>
           <TabsTrigger value="formats" data-testid="admin-tab-formats" className="flex-1">Formats{d?.custom_formats.length ? ` (${d.custom_formats.length})` : ""}</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="approvals" className="space-y-5 pb-4 pt-3">
+        <TabsContent value="approvals" className="space-y-5 pb-4 pt-3 lg:grid lg:grid-cols-3 lg:items-start lg:gap-6 lg:space-y-0">
           <section className="space-y-2">
             <h2 className="font-heading text-lg font-bold">New communities</h2>
             {d?.pending_communities.length === 0 && <p className="text-sm text-slate-400">Nothing waiting.</p>}
@@ -128,7 +128,7 @@ export default function Admin() {
           </section>
         </TabsContent>
 
-        <TabsContent value="communities" className="space-y-2 pt-3">
+        <TabsContent value="communities" className="space-y-2 pt-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
           {d?.communities.map((c) => (
             <div key={c.id} data-testid={`admin-community-${c.id}`} className="space-y-2 rounded-xl border border-line bg-surface px-3 py-2">
               <Link to={`/communities/${c.id}`} className="flex items-center justify-between gap-2 transition-opacity hover:opacity-90">

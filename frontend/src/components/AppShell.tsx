@@ -1,10 +1,12 @@
 import { useEffect } from "react";
-import { NavLink, Outlet, useLocation } from "react-router-dom";
+import { Link, NavLink, Outlet, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
 import { Flame, Sparkles, Trophy, User as UserIcon, Users } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import ReminderBanner from "@/components/ReminderBanner";
 import Brand from "@/components/Brand";
+import Avatar from "@/components/Avatar";
+import { useMe } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
 const TABS = [
@@ -15,6 +17,56 @@ const TABS = [
   { id: "profile", label: "Profile", icon: UserIcon, to: "/profile" },
 ];
 
+function DesktopBar() {
+  const { data: me } = useMe();
+  return (
+    <header data-testid="desktop-top-bar" className="sticky top-0 z-50 hidden border-b border-line/70 bg-page/90 backdrop-blur-xl lg:block">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
+        <Link to="/" aria-label="Home"><Brand /></Link>
+        <nav className="flex flex-1 items-center gap-1">
+          {TABS.filter((t) => t.id !== "profile").map(({ id, label, to }) => (
+            <NavLink
+              key={id}
+              to={to}
+              end={to === "/"}
+              data-testid={`desktop-nav-${id}`}
+              className={({ isActive }) =>
+                cn(
+                  "rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200",
+                  isActive ? "bg-energy/15 text-energy" : "text-slate-300 hover:bg-white/5 hover:text-white",
+                )
+              }
+            >
+              {label}
+            </NavLink>
+          ))}
+          {me?.role === "admin" && (
+            <NavLink
+              to="/admin"
+              data-testid="desktop-nav-admin"
+              className={({ isActive }) =>
+                cn("rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-200", isActive ? "bg-ice/15 text-ice" : "text-slate-300 hover:bg-white/5 hover:text-white")
+              }
+            >
+              Admin
+            </NavLink>
+          )}
+        </nav>
+        {me ? (
+          <Link to="/profile" data-testid="desktop-profile-link" className="flex items-center gap-2.5 rounded-full border border-line bg-surface py-1 pl-1 pr-4 text-sm font-semibold hover:border-energy/50">
+            <Avatar name={me.name} picture={me.picture} className="size-8" />
+            {me.name.split(" ")[0]}
+          </Link>
+        ) : (
+          <Link to="/login" data-testid="desktop-signin-link" className="rounded-full bg-brand px-5 py-2 text-sm font-bold text-white hover:opacity-90">
+            Sign in
+          </Link>
+        )}
+      </div>
+    </header>
+  );
+}
+
 export default function AppShell() {
   const location = useLocation();
   // remember where the visitor was (e.g. a shared community link) so sign-in returns them there
@@ -22,10 +74,12 @@ export default function AppShell() {
     if (location.pathname !== "/login") sessionStorage.setItem("returnTo", location.pathname);
   }, [location.pathname]);
   return (
-    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60">
+    <div className="min-h-screen bg-page">
+    <DesktopBar />
+    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60 lg:min-h-[calc(100vh-4rem)] lg:max-w-6xl lg:border-x-0 lg:pb-12 lg:shadow-none">
       <ReminderBanner />
       {["/communities", "/tournaments", "/monetize", "/profile", "/admin"].includes(location.pathname) && (
-        <header data-testid="app-top-bar" className="flex items-center border-b border-line/60 px-5 py-3">
+        <header data-testid="app-top-bar" className="flex items-center lg:hidden border-b border-line/60 px-5 py-3">
           <Brand tagline />
         </header>
       )}
@@ -39,7 +93,7 @@ export default function AppShell() {
       </motion.main>
       <nav
         data-testid="bottom-nav"
-        className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-16 max-w-md items-center justify-around border-t border-line bg-page/90 px-2 backdrop-blur-xl"
+        className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-16 max-w-md lg:hidden items-center justify-around border-t border-line bg-page/90 px-2 backdrop-blur-xl"
       >
         {TABS.map(({ id, label, icon: Icon, to }) => (
           <NavLink
@@ -66,7 +120,12 @@ export default function AppShell() {
           </NavLink>
         ))}
       </nav>
+      <footer className="mt-12 hidden items-center justify-between border-t border-line/60 px-6 py-6 text-xs text-slate-500 lg:flex">
+        <span>© {new Date().getFullYear()} Green Ocean Sports Management</span>
+        <Link to="/privacy" className="hover:text-slate-300">Privacy policy</Link>
+      </footer>
       <Toaster position="top-center" theme="dark" richColors />
+    </div>
     </div>
   );
 }

@@ -10,6 +10,7 @@ import HostPro from "@/pages/HostPro";
 import Profile from "@/pages/Profile";
 import Login from "@/pages/Login";
 import Admin from "@/pages/Admin";
+import Privacy from "@/pages/Privacy";
 import PlayerProfilePage from "@/pages/PlayerProfile";
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/profile" element={<Profile />} />
         <Route path="/login" element={<Login />} />
         <Route path="/admin" element={<Admin />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/players/:key" element={<PlayerProfilePage />} />
         <Route path="*" element={<Explore />} />
       </Route>

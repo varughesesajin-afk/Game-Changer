@@ -55,14 +55,14 @@ export default function CommunityDetail() {
 
   return (
     <div>
-      <header className="relative h-56 overflow-hidden">
+      <header className="relative h-56 overflow-hidden lg:mx-6 lg:mt-6 lg:h-72 lg:rounded-3xl">
         <img src={sportImage(c?.sport ?? "", c?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.3) 0%, rgba(5,20,30,0.9) 80%, #05141E 100%)" }} />
         <button
           type="button"
           data-testid="back-button"
           onClick={() => nav(-1)}
-          className="absolute left-4 top-4 rounded-full bg-black/40 p-2 backdrop-blur transition-colors hover:bg-black/60"
+          className="absolute left-4 top-4 rounded-full bg-black/40 lg:left-6 lg:top-6 p-2 backdrop-blur transition-colors hover:bg-black/60"
           aria-label="Back"
         >
           <ArrowLeft className="size-5" />
@@ -72,13 +72,13 @@ export default function CommunityDetail() {
             type="button"
             data-testid="community-manage-button"
             onClick={onManage}
-            className="absolute right-4 top-4 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/40 transition-transform duration-150 active:scale-95"
+            className="absolute right-4 top-4 lg:right-6 lg:top-6 inline-flex items-center gap-1.5 rounded-full bg-brand px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-black/40 transition-transform duration-150 active:scale-95"
           >
             {canManage ? <Settings2 className="size-4" /> : <Lock className="size-4" />}
             Manage
           </button>
         )}
-        <div className="absolute bottom-4 left-5 right-5">
+        <div className="absolute bottom-4 left-5 right-5 lg:bottom-8 lg:left-10 lg:right-10">
           <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.15em] text-ice">
             {c?.sport ?? "Community"}
             {c && (
@@ -87,12 +87,12 @@ export default function CommunityDetail() {
               </span>
             )}
           </div>
-          <h1 data-testid="community-title" className="font-heading text-3xl font-bold leading-tight tracking-tight">{c?.name ?? "Loading…"}</h1>
+          <h1 data-testid="community-title" className="font-heading text-3xl font-bold leading-tight tracking-tight lg:text-5xl">{c?.name ?? "Loading…"}</h1>
         </div>
       </header>
 
       {c && (
-        <div className="space-y-6 px-5">
+        <div className="space-y-6 px-5 lg:block lg:columns-2 lg:gap-8 lg:space-y-0 lg:px-6 lg:pt-8 lg:[&>*]:mb-6 lg:[&>*]:break-inside-avoid">
           {isOwner && !isAdmin && <ManageApprovalCard c={c} />}
           <div className="grid grid-cols-3 gap-2 text-center">
             {[
