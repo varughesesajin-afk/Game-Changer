@@ -44,7 +44,7 @@ export default function ProfilePicture({ me }: { me: User }) {
       ) : (
         <div className="grid h-full w-full place-items-center bg-brand font-heading text-2xl font-bold text-white">{me.name[0]}</div>
       )}
-      <span className="absolute inset-x-0 bottom-0 grid place-items-center bg-black/55 py-0.5 transition-colors group-hover:bg-black/70">
+      <span className="on-dark absolute inset-x-0 bottom-0 grid place-items-center bg-black/55 py-0.5 transition-colors group-hover:bg-black/70">
         <Camera className="size-3.5 text-white" />
       </span>
       {busy && <span className="absolute inset-0 animate-pulse bg-black/40" />}

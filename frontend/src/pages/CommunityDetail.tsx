@@ -55,9 +55,9 @@ export default function CommunityDetail() {
 
   return (
     <div>
-      <header className="relative h-56 overflow-hidden lg:mx-6 lg:mt-6 lg:h-72 lg:rounded-3xl">
+      <header className="on-dark relative h-56 overflow-hidden lg:mx-6 lg:mt-6 lg:h-72 lg:rounded-3xl">
         <img src={sportImage(c?.sport ?? "", c?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.3) 0%, rgba(5,20,30,0.9) 80%, #05141E 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.2) 0%, rgba(5,20,30,0.75) 100%)" }} />
         <button
           type="button"
           data-testid="back-button"

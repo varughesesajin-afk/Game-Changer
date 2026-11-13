@@ -76,7 +76,7 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-page">
     <DesktopBar />
-    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
+    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-line bg-page pb-24 shadow-2xl shadow-sky-900/10 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
       <ReminderBanner />
       {["/communities", "/tournaments", "/monetize", "/profile", "/admin"].includes(location.pathname) && (
         <header data-testid="app-top-bar" className="flex items-center lg:hidden border-b border-line/60 px-5 py-3">
@@ -124,7 +124,7 @@ export default function AppShell() {
         <span>© {new Date().getFullYear()} Green Ocean Sports Management</span>
         <Link to="/privacy" className="hover:text-slate-300">Privacy policy</Link>
       </footer>
-      <Toaster position="top-center" theme="dark" richColors />
+      <Toaster position="top-center" theme="light" richColors />
     </div>
     </div>
   );

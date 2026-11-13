@@ -15,7 +15,7 @@ function Section({ title, to, testid, children }: { title: string; to?: string; 
   return (
     <section data-testid={testid} className="space-y-3">
       <div className="flex items-end justify-between">
-        <h2 className="font-heading text-xl font-bold tracking-tight text-white lg:text-2xl">{title}</h2>
+        <h2 className="font-heading text-xl font-bold tracking-tight text-brand lg:text-2xl">{title}</h2>
         {to && (
           <Link to={to} className="inline-flex items-center gap-1 text-xs font-semibold text-ice hover:underline">
             See all <ArrowRight className="size-3" />
@@ -39,9 +39,9 @@ export default function Explore() {
 
   return (
     <div>
-      <header className="relative h-72 overflow-hidden lg:mx-6 lg:mt-6 lg:h-[26rem] lg:rounded-3xl">
+      <header className="on-dark relative h-72 overflow-hidden lg:mx-6 lg:mt-6 lg:h-[26rem] lg:rounded-3xl">
         <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.4) 0%, rgba(5,20,30,0.92) 85%, #05141E 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.25) 0%, rgba(5,20,30,0.7) 100%)" }} />
         <div className="relative flex h-full flex-col justify-between p-5 lg:justify-end lg:p-12">
           <div className="flex items-center justify-between lg:hidden">
             <Brand tagline />

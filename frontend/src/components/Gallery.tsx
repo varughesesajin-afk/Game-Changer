@@ -75,7 +75,7 @@ export default function Gallery({ communityId, isHost }: { communityId: string; 
       )}
 
       {open && (
-        <div data-testid="gallery-viewer" className="fixed inset-0 z-[60] flex flex-col bg-black/95" onClick={() => setOpen(null)}>
+        <div data-testid="gallery-viewer" className="on-dark fixed inset-0 z-[60] flex flex-col bg-black/95" onClick={() => setOpen(null)}>
           <div className="flex items-center justify-between p-4" onClick={(e) => e.stopPropagation()}>
             <span className="text-xs text-slate-400">{open.uploaded_by_name} · {fmtDate(open.created_at, "d MMM yyyy")}</span>
             <div className="flex gap-2">

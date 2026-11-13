@@ -32,7 +32,7 @@ export default function ReminderBanner() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             data-testid={`game-notice-${n.game.id}`}
-            className="flex items-start gap-3 rounded-2xl border border-ice/40 bg-[#0B2A3D]/90 p-3 shadow-lg shadow-black/40 backdrop-blur-xl"
+            className="flex items-start gap-3 rounded-2xl border border-ice/40 bg-sky-50/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl"
           >
             <CalendarClock className="mt-0.5 size-5 shrink-0 text-ice" />
             <Link to={`/communities/${n.game.community_id}`} className="min-w-0 flex-1 text-sm">
@@ -55,7 +55,7 @@ export default function ReminderBanner() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -8 }}
             data-testid={`fee-reminder-${r.id}`}
-            className="flex items-start gap-3 rounded-2xl border border-amber-400/40 bg-[#1F2A1A]/90 p-3 shadow-lg shadow-black/40 backdrop-blur-xl"
+            className="flex items-start gap-3 rounded-2xl border border-amber-400/40 bg-amber-50/95 p-3 shadow-lg shadow-black/10 backdrop-blur-xl"
           >
             <BellRing className="mt-0.5 size-5 shrink-0 text-amber-400" />
             <Link to={`/communities/${r.community_id}`} className="min-w-0 flex-1 text-sm">

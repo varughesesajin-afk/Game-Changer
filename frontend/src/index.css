@@ -9,12 +9,12 @@
 @theme inline {
     --font-heading: 'Outfit Variable', sans-serif;
     --font-sans: 'Plus Jakarta Sans Variable', sans-serif;
-    --color-page: #05141E;
-    --color-surface: #0A2130;
-    --color-elevated: #10304A;
-    --color-line: #1B4058;
-    --color-energy: #34D399;
-    --color-ice: #38BDF8;
+    --color-page: #FFFFFF;
+    --color-surface: #FFFFFF;
+    --color-elevated: #EAF4F9;
+    --color-line: #DCE9F0;
+    --color-energy: #059669;
+    --color-ice: #0284C7;
     --color-sidebar-ring: var(--sidebar-ring);
     --color-sidebar-border: var(--sidebar-border);
     --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -68,39 +68,60 @@
 }
 
 :root, .dark {
-    --background: #05141E;
-    --foreground: #F8FAFC;
-    --card: #0A2130;
-    --card-foreground: #FFFFFF;
-    --popover: #10304A;
-    --popover-foreground: #FFFFFF;
-    --primary: #0F766E;
+    --background: #FFFFFF;
+    --foreground: #0B1B2B;
+    --card: #FFFFFF;
+    --card-foreground: #0B1B2B;
+    --popover: #FFFFFF;
+    --popover-foreground: #0B1B2B;
+    --primary: #0E7490;
     --primary-foreground: #FFFFFF;
-    --secondary: #10304A;
-    --secondary-foreground: #F8FAFC;
-    --muted: #10304A;
-    --muted-foreground: #94A3B8;
-    --accent: #1B4058;
-    --accent-foreground: #FFFFFF;
-    --destructive: #F87171;
-    --border: #1B4058;
-    --input: #23506B;
-    --ring: #38BDF8;
-    --chart-1: #34D399;
-    --chart-2: #38BDF8;
-    --chart-3: #34D399;
-    --chart-4: #FBBF24;
-    --chart-5: #94A3B8;
+    --secondary: #EAF4F9;
+    --secondary-foreground: #0B1B2B;
+    --muted: #EAF4F9;
+    --muted-foreground: #5B7083;
+    --accent: #E1F0F7;
+    --accent-foreground: #0B1B2B;
+    --destructive: #DC2626;
+    --border: #DCE9F0;
+    --input: #C5D9E4;
+    --ring: #0EA5E9;
+    --chart-1: #059669;
+    --chart-2: #0284C7;
+    --chart-3: #059669;
+    --chart-4: #D97706;
+    --chart-5: #64748B;
     --radius: 0.75rem;
-    --sidebar: #0A2130;
-    --sidebar-foreground: #F8FAFC;
-    --sidebar-primary: #0F766E;
+    --sidebar: #FFFFFF;
+    --sidebar-foreground: #0B1B2B;
+    --sidebar-primary: #0E7490;
     --sidebar-primary-foreground: #FFFFFF;
-    --sidebar-accent: #10304A;
-    --sidebar-accent-foreground: #FFFFFF;
-    --sidebar-border: #1B4058;
-    --sidebar-ring: #38BDF8;
+    --sidebar-accent: #EAF4F9;
+    --sidebar-accent-foreground: #0B1B2B;
+    --sidebar-border: #DCE9F0;
+    --sidebar-ring: #0EA5E9;
+
+    /* White-page theme: the "white" and grey text utilities become dark ink.
+       Anything on a dark banner / photo opts back in with the .on-dark class. */
+    --color-white: #0B1B2B;
+    --color-slate-200: #1E3347;
+    --color-slate-300: #3B5268;
+    --color-slate-400: #5B7083;
+    --color-slate-500: #6B8094;
 }
+
+.on-dark {
+    --color-white: #FFFFFF;
+    --color-slate-200: #E2E8F0;
+    --color-slate-300: #CBD5E1;
+    --color-slate-400: #94A3B8;
+    --color-slate-500: #64748B;
+    color: #FFFFFF;
+}
+.on-dark .text-brand {
+    background-image: linear-gradient(90deg, #38BDF8 0%, #34D399 100%);
+}
+
 
 @layer base {
   * {
@@ -108,11 +129,10 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
-    background-color: #03101A;
+    background-color: #FFFFFF;
     background-image:
-      radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.14), transparent 40%),
-      radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.16), transparent 40%),
-      repeating-linear-gradient(135deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 22px);
+      radial-gradient(circle at 15% 10%, rgba(16, 185, 129, 0.06), transparent 40%),
+      radial-gradient(circle at 85% 80%, rgba(14, 165, 233, 0.07), transparent 40%);
   }
   @media (hover: hover) {
     body { background-attachment: fixed; }
@@ -147,10 +167,11 @@
 
 @utility bg-brand {
     background-image: linear-gradient(135deg, #0369A1 0%, #0E7490 45%, #047857 100%);
+    --color-white: #FFFFFF;
 }
 
 @utility text-brand {
-    background-image: linear-gradient(90deg, #38BDF8 0%, #34D399 100%);
+    background-image: linear-gradient(90deg, #0284C7 0%, #059669 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
@@ -158,3 +179,9 @@
 
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
+
+/* soft card shadow on the white page */
+.bg-surface.border { box-shadow: 0 1px 2px rgba(3, 105, 161, 0.06), 0 4px 14px rgba(3, 105, 161, 0.05); }
+.on-dark .bg-surface.border { box-shadow: none; }
+.on-dark .text-ice { color: #38BDF8; }
+.on-dark .text-energy { color: #34D399; }

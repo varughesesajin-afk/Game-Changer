@@ -43,7 +43,7 @@ export default function CoverPhotoPicker({ sport, value, onChange, testid }: Pro
         className="group relative block h-40 w-full overflow-hidden rounded-2xl border border-line"
       >
         <img src={sportImage(sport, value)} alt="Community cover" data-testid={`${testid}-preview`} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-t from-page/90 via-page/30 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         <span className="absolute bottom-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-sm font-semibold text-white backdrop-blur">
           <Camera className="size-4" /> {busy ? "Uploading…" : value ? "Change photo" : "Upload cover photo"}
         </span>

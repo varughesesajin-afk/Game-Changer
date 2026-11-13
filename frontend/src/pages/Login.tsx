@@ -17,9 +17,9 @@ export default function Login() {
   const errorText = LOGIN_ERRORS[params.get("error") ?? ""] ?? null;
   if (me) return <Navigate to="/profile" replace />;
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] overflow-hidden lg:mx-6 lg:mt-6 lg:min-h-[calc(100vh-8rem)] lg:rounded-3xl" data-testid="auth-modal">
+    <div className="on-dark relative min-h-[calc(100vh-4rem)] overflow-hidden lg:mx-6 lg:mt-6 lg:min-h-[calc(100vh-8rem)] lg:rounded-3xl" data-testid="auth-modal">
       <img src={HERO_IMG} alt="" className="absolute inset-0 h-full w-full object-cover opacity-50" />
-      <div className="absolute inset-0 bg-gradient-to-b from-page/40 via-page/90 to-page" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#05141E]/40 via-[#05141E]/80 to-[#05141E]/95" />
       <div className="relative flex min-h-[calc(100vh-4rem)] flex-col justify-end space-y-6 p-6 pb-10 lg:min-h-[calc(100vh-8rem)] lg:max-w-lg lg:justify-center lg:p-14">
         <img src="/logo-512.jpg" alt="Green Ocean Sporting Events" data-testid="login-logo" className="w-40 rounded-3xl shadow-2xl shadow-black/50 ring-1 ring-white/10" />
         <h1 className="font-heading text-4xl font-bold leading-[1.05] tracking-tight lg:text-5xl">Game on.<br /><span className="text-brand">Get on the team sheet.</span></h1>

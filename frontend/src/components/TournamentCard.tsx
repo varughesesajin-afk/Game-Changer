@@ -29,11 +29,11 @@ export default function TournamentCard({ t, wide = false, badge }: { t: Tourname
       >
         <div className="relative h-32 overflow-hidden lg:h-40">
           <img src={sportImage(t.sport, t.image)} alt={t.title} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
-          <div className="absolute inset-0 bg-gradient-to-b from-page/20 via-page/50 to-surface" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-surface" />
           <div className="absolute left-3 top-3 flex gap-1.5">
             <StatusBadge status={t.status} />
             {t.approval_status !== "approved" && (
-              <span data-testid={`tournament-approval-badge-${t.id}`} className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-page">
+              <span data-testid={`tournament-approval-badge-${t.id}`} className="rounded-full bg-amber-400 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-900">
                 {t.approval_status === "pending" ? "Awaiting approval" : "Declined"}
               </span>
             )}

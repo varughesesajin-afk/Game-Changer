@@ -64,7 +64,7 @@ export function JerseyPicker({ labelA, labelB, a, b, onChange, testPrefix }: {
               )}
               style={{ backgroundColor: j.hex }}
             >
-              {on && <span className={cn("size-2 rounded-full", ["White", "Yellow", "Sky"].includes(j.name) ? "bg-slate-900" : "bg-white")} />}
+              {on && <span className={cn("size-2 rounded-full", ["White", "Yellow", "Sky"].includes(j.name) ? "bg-slate-900" : "bg-[#ffffff]")} />}
             </button>
           );
         })}
