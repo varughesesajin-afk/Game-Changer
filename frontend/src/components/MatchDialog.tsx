@@ -33,7 +33,7 @@ export function tournamentSheetValue(m: Match): SheetValue {
 export default function MatchDialog({ t, match, onClose, canManage }: { t: Tournament; match: Match | null; onClose: () => void; canManage: boolean }) {
   return (
     <Dialog open={!!match} onOpenChange={(o: boolean) => !o && onClose()}>
-      <DialogContent data-testid="match-dialog" className="max-h-[88dvh] max-w-sm overflow-x-hidden overflow-y-auto overscroll-contain">
+      <DialogContent data-testid="match-dialog" className="max-h-[88dvh] sm:max-w-md lg:max-w-xl overflow-x-hidden overflow-y-auto overscroll-contain">
         {match && <Body key={match.id} t={t} m={match} canManage={canManage} onClose={onClose} />}
       </DialogContent>
     </Dialog>

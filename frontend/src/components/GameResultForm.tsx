@@ -49,7 +49,7 @@ export function GameSheetDialog({ game, canManage, onClose }: { game: Game | nul
   });
   return (
     <Dialog open={!!game} onOpenChange={(o: boolean) => !o && onClose()}>
-      <DialogContent data-testid="game-sheet-dialog" className="max-h-[90dvh] max-w-md overflow-x-hidden overflow-y-auto overscroll-contain">
+      <DialogContent data-testid="game-sheet-dialog" className="max-h-[90dvh] sm:max-w-md lg:max-w-2xl overflow-x-hidden overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="font-heading">Match sheet</DialogTitle>
           {game && <p className="text-sm text-slate-400">{fmtDate(game.date, "EEE d MMM")} · {game.time}{game.venue ? ` · ${game.venue}` : ""}</p>}

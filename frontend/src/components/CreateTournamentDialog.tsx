@@ -52,7 +52,7 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent data-testid="create-tournament-dialog" className="max-h-[90dvh] max-w-md overflow-x-hidden overflow-y-auto overscroll-contain">
+      <DialogContent data-testid="create-tournament-dialog" className="max-h-[90dvh] sm:max-w-md lg:max-w-3xl overflow-x-hidden overflow-y-auto overscroll-contain">
         <DialogHeader>
           <DialogTitle className="font-heading text-xl">{kind === "official" ? "New official tournament" : "Host a community tournament"}</DialogTitle>
           <DialogDescription>{kind === "official" ? "Teams register, then you draw the fixtures and report scores." : "The admin approves every community tournament before it goes public. After approval, teams register and you run the fixtures."}</DialogDescription>
@@ -83,7 +83,7 @@ export default function CreateTournamentDialog({ open, onOpenChange, kind, commu
           )}
           <div className="space-y-2">
             <Label>Format</Label>
-            <div className="space-y-1.5">
+            <div className="space-y-1.5 lg:grid lg:grid-cols-2 lg:gap-2 lg:space-y-0">
               {FORMATS.map((fm) => (
                 <button
                   key={fm.id}

@@ -49,7 +49,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" data-testid="manage-sheet" className="mx-auto max-h-[88vh] max-w-md overflow-y-auto rounded-t-3xl border-line bg-page">
+      <SheetContent side="bottom" data-testid="manage-sheet" className="mx-auto max-h-[88vh] max-w-md overflow-y-auto lg:max-w-3xl rounded-t-3xl border-line bg-page">
         <SheetHeader>
           <SheetTitle className="font-heading text-2xl">Manage {c.name}</SheetTitle>
           <SheetDescription>
