@@ -102,7 +102,7 @@ export default function Explore() {
 
         <Section title="Groups near you" to="/communities" testid="feed-communities-section">
           {f?.communities.length ? (
-            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 2xl:grid-cols-3">{f.communities.slice(0, 4).map((c) => <CommunityCard key={c.id} c={c} />)}</div>
+            <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-5 lg:space-y-0 xl:grid-cols-4">{f.communities.slice(0, 4).map((c) => <CommunityCard key={c.id} c={c} />)}</div>
           ) : (
             <Empty text="No groups yet." />
           )}

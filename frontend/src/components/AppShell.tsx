@@ -76,7 +76,7 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-page">
     <DesktopBar />
-    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-line bg-page pb-24 shadow-2xl shadow-sky-900/10 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
+    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-line bg-page pb-28 shadow-2xl shadow-sky-900/10 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
       <ReminderBanner />
       {["/communities", "/tournaments", "/monetize", "/profile", "/admin"].includes(location.pathname) && (
         <header data-testid="app-top-bar" className="flex items-center lg:hidden border-b border-line/60 px-5 py-3">
@@ -93,7 +93,7 @@ export default function AppShell() {
       </motion.main>
       <nav
         data-testid="bottom-nav"
-        className="fixed bottom-0 left-0 right-0 z-50 mx-auto flex h-16 max-w-md lg:hidden items-center justify-around border-t border-line bg-page/90 px-2 backdrop-blur-xl"
+        className="glass-bar fixed bottom-4 left-1/2 z-50 flex h-[4.5rem] w-[calc(100%-2rem)] max-w-[26rem] -translate-x-1/2 items-center justify-around rounded-[2rem] p-1.5 lg:hidden"
       >
         {TABS.map(({ id, label, icon: Icon, to }) => (
           <NavLink
@@ -103,18 +103,18 @@ export default function AppShell() {
             data-testid={`nav-${id}`}
             className={({ isActive }) =>
               cn(
-                "relative flex flex-1 flex-col items-center gap-0.5 py-2 text-[10px] font-semibold uppercase tracking-wider transition-colors duration-200",
-                isActive ? "text-energy" : "text-slate-500 hover:text-slate-300",
+                "relative flex h-full flex-1 flex-col items-center justify-center gap-0.5 rounded-3xl text-[10px] font-semibold tracking-wide transition-colors duration-200",
+                isActive ? "text-energy" : "text-slate-400 hover:text-slate-200",
               )
             }
           >
             {({ isActive }) => (
               <>
                 {isActive && (
-                  <motion.span layoutId="nav-dot" className="absolute -top-px h-0.5 w-8 rounded-full bg-energy" />
+                  <motion.span layoutId="nav-glass" transition={{ type: "spring", stiffness: 420, damping: 32 }} className="glass-pill absolute inset-0 rounded-3xl" />
                 )}
-                <Icon className="size-5" strokeWidth={isActive ? 2.4 : 1.8} />
-                {label}
+                <Icon className="relative size-5" strokeWidth={isActive ? 2.4 : 1.8} />
+                <span className="relative">{label}</span>
               </>
             )}
           </NavLink>

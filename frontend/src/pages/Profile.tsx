@@ -75,7 +75,7 @@ export default function Profile() {
 
       <section className="space-y-3">
         <h2 className="font-heading text-xl font-bold">My communities</h2>
-        {comms.data?.length ? comms.data.map((c) => <CommunityCard key={c.id} c={c} badge={c.owner_id === me.user_id ? "Host" : undefined} />) : (
+        {comms.data?.length ? <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-5 lg:space-y-0">{comms.data.map((c) => <CommunityCard key={c.id} c={c} badge={c.owner_id === me.user_id ? "Host" : undefined} />)}</div> : (
           <div className="rounded-2xl border border-dashed border-line p-5 text-center text-sm text-slate-500">No groups yet.</div>
         )}
       </section>

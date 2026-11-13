@@ -46,14 +46,14 @@ export default function Communities() {
         <Input data-testid="community-search-input" placeholder="Search groups" className="pl-9" value={q} onChange={(e) => setQ(e.target.value)} />
       </div>
       <SportPills value={sport} onChange={setSport} />
-      <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 xl:grid-cols-3 2xl:grid-cols-4" data-testid="community-list">
+      <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-5 lg:space-y-0 xl:grid-cols-4 2xl:grid-cols-5" data-testid="community-list">
         {!list.isError && list.data?.map((c) => <CommunityCard key={c.id} c={c} />)}
         {(list.isError || list.data?.length === 0) && (
           <div className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-slate-500 lg:col-span-full">
             No groups found. Be the first to start one.
           </div>
         )}
-        {list.isLoading && <div className="h-24 animate-pulse rounded-2xl bg-surface lg:col-span-full" />}
+        {list.isLoading && <div className="h-48 animate-pulse rounded-3xl bg-surface lg:col-span-full" />}
       </div>
     </div>
   );

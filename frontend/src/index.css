@@ -12,7 +12,7 @@
     --color-page: #FFFFFF;
     --color-surface: #FFFFFF;
     --color-elevated: #EAF4F9;
-    --color-line: #DCE9F0;
+    --color-line: #C9DDE8;
     --color-energy: #059669;
     --color-ice: #0284C7;
     --color-sidebar-ring: var(--sidebar-ring);
@@ -83,8 +83,8 @@
     --accent: #E1F0F7;
     --accent-foreground: #0B1B2B;
     --destructive: #DC2626;
-    --border: #DCE9F0;
-    --input: #C5D9E4;
+    --border: #C9DDE8;
+    --input: #BCD2DF;
     --ring: #0EA5E9;
     --chart-1: #059669;
     --chart-2: #0284C7;
@@ -98,10 +98,10 @@
     --sidebar-primary-foreground: #FFFFFF;
     --sidebar-accent: #EAF4F9;
     --sidebar-accent-foreground: #0B1B2B;
-    --sidebar-border: #DCE9F0;
+    --sidebar-border: #C9DDE8;
     --sidebar-ring: #0EA5E9;
 
-    /* White-page theme: the "white" and grey text utilities become dark ink.
+    /* White-page theme: "white" and grey text utilities become dark ink.
        Anything on a dark banner / photo opts back in with the .on-dark class. */
     --color-white: #0B1B2B;
     --color-slate-200: #1E3347;
@@ -118,10 +118,9 @@
     --color-slate-500: #64748B;
     color: #FFFFFF;
 }
-.on-dark .text-brand {
-    background-image: linear-gradient(90deg, #38BDF8 0%, #34D399 100%);
-}
-
+.on-dark .text-brand { background-image: linear-gradient(90deg, #38BDF8 0%, #34D399 100%); }
+.on-dark .text-ice { color: #38BDF8; }
+.on-dark .text-energy { color: #34D399; }
 
 @layer base {
   * {
@@ -180,8 +179,24 @@
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { scrollbar-width: none; }
 
-/* soft card shadow on the white page */
-.bg-surface.border { box-shadow: 0 1px 2px rgba(3, 105, 161, 0.06), 0 4px 14px rgba(3, 105, 161, 0.05); }
-.on-dark .bg-surface.border { box-shadow: none; }
-.on-dark .text-ice { color: #38BDF8; }
-.on-dark .text-energy { color: #34D399; }
+/* white page: soft shadow under every bordered card */
+.bg-surface.border-2 { box-shadow: 0 2px 4px rgba(3, 105, 161, 0.05), 0 8px 22px rgba(3, 105, 161, 0.07); }
+.on-dark .bg-surface.border-2 { box-shadow: none; }
+
+/* liquid-glass floating tab bar */
+.glass-bar {
+    background: linear-gradient(180deg, rgba(255,255,255,0.72), rgba(255,255,255,0.46));
+    -webkit-backdrop-filter: blur(22px) saturate(180%);
+    backdrop-filter: blur(22px) saturate(180%);
+    border: 1px solid rgba(255,255,255,0.75);
+    box-shadow:
+      0 10px 34px rgba(3, 60, 100, 0.18),
+      0 2px 6px rgba(3, 60, 100, 0.08),
+      inset 0 1px 0 rgba(255,255,255,0.95),
+      inset 0 -1px 0 rgba(255,255,255,0.35);
+}
+.glass-pill {
+    background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.55));
+    border: 1px solid rgba(255,255,255,0.9);
+    box-shadow: 0 4px 14px rgba(5, 150, 105, 0.18), inset 0 1px 0 rgba(255,255,255,1);
+}

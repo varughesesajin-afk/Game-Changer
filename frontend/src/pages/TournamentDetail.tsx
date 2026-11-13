@@ -115,7 +115,7 @@ export default function TournamentDetail() {
     <div>
       <header className="on-dark relative h-60 overflow-hidden lg:mx-6 lg:mt-6 lg:h-80 lg:rounded-3xl">
         <img src={sportImage(t?.sport ?? "", t?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.2) 0%, rgba(5,20,30,0.75) 100%)" }} />
+        <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.25) 0%, rgba(5,20,30,0.7) 100%)" }} />
         <button type="button" data-testid="back-button" onClick={() => nav(-1)} aria-label="Back" className="absolute left-4 top-4 lg:left-6 lg:top-6 rounded-full bg-black/40 p-2 backdrop-blur transition-colors hover:bg-black/60">
           <ArrowLeft className="size-5" />
         </button>
