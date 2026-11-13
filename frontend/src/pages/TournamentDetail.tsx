@@ -137,7 +137,7 @@ export default function TournamentDetail() {
       </header>
 
       {t && (
-        <div className="space-y-6 px-5 lg:mx-auto lg:max-w-4xl lg:px-6 lg:pt-8">
+        <div className="space-y-6 px-5 lg:mx-auto lg:max-w-5xl lg:px-6 lg:pt-8">
           {t.approval_status !== "approved" && (
             <div data-testid="tournament-approval-banner" className={t.approval_status === "pending" ? "space-y-3 rounded-2xl border border-amber-400/40 bg-amber-400/10 p-4 text-sm" : "space-y-3 rounded-2xl border border-red-400/40 bg-red-400/10 p-4 text-sm"}>
               <div className="flex gap-3">

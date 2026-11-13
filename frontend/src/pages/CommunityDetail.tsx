@@ -92,7 +92,7 @@ export default function CommunityDetail() {
       </header>
 
       {c && (
-        <div className="space-y-6 px-5 lg:block lg:columns-2 lg:gap-8 lg:space-y-0 lg:px-6 lg:pt-8 lg:[&>*]:mb-6 lg:[&>*]:break-inside-avoid">
+        <div className="space-y-6 px-5 lg:block lg:columns-2 lg:gap-8 2xl:columns-3 lg:space-y-0 lg:px-6 lg:pt-8 lg:[&>*]:mb-6 lg:[&>*]:break-inside-avoid">
           {isOwner && !isAdmin && <ManageApprovalCard c={c} />}
           <div className="grid grid-cols-3 gap-2 text-center">
             {[

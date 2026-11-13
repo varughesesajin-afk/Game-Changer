@@ -72,7 +72,7 @@ export default function Explore() {
 
         <Section title="Official tournaments" to="/tournaments" testid="feed-official-section">
           {f?.official.length ? (
-            <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0">
+            <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 xl:grid-cols-4">
               {f.official.map((t) => <TournamentCard key={t.id} t={t} wide />)}
             </div>
           ) : (
@@ -82,7 +82,7 @@ export default function Explore() {
 
         <Section title="Games this week" to="/communities" testid="feed-games-section">
           {f?.upcoming_games.length ? (
-            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0">
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:items-start lg:gap-4 lg:space-y-0 2xl:grid-cols-3">
               {f.upcoming_games.slice(0, 4).map((g) => <GameCard key={g.id} game={g} me={me} showCommunity compact />)}
             </div>
           ) : (
@@ -92,7 +92,7 @@ export default function Explore() {
 
         <Section title="Community tournaments" to="/tournaments" testid="feed-community-tournaments-section">
           {f?.community_tournaments.length ? (
-            <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0">
+            <div className="no-scrollbar -mx-5 flex gap-3 overflow-x-auto px-5 lg:mx-0 lg:grid lg:grid-cols-3 lg:gap-5 lg:overflow-visible lg:px-0 xl:grid-cols-4">
               {f.community_tournaments.map((t) => <TournamentCard key={t.id} t={t} wide />)}
             </div>
           ) : (
@@ -102,7 +102,7 @@ export default function Explore() {
 
         <Section title="Groups near you" to="/communities" testid="feed-communities-section">
           {f?.communities.length ? (
-            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">{f.communities.slice(0, 4).map((c) => <CommunityCard key={c.id} c={c} />)}</div>
+            <div className="space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 2xl:grid-cols-3">{f.communities.slice(0, 4).map((c) => <CommunityCard key={c.id} c={c} />)}</div>
           ) : (
             <Empty text="No groups yet." />
           )}

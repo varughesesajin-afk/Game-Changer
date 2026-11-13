@@ -21,7 +21,7 @@ function DesktopBar() {
   const { data: me } = useMe();
   return (
     <header data-testid="desktop-top-bar" className="sticky top-0 z-50 hidden border-b border-line/70 bg-page/90 backdrop-blur-xl lg:block">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-6">
+      <div className="flex h-16 w-full items-center gap-8 px-6 xl:px-14">
         <Link to="/" aria-label="Home"><Brand /></Link>
         <nav className="flex flex-1 items-center gap-1">
           {TABS.filter((t) => t.id !== "profile").map(({ id, label, to }) => (
@@ -76,7 +76,7 @@ export default function AppShell() {
   return (
     <div className="min-h-screen bg-page">
     <DesktopBar />
-    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60 lg:min-h-[calc(100vh-4rem)] lg:max-w-6xl lg:border-x-0 lg:pb-12 lg:shadow-none">
+    <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-[#1E293B]/40 bg-page pb-24 shadow-2xl shadow-black/60 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
       <ReminderBanner />
       {["/communities", "/tournaments", "/monetize", "/profile", "/admin"].includes(location.pathname) && (
         <header data-testid="app-top-bar" className="flex items-center lg:hidden border-b border-line/60 px-5 py-3">

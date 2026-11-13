@@ -21,7 +21,7 @@ export default function SportPills({ value, onChange, includeAll = true, testPre
           onClick={() => onChange(s)}
           className={cn(
             // every sport pill is the same size everywhere in the app
-            "flex h-9 w-[6.5rem] shrink-0 items-center justify-center truncate rounded-full border px-2 text-sm font-semibold transition-[background-color,color,border-color,transform] duration-200 active:scale-95",
+            "flex h-9 w-[6.5rem] shrink-0 lg:w-24 items-center justify-center truncate rounded-full border px-2 text-sm font-semibold transition-[background-color,color,border-color,transform] duration-200 active:scale-95",
             wrap && "w-full",
             value === s
               ? "border-transparent bg-brand text-white"

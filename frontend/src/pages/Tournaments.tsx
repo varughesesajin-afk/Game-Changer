@@ -66,7 +66,7 @@ export default function Tournaments() {
         </TabsList>
       </Tabs>
       <SportPills value={sport} onChange={setSport} />
-      <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-5 lg:space-y-0" data-testid="tournament-list">
+      <div className="space-y-4 lg:grid lg:grid-cols-3 lg:gap-5 lg:space-y-0 xl:grid-cols-4" data-testid="tournament-list">
         {!list.isError && list.data?.map((t) => <TournamentCard key={t.id} t={t} />)}
         {(list.isError || list.data?.length === 0) && (
           <div className="rounded-2xl border border-dashed border-line p-6 text-center text-sm text-slate-500 lg:col-span-full">No tournaments here yet.</div>
