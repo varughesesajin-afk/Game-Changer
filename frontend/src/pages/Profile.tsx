@@ -10,10 +10,14 @@ import { useMe } from "@/lib/auth";
 import { endSession } from "@/lib/session";
 import ProfilePicture from "@/components/ProfilePicture";
 import MyStats from "@/components/MyStats";
+import { Moon, Sun } from "lucide-react";
+import { useTheme } from "@/lib/theme";
+import { cn } from "@/lib/utils";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function Profile() {
   const { data: me, isLoading } = useMe();
+  const [theme, setTheme] = useTheme();
   const games = useQuery({ queryKey: ["games", "mine"], queryFn: () => apiGet<Game[]>("/games/mine"), enabled: !!me });
   const comms = useQuery({ queryKey: ["communities", "mine"], queryFn: () => apiGet<Community[]>("/communities?mine=true"), enabled: !!me });
   const tours = useQuery({ queryKey: ["tournaments", "mine"], queryFn: () => apiGet<Tournament[]>("/tournaments?mine=true"), enabled: !!me });
@@ -59,6 +63,23 @@ export default function Profile() {
           <span className="font-semibold text-energy">Run a community?</span> Start one — the admin approves it and your 30-day Manage periods.
         </Link>
       )}
+
+      <div className="flex items-center justify-between gap-3 rounded-2xl border-2 border-line bg-surface p-3 lg:col-span-2" data-testid="appearance-row">
+        <div className="pl-1 text-sm font-semibold">Appearance</div>
+        <div className="flex gap-1 rounded-full bg-elevated p-1">
+          {([["light", "Light", Sun], ["dark", "Dark", Moon]] as const).map(([id, label, Icon]) => (
+            <button
+              key={id}
+              type="button"
+              data-testid={`theme-${id}`}
+              onClick={() => setTheme(id)}
+              className={cn("inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold transition-colors", theme === id ? "bg-brand text-white" : "text-slate-400")}
+            >
+              <Icon className="size-4" /> {label}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="lg:col-span-2"><MyStats userId={me.user_id} /></div>
 

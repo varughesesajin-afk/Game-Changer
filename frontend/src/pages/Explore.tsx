@@ -9,6 +9,7 @@ import GameCard from "@/components/GameCard";
 import { apiGet } from "@/lib/api";
 import { HERO_IMG, useMe } from "@/lib/auth";
 import Brand from "@/components/Brand";
+import ThemeToggle from "@/components/ThemeToggle";
 import type { Feed } from "@/lib/types";
 
 function Section({ title, to, testid, children }: { title: string; to?: string; testid: string; children: React.ReactNode }) {
@@ -45,6 +46,8 @@ export default function Explore() {
         <div className="relative flex h-full flex-col justify-between p-5 lg:justify-end lg:p-12">
           <div className="flex items-center justify-between lg:hidden">
             <Brand tagline />
+            <div className="flex items-center gap-2">
+              <ThemeToggle className="border-white/30 bg-white/15 backdrop-blur" />
             {me ? (
               <Link to="/profile" data-testid="header-profile-link" className="text-sm font-semibold text-slate-200">
                 Hi, {me.name.split(" ")[0]}
@@ -54,6 +57,7 @@ export default function Explore() {
                 Sign in
               </Link>
             )}
+            </div>
           </div>
           <div className="animate-rise space-y-2 lg:max-w-2xl lg:space-y-4">
             <div className="inline-flex items-center gap-1.5 rounded-full bg-brand px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] text-white">

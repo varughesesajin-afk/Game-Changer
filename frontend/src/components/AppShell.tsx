@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import ReminderBanner from "@/components/ReminderBanner";
 import Brand from "@/components/Brand";
 import Avatar from "@/components/Avatar";
+import ThemeToggle from "@/components/ThemeToggle";
 import { useMe } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,7 @@ function DesktopBar() {
             </NavLink>
           )}
         </nav>
+        <ThemeToggle className="-mr-4" />
         {me ? (
           <Link to="/profile" data-testid="desktop-profile-link" className="flex items-center gap-2.5 rounded-full border border-line bg-surface py-1 pl-1 pr-4 text-sm font-semibold hover:border-energy/50">
             <Avatar name={me.name} picture={me.picture} className="size-8" />
@@ -79,8 +81,9 @@ export default function AppShell() {
     <div className="relative mx-auto min-h-screen w-full max-w-md border-x border-line bg-page pb-28 shadow-2xl shadow-sky-900/10 lg:min-h-[calc(100vh-4rem)] lg:max-w-none lg:border-x-0 lg:pb-12 xl:px-8 lg:shadow-none">
       <ReminderBanner />
       {["/communities", "/tournaments", "/monetize", "/profile", "/admin"].includes(location.pathname) && (
-        <header data-testid="app-top-bar" className="flex items-center lg:hidden border-b border-line/60 px-5 py-3">
+        <header data-testid="app-top-bar" className="flex items-center justify-between lg:hidden border-b border-line/60 px-5 py-3">
           <Brand tagline />
+          <ThemeToggle />
         </header>
       )}
       <motion.main
@@ -124,7 +127,7 @@ export default function AppShell() {
         <span>© {new Date().getFullYear()} Green Ocean Sports Management</span>
         <Link to="/privacy" className="hover:text-slate-300">Privacy policy</Link>
       </footer>
-      <Toaster position="top-center" theme="light" richColors />
+      <Toaster position="top-center" richColors />
     </div>
     </div>
   );
