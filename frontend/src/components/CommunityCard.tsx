@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 import { motion } from "motion/react";
 import { CalendarClock, MapPin, Users } from "lucide-react";
 import type { Community } from "@/lib/types";
-import { money, sportImage } from "@/lib/auth";
+import CoverImage from "@/components/CoverImage";
+import { money } from "@/lib/auth";
 
 // Photo fills the top half of the card, the name sits on the photo, the details sit below.
 export default function CommunityCard({ c, badge }: { c: Community; badge?: string }) {
@@ -14,7 +15,7 @@ export default function CommunityCard({ c, badge }: { c: Community; badge?: stri
         className="group block overflow-hidden rounded-[1.75rem] border-2 border-transparent gradient-card transition-transform duration-200"
       >
         <div className="on-dark relative h-40 overflow-hidden lg:h-44">
-          <img src={sportImage(c.sport, c.image)} alt={c.name} className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+          <CoverImage c={c} alt={c.name} className="h-full w-full" imgClassName="transition-transform duration-500 group-hover:scale-105" />
           <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/10 to-black/75" />
           <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
             <span className="rounded-full bg-[#ffffff]/95 px-3 py-1 text-xs font-bold text-emerald-700 shadow-sm">

@@ -48,6 +48,10 @@ class CommunityCreate(BaseModel):
     max_players: int = Field(14, ge=2, le=200)
     fee: float = Field(0.0, ge=0)
     image: Optional[str] = None
+    # How the cover photo is framed: focal point (% from the left / top) and zoom (1 = fit, up to 3x)
+    image_x: float = Field(50.0, ge=0, le=100)
+    image_y: float = Field(50.0, ge=0, le=100)
+    image_zoom: float = Field(1.0, ge=1, le=3)
     visibility: Literal["open", "private"] = "open"  # private: only approved members can join matches
 
 
@@ -66,6 +70,9 @@ class CommunityUpdate(BaseModel):
     max_players: Optional[int] = Field(None, ge=2, le=200)
     fee: Optional[float] = Field(None, ge=0)
     image: Optional[str] = None  # "/api/images/<id>" from POST /api/images, or "" to reset to the sport default
+    image_x: Optional[float] = Field(None, ge=0, le=100)
+    image_y: Optional[float] = Field(None, ge=0, le=100)
+    image_zoom: Optional[float] = Field(None, ge=1, le=3)
     visibility: Optional[Literal["open", "private"]] = None
 
 

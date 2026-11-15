@@ -13,9 +13,10 @@ import Gallery from "@/components/Gallery";
 import Avatar from "@/components/Avatar";
 import ShareButtons from "@/components/ShareButtons";
 import ManageApprovalCard from "@/components/ManageApprovalCard";
+import CoverImage from "@/components/CoverImage";
 import TransferHostDialog from "@/components/TransferHostDialog";
 import { apiGet, apiPost } from "@/lib/api";
-import { errMsg, fmtDate, money, refreshAll, sportImage, useMe } from "@/lib/auth";
+import { errMsg, fmtDate, money, refreshAll, useMe } from "@/lib/auth";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function CommunityDetail() {
@@ -58,7 +59,7 @@ export default function CommunityDetail() {
   return (
     <div>
       <header className="on-dark relative h-56 overflow-hidden lg:mx-6 lg:mt-6 lg:h-72 lg:rounded-3xl">
-        <img src={sportImage(c?.sport ?? "", c?.image)} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <CoverImage c={c} sport={c?.sport ?? ""} className="absolute inset-0" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.25) 0%, rgba(5,20,30,0.7) 100%)" }} />
         <button
           type="button"

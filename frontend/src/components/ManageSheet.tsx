@@ -31,7 +31,7 @@ interface Props {
 export default function ManageSheet({ c, games, me, open, onOpenChange }: Props) {
   const nav = useNavigate();
   const [f, setF] = useState<CommunityUpdate>({
-    name: c.name, image: c.image ?? "", visibility: c.visibility, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
+    name: c.name, image: c.image ?? "", image_x: c.image_x ?? 50, image_y: c.image_y ?? 50, image_zoom: c.image_zoom ?? 1, visibility: c.visibility, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
   });
   const [tOpen, setTOpen] = useState(false);
   const set = <K extends keyof CommunityUpdate>(k: K, v: CommunityUpdate[K]) => setF((p) => ({ ...p, [k]: v }));
@@ -69,7 +69,7 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
             <TabsContent value="details" className="space-y-3 pt-4">
               <div className="space-y-1.5">
                 <Label>Cover photo</Label>
-                <CoverPhotoPicker sport={c.sport} value={f.image} onChange={(url) => set("image", url)} testid="manage-cover" />
+                <CoverPhotoPicker sport={c.sport} value={f.image} onChange={(url) => setF((p) => ({ ...p, image: url, ...(url ? {} : { image_x: 50, image_y: 50, image_zoom: 1 }) }))} pos={{ x: f.image_x ?? 50, y: f.image_y ?? 50, zoom: f.image_zoom ?? 1 }} onPos={(p) => setF((q) => ({ ...q, image_x: p.x, image_y: p.y, image_zoom: p.zoom }))} testid="manage-cover" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="m-name">Name</Label>

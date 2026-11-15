@@ -32,6 +32,10 @@ export interface CommunityCreate {
   max_players: number;
   fee: number;
   image?: string | null;
+  // cover photo framing: focal point in % from left / top, zoom 1-3
+  image_x?: number;
+  image_y?: number;
+  image_zoom?: number;
   visibility: Visibility;
 }
 

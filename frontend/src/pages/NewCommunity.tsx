@@ -65,7 +65,7 @@ export default function NewCommunity() {
 
       <div className="space-y-2">
         <Label>Cover photo</Label>
-        <CoverPhotoPicker sport={f.sport} value={f.image} onChange={(url) => set("image", url || null)} testid="community-cover" />
+        <CoverPhotoPicker sport={f.sport} value={f.image} onChange={(url) => setF((p) => ({ ...p, image: url || null, ...(url ? {} : { image_x: 50, image_y: 50, image_zoom: 1 }) }))} pos={{ x: f.image_x ?? 50, y: f.image_y ?? 50, zoom: f.image_zoom ?? 1 }} onPos={(p) => setF((q) => ({ ...q, image_x: p.x, image_y: p.y, image_zoom: p.zoom }))} testid="community-cover" />
       </div>
 
       <div className="space-y-2">
