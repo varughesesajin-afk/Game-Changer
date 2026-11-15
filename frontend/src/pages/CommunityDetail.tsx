@@ -13,6 +13,7 @@ import Gallery from "@/components/Gallery";
 import Avatar from "@/components/Avatar";
 import ShareButtons from "@/components/ShareButtons";
 import ManageApprovalCard from "@/components/ManageApprovalCard";
+import TransferHostDialog from "@/components/TransferHostDialog";
 import { apiGet, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll, sportImage, useMe } from "@/lib/auth";
 import type { Community, Game, Tournament } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function CommunityDetail() {
   const nav = useNavigate();
   const { data: me } = useMe();
   const [manageOpen, setManageOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
   const cq = useQuery({ queryKey: ["community", id], queryFn: () => apiGet<Community>(`/communities/${id}`) });
   const gq = useQuery({ queryKey: ["games", id], queryFn: () => apiGet<Game[]>(`/communities/${id}/games`) });
   const tq = useQuery({ queryKey: ["tournaments", "community", id], queryFn: () => apiGet<Tournament[]>(`/tournaments?community_id=${id}`) });
@@ -185,6 +187,17 @@ export default function CommunityDetail() {
               ))}
             </div>
           </section>
+
+          {isHostView && (
+            <section data-testid="host-options" className="space-y-2 rounded-2xl border-2 border-line bg-surface p-4">
+              <h2 className="font-heading text-lg font-bold">Host options</h2>
+              <p className="text-sm text-slate-400">Moving on? Hand this community to another member. They become the host straight away.</p>
+              <Button variant="outline" data-testid="transfer-host-button" onClick={() => setTransferOpen(true)}>
+                <Crown className="size-4" /> Transfer host
+              </Button>
+              <TransferHostDialog c={c} open={transferOpen} onOpenChange={setTransferOpen} />
+            </section>
+          )}
 
           <Gallery communityId={c.id} isHost={isAdmin || (isOwner && c.manage_active)} />
           {me && canManage && <ManageSheet key={c.id + c.name + c.fee} c={c} games={games} me={me} open={manageOpen} onOpenChange={setManageOpen} />}

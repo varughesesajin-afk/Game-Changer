@@ -33,6 +33,10 @@ class Member(BaseModel):
     picture: Optional[str] = None
 
 
+class TransferHostIn(BaseModel):
+    user_id: str
+
+
 class CommunityCreate(BaseModel):
     name: str = Field(min_length=2, max_length=80)
     sport: str

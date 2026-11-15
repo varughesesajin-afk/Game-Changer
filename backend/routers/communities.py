@@ -11,7 +11,7 @@ from models.schemas import _now
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
                             GameResult, GameResultIn, GameSheetIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
                             PaidIn, PlayerCommunityStats, PlayerGameLine, PlayerProfile, RosterEntry, SeasonIn,
-                            Tournament, User)
+                            Tournament, TransferHostIn, User)
 
 router = APIRouter(tags=["communities"])
 
@@ -195,6 +195,28 @@ async def leave_community(cid: str, user: User = Depends(current_user)):
         raise HTTPException(400, "Organiser cannot leave their own community")
     await db.communities.update_one({"id": cid}, {"$pull": {"members": {"user_id": user.user_id},
                                                             "join_requests": {"user_id": user.user_id}}})
+    return await _get_community(cid)
+
+
+@router.post("/communities/{cid}/transfer-host", response_model=Community)
+async def transfer_host(cid: str, body: TransferHostIn, user: User = Depends(current_user)):
+    """The host (or the site admin) hands the community to another member.
+
+    The community keeps its approval and whatever is left of its 30-day Manage period; its community tournaments move
+    to the new host too. The previous host stays on as an ordinary member."""
+    c = await _get_community(cid)
+    _require_host(c, user)
+    if body.user_id == c.owner_id:
+        raise HTTPException(400, "That player is already the host")
+    new = next((m for m in c.members if m.user_id == body.user_id), None)
+    if not new:
+        raise HTTPException(400, "Pick a member of this community")
+    await db.communities.update_one({"id": cid}, {"$set": {"owner_id": new.user_id, "owner_name": new.name}})
+    if not any(m.user_id == c.owner_id for m in c.members):
+        prev = Member(user_id=c.owner_id, name=c.owner_name)
+        await db.communities.update_one({"id": cid, "members.user_id": {"$ne": c.owner_id}}, {"$push": {"members": prev.model_dump()}})
+    await db.tournaments.update_many({"community_id": cid, "kind": "community"},
+                                     {"$set": {"organiser_id": new.user_id, "organiser_name": new.name}})
     return await _get_community(cid)
 
 
