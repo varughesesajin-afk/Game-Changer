@@ -4,6 +4,7 @@ from lib.auth import current_user
 from lib.community_access import PERIOD_DAYS, get_community, plus_days, to_community
 from lib.dates import today_iso
 from lib.db import db
+from lib.push import notify
 from models.schemas import AdminOverview, AdminStats, AdminUser, Community, Tournament, User
 from routers.communities import create_first_games
 
@@ -58,6 +59,7 @@ async def approve_community(cid: str, _: User = Depends(require_admin)):
     c = await get_community(cid)
     if not await db.games.count_documents({"community_id": cid}):
         await create_first_games(c)
+    await notify([c.owner_id], "Community approved", f"{c.name} is live. Manage is on for {PERIOD_DAYS} days.", f"/communities/{cid}", f"appr-{cid}")
     return c
 
 
@@ -65,7 +67,9 @@ async def approve_community(cid: str, _: User = Depends(require_admin)):
 async def decline_community(cid: str, _: User = Depends(require_admin)):
     await get_community(cid)
     await db.communities.update_one({"id": cid}, {"$set": {"approval_status": "declined", "manage_requested_at": None}})
-    return await get_community(cid)
+    c = await get_community(cid)
+    await notify([c.owner_id], "Community not approved", f"{c.name} was not approved this time.", f"/communities/{cid}", f"decl-{cid}")
+    return c
 
 
 # ---------- 30-day Manage periods ----------
@@ -77,7 +81,9 @@ async def approve_manage(cid: str, _: User = Depends(require_admin)):
         raise HTTPException(400, "Approve the community first")
     start = c.manage_until if c.manage_until and c.manage_until >= today_iso() else today_iso()
     await db.communities.update_one({"id": cid}, {"$set": {"manage_until": plus_days(PERIOD_DAYS, start), "manage_requested_at": None}})
-    return await get_community(cid)
+    c = await get_community(cid)
+    await notify([c.owner_id], "Manage approved", f"{c.name} can be managed for another {PERIOD_DAYS} days.", f"/communities/{cid}", f"mgr-{cid}")
+    return c
 
 
 @router.post("/communities/{cid}/manage/decline", response_model=Community)
@@ -107,11 +113,15 @@ async def _tournament(tid: str) -> dict:
 async def approve_tournament(tid: str, _: User = Depends(require_admin)):
     await _tournament(tid)
     await db.tournaments.update_one({"id": tid}, {"$set": {"approval_status": "approved"}})
-    return Tournament(**await _tournament(tid))
+    t = Tournament(**await _tournament(tid))
+    await notify([t.organiser_id], "Tournament approved", f"{t.title} is now public.", f"/tournaments/{tid}", f"tappr-{tid}")
+    return t
 
 
 @router.post("/tournaments/{tid}/decline", response_model=Tournament)
 async def decline_tournament(tid: str, _: User = Depends(require_admin)):
     await _tournament(tid)
     await db.tournaments.update_one({"id": tid}, {"$set": {"approval_status": "declined"}})
-    return Tournament(**await _tournament(tid))
+    t = Tournament(**await _tournament(tid))
+    await notify([t.organiser_id], "Tournament not approved", f"{t.title} was not approved this time.", f"/tournaments/{tid}", f"tdecl-{tid}")
+    return t

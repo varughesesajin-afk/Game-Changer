@@ -10,6 +10,7 @@ import { useMe } from "@/lib/auth";
 import { endSession } from "@/lib/session";
 import ProfilePicture from "@/components/ProfilePicture";
 import MyStats from "@/components/MyStats";
+import NotificationToggle from "@/components/NotificationToggle";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -80,6 +81,8 @@ export default function Profile() {
           ))}
         </div>
       </div>
+
+      <NotificationToggle />
 
       <div className="lg:col-span-2"><MyStats userId={me.user_id} /></div>
 

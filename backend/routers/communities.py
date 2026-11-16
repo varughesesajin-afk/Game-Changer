@@ -7,6 +7,7 @@ from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import PERIOD_DAYS, get_community as _get_community, is_visible_to, plus_days, require_manage, to_community
 from lib.dates import today_iso
 from lib.db import db
+from lib.push import admin_ids, notify
 from models.schemas import _now
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
                             GameResult, GameResultIn, GameSheetIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
@@ -90,6 +91,8 @@ async def create_community(body: CommunityCreateIn, user: User = Depends(current
     await db.communities.insert_one(doc)
     if admin:
         await create_first_games(c)
+    else:
+        await notify(await admin_ids(), "New community to approve", f"{user.name} wants to start {c.name}.", "/admin", f"newc-{c.id}")
     return to_community(doc)
 
 
@@ -110,6 +113,7 @@ async def request_manage(cid: str, user: User = Depends(current_user)):
     if c.manage_requested_at:
         raise HTTPException(409, "Your request is already with the admin")
     await db.communities.update_one({"id": cid}, {"$set": {"manage_requested_at": _now()}})
+    await notify(await admin_ids(), "Manage request", f"{c.name} is asking for another 30 days of Manage.", "/admin", f"manage-{cid}")
     return await _get_community(cid)
 
 
@@ -160,6 +164,7 @@ async def join_community(cid: str, user: User = Depends(current_user)):
         {"id": cid, "join_requests.user_id": {"$ne": user.user_id}},
         {"$push": {"join_requests": Member(user_id=user.user_id, name=user.name, picture=user.picture).model_dump()}},
     )
+    await notify([c.owner_id], "New join request", f"{user.name} wants to join {c.name}.", f"/communities/{cid}", f"join-{cid}")
     return await _get_community(cid)
 
 
@@ -177,6 +182,7 @@ async def approve_request(cid: str, uid: str, user: User = Depends(current_user)
         raise HTTPException(404, "No pending request from this player")
     await db.communities.update_one({"id": cid}, {"$pull": {"join_requests": {"user_id": uid}}})
     await db.communities.update_one({"id": cid, "members.user_id": {"$ne": uid}}, {"$push": {"members": req.model_dump()}})
+    await notify([uid], "You're in!", f"You can now play with {c.name}.", f"/communities/{cid}", f"in-{cid}")
     return await _get_community(cid)
 
 
@@ -217,6 +223,7 @@ async def transfer_host(cid: str, body: TransferHostIn, user: User = Depends(cur
         await db.communities.update_one({"id": cid, "members.user_id": {"$ne": c.owner_id}}, {"$push": {"members": prev.model_dump()}})
     await db.tournaments.update_many({"community_id": cid, "kind": "community"},
                                      {"$set": {"organiser_id": new.user_id, "organiser_name": new.name}})
+    await notify([new.user_id], "You're the host now", f"{user.name} handed {c.name} over to you.", f"/communities/{cid}", f"host-{cid}")
     return await _get_community(cid)
 
 

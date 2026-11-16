@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import get_community, require_manage
 from lib.db import db
+from lib.push import admin_ids, notify
 from models.schemas import (Match, MatchGoal, MatchScheduleIn, MatchSheetIn, MatchStatsIn, PlayerIn, ResultIn, ScorerRow, StandingRow,
                             StandingsTable, Team, TeamCreate, TeamLogoIn,
                             Tournament, TournamentCreate, User)
@@ -202,6 +203,8 @@ async def create_tournament(body: TournamentCreate, user: User = Depends(current
     t = Tournament(**body.model_dump(), community_name=community_name, approval_status=approval,
                    organiser_id=user.user_id, organiser_name=user.name)
     await db.tournaments.insert_one(t.model_dump())
+    if approval == "pending":
+        await notify(await admin_ids(), "Tournament to approve", f"{user.name} wants to host {t.title}.", "/admin", f"newt-{t.id}")
     return t
 
 

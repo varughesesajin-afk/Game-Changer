@@ -15,13 +15,16 @@ ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
 from lib.db import client, ensure_indexes  # noqa: E402
-from routers import admin, auth, communities, gallery, images, reminders, tournaments  # noqa: E402
+from lib.push import reminder_loop  # noqa: E402
+from routers import admin, auth, communities, gallery, images, push, reminders, tournaments  # noqa: E402
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     app.state.index_task = asyncio.create_task(ensure_indexes())
+    app.state.push_task = asyncio.create_task(reminder_loop())
     yield
+    app.state.push_task.cancel()
     client.close()
 
 
@@ -41,6 +44,7 @@ api_router.include_router(admin.router)
 api_router.include_router(reminders.router)
 api_router.include_router(images.router)
 api_router.include_router(gallery.router)
+api_router.include_router(push.router)
 
 app.add_middleware(
     CORSMiddleware,

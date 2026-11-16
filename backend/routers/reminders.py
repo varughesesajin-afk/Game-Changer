@@ -8,6 +8,7 @@ from lib.auth import current_user
 from lib.community_access import get_community, require_manage
 from lib.dates import today_iso
 from lib.db import db
+from lib.push import notify
 from models.schemas import Game, Reminder, RemindResult, RosterEntry, UnpaidGame, UnpaidPlayer, User
 
 router = APIRouter(tags=["reminders"])
@@ -23,6 +24,8 @@ async def _send(g: Game, players: List[RosterEntry], sender: User) -> None:
              "$setOnInsert": {"id": Reminder.new_id(), "currency": "OMR"}},
             upsert=True,
         )
+    await notify([r.user_id for r in players], "Fee reminder", f"OMR {g.fee:g} is due for {g.community_name} on {g.date}. Tap to see it.",
+                 f"/communities/{g.community_id}", f"fee-{g.id}")
 
 
 async def _managed_game(gid: str, user: User) -> Game:
