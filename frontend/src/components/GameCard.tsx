@@ -11,6 +11,8 @@ import { apiDelete, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Game, TeamSide, User } from "@/lib/types";
 import { JerseyChip } from "@/components/Jersey";
+import GameSpots from "@/components/GameSpots";
+import GameShareRow from "@/components/GameShareRow";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -31,6 +33,9 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
   const full = game.roster.length >= game.max_players;
   const teamA = game.roster.filter((r) => r.team === "A");
   const teamB = game.roster.filter((r) => r.team === "B");
+  const spots = game.signup_style === "spots";
+  const showSpots = spots && !compact;
+  const showShare = !compact && !game.result && game.date >= new Date().toLocaleDateString("en-CA");
 
   const act = useMutation({
     mutationFn: (fn: () => Promise<Game>) => fn(),
@@ -100,6 +105,7 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
   );
 
   return (
+    <div>
     <div data-testid={`game-card-${game.id}`} className="animate-rise gradient-card rounded-3xl border-2 border-transparent p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -128,14 +134,16 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
         <div className="h-full rounded-full bg-gradient-to-r from-ice to-energy transition-[width] duration-500" style={{ width: `${Math.min(100, (game.roster.length / game.max_players) * 100)}%` }} />
       </div>
 
-      {!compact && (
+      {showSpots && <GameSpots game={game} me={me} canManage={canManage} membersOnly={membersOnly} />}
+
+      {!compact && !spots && (
         <div className="mt-3 flex gap-2">
           <Column side="A" list={teamA} />
           <Column side="B" list={teamB} />
         </div>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      {!showSpots && <div className="mt-3 flex flex-wrap gap-2">
         {mine ? (
           <>
             <Button
@@ -176,13 +184,13 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
         <Button size="sm" variant="ghost" data-testid="game-add-guest-toggle" disabled={full || membersOnly} onClick={guard(() => setGuestOpen((o) => !o))}>
           <UserPlus className="size-4" /> Add a name
         </Button>
-      </div>
+      </div>}
 
-      {membersOnly && !mine && (
+      {membersOnly && !mine && !showSpots && (
         <p data-testid="game-members-only-note" className="mt-2 text-xs text-amber-300">Private community — only approved members can join this game.</p>
       )}
 
-      {guestOpen && (
+      {guestOpen && !showSpots && (
         <div className="mt-3 flex gap-2">
           <Input
             data-testid="game-guest-name-input"
@@ -204,6 +212,8 @@ export default function GameCard({ game, me, canManage = false, showCommunity = 
           </Button>
         </div>
       )}
+    </div>
+    {showShare && <GameShareRow game={game} />}
     </div>
   );
 }

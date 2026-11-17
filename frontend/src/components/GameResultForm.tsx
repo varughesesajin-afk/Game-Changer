@@ -4,6 +4,8 @@ import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import MotmVote from "@/components/MotmVote";
+import TeamSplitDialog from "@/components/TeamSplitDialog";
 import MatchSheet, { eventsFromTotals, pk, splitKey, type SheetSide, type SheetValue } from "@/components/MatchSheet";
 import { apiPost } from "@/lib/api";
 import { errMsg, fmtDate, refreshAll } from "@/lib/auth";
@@ -30,6 +32,7 @@ export function gameSheetValue(game: Game): SheetValue {
 
 /** Community game match sheet dialog — editable for the host, read-only for everyone else. */
 export function GameSheetDialog({ game, canManage, onClose }: { game: Game | null; canManage: boolean; onClose: () => void }) {
+  const [teamsOpen, setTeamsOpen] = useState(false);
   const save = useMutation({
     mutationFn: ({ g, v }: { g: Game; v: SheetValue }) => {
       const body: GameSheetIn = {
@@ -59,7 +62,15 @@ export function GameSheetDialog({ game, canManage, onClose }: { game: Game | nul
             {!canManage && game.result && (
               <div className="text-center font-heading text-2xl font-bold">Team A {game.result.score_a ?? 0} – {game.result.score_b ?? 0} Team B</div>
             )}
-            <MatchSheet key={game.id} sides={gameSides(game)} initial={gameSheetValue(game)} canManage={canManage} saving={save.isPending} onSave={(v) => save.mutate({ g: game, v })} />
+            {canManage && game.signup_style === "spots" && !game.result && (
+              <div className="flex items-center justify-between gap-2 rounded-xl bg-elevated/60 p-2.5 text-xs text-slate-400">
+                <span>Numbered-spots game: split the players into Team A and Team B before entering goals.</span>
+                <Button type="button" size="sm" variant="outline" data-testid="sheet-set-teams" className="shrink-0" onClick={() => setTeamsOpen(true)}>Set teams</Button>
+              </div>
+            )}
+            {canManage && game.signup_style === "spots" && <TeamSplitDialog game={game} open={teamsOpen} onClose={() => setTeamsOpen(false)} />}
+            {game.result && <MotmVote gameId={game.id} />}
+            <MatchSheet key={`${game.id}-${game.roster.map((r) => r.team).join("")}`} sides={gameSides(game)} initial={gameSheetValue(game)} canManage={canManage} saving={save.isPending} onSave={(v) => save.mutate({ g: game, v })} />
           </>
         )}
       </DialogContent>

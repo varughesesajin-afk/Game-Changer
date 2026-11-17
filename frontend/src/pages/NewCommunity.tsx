@@ -10,13 +10,14 @@ import { Textarea } from "@/components/ui/textarea";
 import SportPills from "@/components/SportPills";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import VisibilityToggle from "@/components/VisibilityToggle";
+import SignupStyleToggle from "@/components/SignupStyleToggle";
 import { apiPost } from "@/lib/api";
 import { WEEKDAYS, errMsg, refreshAll, useMe } from "@/lib/auth";
 import type { Community, CommunityCreate } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const EMPTY: CommunityCreate = {
-  name: "", sport: "Football", city: "Muscat", venue: "", description: "", days: ["Sun", "Tue"], time: "20:00", max_players: 14, fee: 0, visibility: "open",
+  name: "", sport: "Football", city: "Muscat", venue: "", description: "", days: ["Sun", "Tue"], time: "20:00", max_players: 14, fee: 0, visibility: "open", signup_style: "teams",
 };
 
 export default function NewCommunity() {
@@ -109,6 +110,10 @@ export default function NewCommunity() {
       <div className="space-y-1.5">
         <Label htmlFor="cc-max">Max players per game</Label>
         <Input id="cc-max" type="number" inputMode="numeric" data-testid="community-max-input" value={f.max_players} onChange={(e) => set("max_players", Number(e.target.value))} />
+      </div>
+      <div className="space-y-1.5">
+        <Label>How do players sign up?</Label>
+        <SignupStyleToggle testid="community-signup-style" value={f.signup_style ?? "teams"} onChange={(v) => set("signup_style", v)} />
       </div>
       <div className="space-y-1.5">
         <Label htmlFor="cc-fee">Match fee per player (OMR)</Label>

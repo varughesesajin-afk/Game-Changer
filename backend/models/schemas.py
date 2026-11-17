@@ -53,6 +53,8 @@ class CommunityCreate(BaseModel):
     image_y: float = Field(50.0, ge=0, le=100)
     image_zoom: float = Field(1.0, ge=1, le=3)
     visibility: Literal["open", "private"] = "open"  # private: only approved members can join matches
+    # how players sign up for a game: pick Team A/B, or take a numbered spot (the host then splits teams)
+    signup_style: Literal["teams", "spots"] = "teams"
 
 
 class CommunityCreateIn(CommunityCreate):
@@ -73,6 +75,7 @@ class CommunityUpdate(BaseModel):
     image_x: Optional[float] = Field(None, ge=0, le=100)
     image_y: Optional[float] = Field(None, ge=0, le=100)
     image_zoom: Optional[float] = Field(None, ge=1, le=3)
+    signup_style: Optional[Literal["teams", "spots"]] = None
     visibility: Optional[Literal["open", "private"]] = None
 
 
@@ -104,6 +107,7 @@ class RosterEntry(BaseModel):
     paid: bool = False
     goals: int = 0
     late: bool = False  # ticked on the match sheet
+    spot: Optional[int] = None  # number the player holds, in numbered-spots games
 
 
 JERSEY_COLOURS = ["White", "Black", "Red", "Blue", "Navy", "Sky", "Green", "Yellow", "Orange", "Purple", "Maroon", "Grey"]
@@ -165,6 +169,9 @@ class Game(BaseModel):
     result: Optional[GameResult] = None
     jersey_a: Jersey = None
     jersey_b: Jersey = None
+    signup_style: Literal["teams", "spots"] = "teams"  # copied from the community when the game is made
+    motm_closes_at: Optional[datetime] = None  # man-of-the-match voting window, set when the result is first saved
+    motm_final: bool = False  # the vote has been counted
     created_at: datetime = Field(default_factory=_now)
 
 
@@ -228,8 +235,65 @@ class PlayerProfile(BaseModel):
     recent: List[PlayerGameLine]
 
 
+# ---------- man-of-the-match voting + badges ----------
+class MotmCandidate(BaseModel):
+    entry_id: str
+    name: str
+    picture: Optional[str] = None
+    team: Literal["A", "B"]
+    goals: int = 0
+    votes: Optional[int] = None  # hidden until the viewer has voted or voting has closed
+    is_me: bool = False
+
+
+class MotmState(BaseModel):
+    game_id: str
+    status: Literal["none", "open", "closed"]
+    closes_at: Optional[str] = None  # ISO, UTC ("Z")
+    can_vote: bool = False  # signed-in player on this game's roster while voting is open
+    my_vote: Optional[str] = None
+    voters: int = 0
+    eligible: int = 0
+    winner_entry_id: Optional[str] = None
+    by_vote: bool = False  # the winner was decided by votes (not just the host's pick)
+    candidates: List[MotmCandidate] = Field(default_factory=list)
+
+
+class MotmVoteIn(BaseModel):
+    entry_id: str
+
+
+class MotmPending(BaseModel):
+    game_id: str
+    community_id: str
+    community_name: str
+    date: str
+    closes_at: str
+
+
+class Badge(BaseModel):
+    id: str
+    name: str
+    description: str
+    icon: str
+    earned: bool
+    progress: int = 0
+    target: int = 1
+    earned_at: Optional[str] = None
+
+
+class BadgesOut(BaseModel):
+    user_id: str
+    current_streak: int
+    best_streak: int
+    earned: int
+    total: int
+    badges: List[Badge]
+
+
 class JoinGameIn(BaseModel):
     team: Literal["A", "B"] = "A"
+    spot: Optional[int] = Field(None, ge=1, le=500)
 
 
 class PaidIn(BaseModel):
@@ -237,8 +301,18 @@ class PaidIn(BaseModel):
 
 
 class GuestIn(BaseModel):
-    name: str = Field(min_length=1, max_length=60)
+    name: str = Field("", max_length=60)
     team: Literal["A", "B"] = "A"
+    spot: Optional[int] = Field(None, ge=1, le=500)
+    user_id: Optional[str] = None  # add an existing community member (host/admin only) instead of a guest name
+
+
+class SpotIn(BaseModel):
+    spot: int = Field(ge=1, le=500)
+
+
+class TeamsIn(BaseModel):
+    teams: Dict[str, Literal["A", "B"]]  # roster entry id -> team
 
 
 # ---------- tournaments ----------

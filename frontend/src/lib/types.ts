@@ -36,8 +36,11 @@ export interface CommunityCreate {
   image_x?: number;
   image_y?: number;
   image_zoom?: number;
+  signup_style?: SignupStyle; // how players sign up for games
   visibility: Visibility;
 }
+
+export type SignupStyle = "teams" | "spots";
 
 export type Visibility = "open" | "private";
 
@@ -79,6 +82,7 @@ export interface RosterEntry {
   paid: boolean;
   goals: number;
   late: boolean;
+  spot: number | null;
 }
 
 export interface GameResult {
@@ -120,7 +124,61 @@ export interface Game {
   result: GameResult | null;
   jersey_a: Jersey;
   jersey_b: Jersey;
+  signup_style?: SignupStyle;
+  motm_closes_at?: string | null;
+  motm_final?: boolean;
   created_at: string;
+}
+
+export interface MotmCandidate {
+  entry_id: string;
+  name: string;
+  picture: string | null;
+  team: TeamSide;
+  goals: number;
+  votes: number | null; // hidden until you have voted or voting has closed
+  is_me: boolean;
+}
+
+export interface MotmState {
+  game_id: string;
+  status: "none" | "open" | "closed";
+  closes_at: string | null;
+  can_vote: boolean;
+  my_vote: string | null;
+  voters: number;
+  eligible: number;
+  winner_entry_id: string | null;
+  by_vote: boolean;
+  candidates: MotmCandidate[];
+}
+
+export interface MotmPending {
+  game_id: string;
+  community_id: string;
+  community_name: string;
+  date: string;
+  closes_at: string;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: "medal" | "trophy" | "goal" | "star" | "flame" | "coins";
+  earned: boolean;
+  progress: number;
+  target: number;
+  earned_at: string | null;
+}
+
+export interface BadgesOut {
+  user_id: string;
+  current_streak: number;
+  best_streak: number;
+  earned: number;
+  total: number;
+  badges: Badge[];
 }
 
 export interface GameNotice {

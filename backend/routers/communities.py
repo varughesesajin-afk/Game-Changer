@@ -7,12 +7,13 @@ from lib.auth import current_user, is_admin, optional_user
 from lib.community_access import PERIOD_DAYS, get_community as _get_community, is_visible_to, plus_days, require_manage, to_community
 from lib.dates import today_iso
 from lib.db import db
+from lib import engagement
 from lib.push import admin_ids, notify
 from models.schemas import _now
 from models.schemas import (Community, CommunityCreateIn, CommunityUpdate, Feed, Game, GameCreate, GameNotice, GameUpdate,
                             GameResult, GameResultIn, GameSheetIn, GuestIn, JoinGameIn, Leaderboard, LeaderboardRow, Member,
                             PaidIn, PlayerCommunityStats, PlayerGameLine, PlayerProfile, RosterEntry, SeasonIn,
-                            Tournament, TransferHostIn, User)
+                            SpotIn, TeamsIn, Tournament, TransferHostIn, User)
 
 router = APIRouter(tags=["communities"])
 
@@ -33,12 +34,53 @@ async def _get_game(gid: str) -> Game:
     doc = await db.games.find_one({"id": gid}, {"_id": 0})
     if not doc:
         raise HTTPException(404, "Game not found")
-    return Game(**doc)
+    g = Game(**doc)
+    if g.signup_style == "spots" and any(r.spot is None for r in g.roster):
+        await _number_roster(g)  # a game switched to numbered spots: give everyone already on it the next free numbers
+    return g
+
+
+async def _games_out(docs: list) -> List[Game]:
+    """Game docs to models, numbering the roster of any game that was switched to numbered spots."""
+    out = []
+    for d in docs:
+        g = Game(**d)
+        if g.signup_style == "spots" and any(r.spot is None for r in g.roster):
+            await _number_roster(g)
+        out.append(g)
+    return out
+
+
+def _free_spots(g: Game) -> List[int]:
+    used = {r.spot for r in g.roster if r.spot}
+    top = max([g.max_players] + list(used))
+    return [n for n in range(1, top + 1) if n not in used]
+
+
+async def _number_roster(g: Game) -> None:
+    free = iter(_free_spots(g))
+    for r in g.roster:
+        if r.spot is None:
+            r.spot = next(free)
+    await db.games.update_one({"id": g.id}, {"$set": {"roster": [r.model_dump() for r in g.roster]}})
+
+
+def _pick_spot(g: Game, want: Optional[int]) -> int:
+    free = _free_spots(g)
+    if want is None:
+        if not free:
+            raise HTTPException(409, "This game is full")
+        return free[0]
+    if want < 1 or want > g.max_players:
+        raise HTTPException(400, f"Pick a spot between 1 and {g.max_players}")
+    if want not in free:
+        raise HTTPException(409, "That spot was just taken — pick another number")
+    return want
 
 
 def _game_from(c: Community, d: str, time: Optional[str] = None) -> Game:
     return Game(community_id=c.id, community_name=c.name, sport=c.sport, date=d, time=time or c.time,
-                venue=c.venue, max_players=c.max_players, fee=c.fee)
+                venue=c.venue, max_players=c.max_players, fee=c.fee, signup_style=c.signup_style)
 
 
 # ---------- feed ----------
@@ -132,6 +174,9 @@ async def update_community(cid: str, body: CommunityUpdate, user: User = Depends
     changes = body.model_dump(exclude_none=True)
     if changes:
         await db.communities.update_one({"id": cid}, {"$set": changes})
+        if "signup_style" in changes:  # upcoming games follow the new style; players keep their place
+            await db.games.update_many({"community_id": cid, "date": {"$gte": today_iso()}, "result": None},
+                                       {"$set": {"signup_style": changes["signup_style"]}})
         game_fields = {k: changes[k] for k in ("venue", "fee", "max_players", "sport") if k in changes}
         if "name" in changes:
             game_fields["community_name"] = changes["name"]
@@ -246,7 +291,7 @@ async def community_games(cid: str, past: bool = False):
     else:
         docs = await db.games.find({"community_id": cid, "date": {"$gte": today_iso()}}, {"_id": 0}) \
             .sort([("date", 1), ("time", 1)]).to_list(50)
-    return [Game(**d) for d in docs]
+    return await _games_out(docs)
 
 
 def season_start_for(c: Community) -> tuple[Optional[str], str]:
@@ -413,7 +458,7 @@ async def schedule_next_week(cid: str, user: User = Depends(current_user)):
 async def my_games(user: User = Depends(current_user)):
     docs = await db.games.find({"roster.user_id": user.user_id, "date": {"$gte": today_iso()}}, {"_id": 0}) \
         .sort([("date", 1), ("time", 1)]).to_list(100)
-    return [Game(**d) for d in docs]
+    return await _games_out(docs)
 
 
 @router.get("/games/mine/soon", response_model=List[GameNotice])
@@ -442,15 +487,38 @@ async def _require_can_play(g: Game, user: User) -> None:
 async def join_game(gid: str, body: JoinGameIn, user: User = Depends(current_user)):
     g = await _get_game(gid)
     mine = next((r for r in g.roster if r.user_id == user.user_id), None)
+    spots = g.signup_style == "spots"
     if mine:
-        await db.games.update_one({"id": gid, "roster.id": mine.id}, {"$set": {"roster.$.team": body.team}})
+        if spots:
+            if body.spot and body.spot != mine.spot:  # move to another number
+                await _move_spot(g, mine.id, _pick_spot(g, body.spot))
+        else:
+            await db.games.update_one({"id": gid, "roster.id": mine.id}, {"$set": {"roster.$.team": body.team}})
     else:
         await _require_can_play(g, user)
         if len(g.roster) >= g.max_players:
             raise HTTPException(409, "This game is full")
         entry = RosterEntry(user_id=user.user_id, name=user.name, team=body.team, added_by=user.user_id, picture=user.picture)
-        await db.games.update_one({"id": gid}, {"$push": {"roster": entry.model_dump()}})
+        await _push_entry(g, entry, body.spot if spots else None)
     return await _get_game(gid)
+
+
+async def _push_entry(g: Game, entry: RosterEntry, want: Optional[int]) -> None:
+    """Add to the roster; in numbered games take the wanted spot (or the lowest free one) without ever double-booking it."""
+    if g.signup_style != "spots":
+        await db.games.update_one({"id": g.id}, {"$push": {"roster": entry.model_dump()}})
+        return
+    entry.spot = _pick_spot(g, want)
+    res = await db.games.update_one({"id": g.id, "roster.spot": {"$ne": entry.spot}}, {"$push": {"roster": entry.model_dump()}})
+    if not res.modified_count:
+        raise HTTPException(409, "That spot was just taken — pick another number")
+
+
+async def _move_spot(g: Game, entry_id: str, spot: int) -> None:
+    res = await db.games.update_one({"id": g.id, "roster.spot": {"$ne": spot}}, {"$set": {"roster.$[e].spot": spot}},
+                                    array_filters=[{"e.id": entry_id}])
+    if not res.modified_count:
+        raise HTTPException(409, "That spot was just taken — pick another number")
 
 
 @router.post("/games/{gid}/leave", response_model=Game)
@@ -466,8 +534,48 @@ async def add_guest(gid: str, body: GuestIn, user: User = Depends(current_user))
     await _require_can_play(g, user)
     if len(g.roster) >= g.max_players:
         raise HTTPException(409, "This game is full")
-    entry = RosterEntry(user_id=None, name=body.name.strip(), team=body.team, added_by=user.user_id)
-    await db.games.update_one({"id": gid}, {"$push": {"roster": entry.model_dump()}})
+    if body.user_id:  # putting a member's name down for them is a host/admin job
+        c = await _get_community(g.community_id)
+        require_manage(c, user)
+        m = next((x for x in c.members if x.user_id == body.user_id), None)
+        if not m:
+            raise HTTPException(400, "Pick a member of this community")
+        if any(r.user_id == m.user_id for r in g.roster):
+            raise HTTPException(409, f"{m.name} is already on this game")
+        entry = RosterEntry(user_id=m.user_id, name=m.name, team=body.team, added_by=user.user_id, picture=m.picture)
+    else:
+        if not body.name.strip():
+            raise HTTPException(400, "Type a name")
+        entry = RosterEntry(user_id=None, name=body.name.strip(), team=body.team, added_by=user.user_id)
+    await _push_entry(g, entry, body.spot)
+    return await _get_game(gid)
+
+
+@router.post("/games/{gid}/roster/{entry_id}/spot", response_model=Game)
+async def move_entry(gid: str, entry_id: str, body: SpotIn, user: User = Depends(current_user)):
+    """Move someone to another free number (the player, whoever added them, or the host/admin)."""
+    g = await _get_game(gid)
+    if g.signup_style != "spots":
+        raise HTTPException(400, "This game uses teams, not numbered spots")
+    entry = next((r for r in g.roster if r.id == entry_id), None)
+    if not entry:
+        raise HTTPException(404, "Entry not found")
+    if user.user_id not in (entry.added_by, entry.user_id):
+        require_manage(await _get_community(g.community_id), user)
+    if body.spot != entry.spot:
+        await _move_spot(g, entry_id, _pick_spot(g, body.spot))
+    return await _get_game(gid)
+
+
+@router.put("/games/{gid}/teams", response_model=Game)
+async def set_teams(gid: str, body: TeamsIn, user: User = Depends(current_user)):
+    """Host/admin splits the players into Team A and Team B (used with numbered spots)."""
+    g = await _get_game(gid)
+    require_manage(await _get_community(g.community_id), user)
+    for r in g.roster:
+        if r.id in body.teams:
+            r.team = body.teams[r.id]
+    await db.games.update_one({"id": gid}, {"$set": {"roster": [r.model_dump() for r in g.roster]}})
     return await _get_game(gid)
 
 
@@ -511,6 +619,7 @@ async def record_result(gid: str, body: GameResultIn, user: User = Depends(curre
     result = GameResult(winner=body.winner, score_a=body.score_a, score_b=body.score_b, motm_entry_id=body.motm_entry_id)
     await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(),
                                                      "roster": [r.model_dump() for r in g.roster]}})
+    await engagement.after_result(gid)
     return await _get_game(gid)
 
 
@@ -545,6 +654,7 @@ async def game_sheet(gid: str, body: GameSheetIn, user: User = Depends(current_u
     await db.games.update_one({"id": gid}, {"$set": {"result": result.model_dump(), "roster": [r.model_dump() for r in g.roster]}})
     if newly_paid:
         await db.reminders.delete_many({"game_id": gid, "user_id": {"$in": newly_paid}})
+    await engagement.after_result(gid)
     return await _get_game(gid)
 
 

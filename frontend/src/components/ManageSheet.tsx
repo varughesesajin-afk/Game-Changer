@@ -16,6 +16,7 @@ import UnpaidList from "@/components/UnpaidList";
 import CoverPhotoPicker from "@/components/CoverPhotoPicker";
 import GameScheduler from "@/components/GameScheduler";
 import VisibilityToggle from "@/components/VisibilityToggle";
+import SignupStyleToggle from "@/components/SignupStyleToggle";
 import { WEEKDAYS, errMsg, fmtDate, money, refreshAll } from "@/lib/auth";
 import type { Community, CommunityUpdate, Game, RemindResult, SeasonIn, User } from "@/lib/types";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ interface Props {
 export default function ManageSheet({ c, games, me, open, onOpenChange }: Props) {
   const nav = useNavigate();
   const [f, setF] = useState<CommunityUpdate>({
-    name: c.name, image: c.image ?? "", image_x: c.image_x ?? 50, image_y: c.image_y ?? 50, image_zoom: c.image_zoom ?? 1, visibility: c.visibility, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee,
+    name: c.name, image: c.image ?? "", image_x: c.image_x ?? 50, image_y: c.image_y ?? 50, image_zoom: c.image_zoom ?? 1, visibility: c.visibility, venue: c.venue, city: c.city, description: c.description, days: c.days, time: c.time, max_players: c.max_players, fee: c.fee, signup_style: c.signup_style ?? "teams",
   });
   const [tOpen, setTOpen] = useState(false);
   const set = <K extends keyof CommunityUpdate>(k: K, v: CommunityUpdate[K]) => setF((p) => ({ ...p, [k]: v }));
@@ -111,6 +112,10 @@ export default function ManageSheet({ c, games, me, open, onOpenChange }: Props)
                   <Label htmlFor="m-fee">Fee (OMR)</Label>
                   <Input id="m-fee" type="number" step="0.5" data-testid="manage-fee-input" value={f.fee ?? 0} onChange={(e) => set("fee", Number(e.target.value))} />
                 </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>How do players sign up?</Label>
+                <SignupStyleToggle testid="manage-signup-style" value={f.signup_style ?? "teams"} onChange={(v) => set("signup_style", v)} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
