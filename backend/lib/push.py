@@ -135,9 +135,12 @@ async def run_reminders() -> int:
 
 
 async def reminder_loop(every_seconds: int = 600) -> None:
+    from lib import engagement  # lazy: engagement imports this module
+
     await asyncio.sleep(30)  # let the app finish booting
     while True:
         try:
+            await engagement.finalize_due()
             n = await run_reminders()
             if n:
                 logger.info("push reminders sent: %s", n)

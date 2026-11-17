@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { ArrowLeft, CalendarClock, Crown, Lock, MapPin, Settings2, Trophy, Users } from "lucide-react";
@@ -15,12 +15,15 @@ import ShareButtons from "@/components/ShareButtons";
 import ManageApprovalCard from "@/components/ManageApprovalCard";
 import CoverImage from "@/components/CoverImage";
 import TransferHostDialog from "@/components/TransferHostDialog";
+import MotmDialog from "@/components/MotmDialog";
 import { apiGet, apiPost } from "@/lib/api";
 import { errMsg, fmtDate, money, refreshAll, useMe } from "@/lib/auth";
 import type { Community, Game, Tournament } from "@/lib/types";
 
 export default function CommunityDetail() {
   const { id = "" } = useParams();
+  const [params, setParams] = useSearchParams();
+  const voteGame = params.get("vote"); // set by the "vote for man of the match" notification
   const nav = useNavigate();
   const { data: me } = useMe();
   const [manageOpen, setManageOpen] = useState(false);
@@ -58,6 +61,7 @@ export default function CommunityDetail() {
 
   return (
     <div>
+      <MotmDialog gameId={voteGame} title={c ? `${c.name}` : undefined} onClose={() => setParams((p) => { p.delete("vote"); return p; }, { replace: true })} />
       <header className="on-dark relative h-56 overflow-hidden lg:mx-6 lg:mt-6 lg:h-72 lg:rounded-3xl">
         <CoverImage c={c} sport={c?.sport ?? ""} className="absolute inset-0" />
         <div className="absolute inset-0" style={{ background: "linear-gradient(180deg, rgba(5,20,30,0.25) 0%, rgba(5,20,30,0.7) 100%)" }} />

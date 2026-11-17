@@ -11,6 +11,7 @@ import { endSession } from "@/lib/session";
 import ProfilePicture from "@/components/ProfilePicture";
 import MyStats from "@/components/MyStats";
 import NotificationToggle from "@/components/NotificationToggle";
+import BadgesPanel from "@/components/BadgesPanel";
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
@@ -85,6 +86,8 @@ export default function Profile() {
       <NotificationToggle />
 
       <div className="lg:col-span-2"><MyStats userId={me.user_id} /></div>
+
+      <div className="lg:col-span-2"><BadgesPanel userId={me.user_id} /></div>
 
       <section className="space-y-3 lg:col-span-2">
         <h2 className="font-heading text-xl font-bold">My upcoming games</h2>

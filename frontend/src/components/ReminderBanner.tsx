@@ -2,10 +2,11 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { BellRing, CalendarClock, X } from "lucide-react";
+import { BellRing, CalendarClock, Star, X } from "lucide-react";
+import MotmDialog from "@/components/MotmDialog";
 import { apiGet, apiPost } from "@/lib/api";
 import { fmtDate, money, refreshAll, useMe } from "@/lib/auth";
-import type { GameNotice, Reminder } from "@/lib/types";
+import type { GameNotice, MotmPending, Reminder } from "@/lib/types";
 
 // In-app fee reminders: shown at the top of every screen until the player pays or dismisses.
 export default function ReminderBanner() {
@@ -14,6 +15,9 @@ export default function ReminderBanner() {
   const dismiss = useMutation({ mutationFn: (id: string) => apiPost(`/reminders/${id}/dismiss`), onSuccess: () => refreshAll() });
   const list = q.isError ? [] : q.data ?? [];
   const soon = useQuery({ queryKey: ["games", "soon"], queryFn: () => apiGet<GameNotice[]>("/games/mine/soon"), enabled: !!me, refetchInterval: 300_000 });
+  const pending = useQuery({ queryKey: ["motm", "pending"], queryFn: () => apiGet<MotmPending[]>("/motm/pending"), enabled: !!me, refetchInterval: 120_000 });
+  const votes = pending.isError ? [] : pending.data ?? [];
+  const [voting, setVoting] = useState<MotmPending | null>(null);
   const [hidden, setHidden] = useState<string[]>(() => JSON.parse(localStorage.getItem("hiddenGameNotices") ?? "[]") as string[]);
   const hide = (key: string) => {
     const next = [...hidden, key].slice(-50);
@@ -24,7 +28,26 @@ export default function ReminderBanner() {
 
   return (
     <div className="sticky top-0 z-40 space-y-2 px-3 pt-2 empty:hidden" data-testid="reminder-banner-stack">
+      <MotmDialog gameId={voting?.game_id ?? null} title={voting ? `${voting.community_name} · ${fmtDate(voting.date, "EEE d MMM")}` : undefined} onClose={() => setVoting(null)} />
       <AnimatePresence>
+        {votes.map((v) => (
+          <motion.button
+            key={`vote-${v.game_id}`}
+            type="button"
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            data-testid={`motm-banner-${v.game_id}`}
+            onClick={() => setVoting(v)}
+            className="flex w-full items-start gap-3 rounded-2xl border border-energy/40 bg-emerald-50/95 p-3 text-left shadow-lg shadow-black/10 backdrop-blur-xl dark:bg-[#0A1F18]/95"
+          >
+            <Star className="mt-0.5 size-5 shrink-0 text-amber-400" />
+            <span className="min-w-0 flex-1 text-sm">
+              <span className="block font-semibold text-white">Vote for man of the match</span>
+              <span className="block text-xs text-slate-300">{v.community_name} · {fmtDate(v.date, "EEE d MMM")} — tap to vote</span>
+            </span>
+          </motion.button>
+        ))}
         {notices.map((n) => (
           <motion.div
             key={n.game.id + n.when}

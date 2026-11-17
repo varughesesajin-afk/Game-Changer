@@ -97,6 +97,7 @@ export default function MatchSheet({ sides, initial, canManage, saving, onSave, 
             </optgroup>
           ))}
         </select>
+        <p className="text-[11px] text-slate-400">Players vote for 24 hours after you save. Your pick is used if nobody votes, or to break a tie.</p>
       </div>
 
       <Button data-testid="sheet-save" className="h-11 w-full bg-brand text-white" disabled={saving} onClick={() => onSave(v)}>

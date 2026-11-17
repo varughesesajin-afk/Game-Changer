@@ -40,6 +40,8 @@ INDEXES: dict[str, list[IndexModel]] = {
                   IndexModel([("user_id", ASCENDING), ("dismissed", ASCENDING), ("game_date", ASCENDING)], name="user_active")],
     "gallery": [IndexModel([("community_id", ASCENDING), ("created_at", DESCENDING)], name="community_created")],
     "images": [IndexModel([("id", ASCENDING)], name="id", unique=True)],
+    "motm_votes": [IndexModel([("game_id", ASCENDING), ("voter_id", ASCENDING)], name="game_voter", unique=True)],
+    "user_badges": [IndexModel([("user_id", ASCENDING), ("badge_id", ASCENDING)], name="user_badge", unique=True)],
     "push_subscriptions": [IndexModel([("endpoint", ASCENDING)], name="endpoint", unique=True),
                            IndexModel([("user_id", ASCENDING)], name="user")],
     "push_sent": [IndexModel([("key", ASCENDING)], name="key", unique=True),

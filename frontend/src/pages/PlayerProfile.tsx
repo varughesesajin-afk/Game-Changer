@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Goal, Medal, Star, Trophy } from "lucide-react";
 import { apiGet } from "@/lib/api";
 import { fmtDate } from "@/lib/auth";
+import BadgesPanel from "@/components/BadgesPanel";
 import type { PlayerProfile } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +65,8 @@ export default function PlayerProfilePage() {
               <span className="font-semibold text-white">{(p.totals.goals / p.totals.games).toFixed(1)}</span> goals per game
             </div>
           )}
+
+          {p.user_id && <BadgesPanel userId={p.user_id} />}
 
           <section className="space-y-2">
             <h2 className="font-heading text-lg font-bold">By community</h2>

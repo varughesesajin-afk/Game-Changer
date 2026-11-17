@@ -16,7 +16,7 @@ load_dotenv(ROOT_DIR / '.env')
 
 from lib.db import client, ensure_indexes  # noqa: E402
 from lib.push import reminder_loop  # noqa: E402
-from routers import admin, auth, communities, gallery, images, push, reminders, tournaments  # noqa: E402
+from routers import admin, auth, communities, gallery, images, motm, push, reminders, tournaments  # noqa: E402
 
 
 @asynccontextmanager
@@ -45,6 +45,7 @@ api_router.include_router(reminders.router)
 api_router.include_router(images.router)
 api_router.include_router(gallery.router)
 api_router.include_router(push.router)
+api_router.include_router(motm.router)
 
 app.add_middleware(
     CORSMiddleware,
